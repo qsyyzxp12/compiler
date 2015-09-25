@@ -1,0 +1,9 @@
+1. accept integer multiply (*) and divide (/) operator
+	handle the precedence of * and / operators, which are higher than the + and - operators
+2.  length of a variable name will not exceed 64 characters
+	number of different variables will not exceed 23
+3. simple optimization called ¡§constant folding¡¨
+	a= 10+20-5 + b   could be turned into  a = 25 + b
+	NOT required to exploit the constant folding opportunities in the following expressions
+		a ¡V 100 ¡V50 + 6
+	pay attention to the correctness of constant folding, for example, 1 / 2 = 0, but 1.0 / 2 = 0.5.
