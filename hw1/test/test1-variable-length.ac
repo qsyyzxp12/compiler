@@ -1,11 +1,3 @@
 i abc
-f bcd
-i cde
-i def
-abc = 1
-bcd = 2.1
-cde = 1
-def = 2
-cde = abc + def
-p cde
-p def
+abc = 123
+p abc

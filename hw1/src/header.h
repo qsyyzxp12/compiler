@@ -1,11 +1,15 @@
 #ifndef HEADER_H_INCLUDED
 #define HEADER_H_INCLUDED
 
+#include <string.h>
+#include <map>
+#define VARIABLE_LENGTH 64
+
 /******************************************************************************************************************************************
     All enumeration literals
        TokenType : Specify the type of the token scanner returns
 	   DataType  : The data type of the declared variable
-	   StmtType  : Indicate one statement in AcDc program is print or assignment statement.
+	   StmtTynpe  : Indicate one statement in AcDc program is print or assignment statement.
 	   ValueType : The node types of the expression tree that represents the expression on the right hand side of the assignment statement.
 	               Identifier, IntConst, FloatConst must be the leaf nodes ex: a, b, c , 1.5 , 3.
 				   PlusNode, MinusNode, MulNode, DivNode are the operations in AcDc. They must be the internal nodes.
@@ -37,8 +41,9 @@ typedef struct Token{
 
 /* For decl production or say one declaration statement */
 typedef struct Declaration{
-    DataType type;
-    char name;
+  DataType type;
+  char* name;
+  Declaration(){name = NULL;}
 }Declaration;
 
 /* 
@@ -55,11 +60,12 @@ typedef struct Declarations{
 /* For the nodes of the expression on the right hand side of one assignment statement */
 typedef struct Value{
     ValueType type;
-    union{
-        char id;                   /* if the node represent the access of the identifier */
-        Operation op;              /* store +, -, *, /, =, type_convert */
-        int ivalue;                /* for integer constant in the expression */
-        float fvalue;              /* for float constant */
+    union val{
+      char* id;                   /* if the node represent the access of the identifier */
+      Operation op;              /* store +, -, *, /, =, type_convert */
+      int ivalue;                /* for integer constant in the expression */
+      float fvalue;              /* for float constant */
+      val(){id = NULL;}//TODO: init and malloc
     }val;
 }Value;
 
@@ -79,9 +85,10 @@ typedef struct Expression{
 
 /* For one assignment statement */
 typedef struct AssignmentStatement{
-    char id;
+  char* id;
     Expression *expr;
     DataType type;      /* For type checking to store the type of all expression on the right. */
+
 }AssignmentStatement;
 
 
@@ -89,7 +96,7 @@ typedef struct AssignmentStatement{
 typedef struct Statement{
     StmtType type;
     union{
-        char variable;              /* print statement */
+        char* variable;              /* print statement */
         AssignmentStatement assign;
     }stmt;
 }Statement;
@@ -100,6 +107,7 @@ typedef struct Statements{
     struct Statements *rest;
 }Statements;
 
+
 /* For the root of the AST. */
 typedef struct Program{
     Declarations *declarations;
@@ -107,10 +115,22 @@ typedef struct Program{
 }Program;
 
 /* For building the symbol table */
-typedef struct SymbolTable{
-    DataType table[26];
-} SymbolTable;
 
+/*typedef struct Symbol{
+  DataType dt;
+  char* name;
+  } Symbol;*/
+
+struct cmpStr{
+  bool operator()(char const *a, char const *b){
+    return strcmp(a, b) < 0;
+  }
+};
+typedef struct SymbolTable{
+  std::map<char*, DataType, cmpStr> table;
+  void clear(){ table.clear();}
+  
+} SymbolTable;
 
 Token getNumericToken( FILE *source, char c );
 Token scanner( FILE *source );
@@ -121,18 +141,18 @@ Declarations *parseDeclarations( FILE *source );
 Expression *parseValue( FILE *source );
 Expression *parseExpressionTail( FILE *source, Expression *lvalue );
 Expression *parseExpression( FILE *source, Expression *lvalue );
-Statement makeAssignmentNode( char id, Expression *v, Expression *expr_tail );
-Statement makePrintNode( char id );
+Statement makeAssignmentNode( char* id, Expression *v, Expression *expr_tail );
+Statement makePrintNode( char *id );
 Statements *makeStatementTree( Statement stmt, Statements *stmts );
 Statement parseStatement( FILE *source, Token token );
 Statements *parseStatements( FILE * source );
 Program parser( FILE *source );
 void InitializeTable( SymbolTable *table );
-void add_table( SymbolTable *table, char c, DataType t );
+void add_table( SymbolTable *table, char* s, DataType t );
 SymbolTable build( Program program );
 void convertType( Expression * old, DataType type );
 DataType generalize( Expression *left, Expression *right );
-DataType lookup_table( SymbolTable *table, char c );
+DataType lookup_table( SymbolTable *table, char* s );
 void checkexpression( Expression * expr, SymbolTable * table );
 void checkstmt( Statement *stmt, SymbolTable * table );
 void check( Program *program, SymbolTable * table);

@@ -1,5 +1,6 @@
 1. accept integer multiply (*) and divide (/) operator
 	handle the precedence of * and / operators, which are higher than the + and - operators
+	float?
 2.  length of a variable name will not exceed 64 characters
 	number of different variables will not exceed 23
 3. simple optimization called ¡§constant folding¡¨
