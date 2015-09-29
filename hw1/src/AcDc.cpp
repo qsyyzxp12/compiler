@@ -2,7 +2,10 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <stack>
 #include "header.h"
+
+std::stack<char> operatorStack;
 
 int main( int argc, char *argv[] )
 {
@@ -240,6 +243,7 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
     (expr->v).val.op = Plus;
     expr->leftOperand = lvalue;
     expr->rightOperand = parseValue(source);
+    operatorStack.push('+');
     return parseExpressionTail(source, expr);
   case MinusOp:
     expr = (Expression *)malloc( sizeof(Expression) );
@@ -247,6 +251,7 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
     (expr->v).val.op = Minus;
     expr->leftOperand = lvalue;
     expr->rightOperand = parseValue(source);
+    operatorStack.push('-');
     return parseExpressionTail(source, expr);
   case MulOp://TODO:
     expr = (Expression *)malloc( sizeof(Expression) );
@@ -254,6 +259,7 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
     (expr->v).val.op = Mul;
     expr->leftOperand = lvalue;
     expr->rightOperand = parseValue(source);
+    operatorStack.push('*');
     return parseExpressionTail(source, expr);
   case DivOp://TODO:
     expr = (Expression *)malloc( sizeof(Expression) );
@@ -261,6 +267,7 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
     (expr->v).val.op = Div;
     expr->leftOperand = lvalue;
     expr->rightOperand = parseValue(source);
+    operatorStack.push('/');
     return parseExpressionTail(source, expr);
   case Alphabet:
     fseek(source, -strlen(token.tok), SEEK_CUR);
@@ -278,30 +285,36 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
 
 Expression *parseExpression( FILE *source, Expression *lvalue )
 {
+  while(!operatorStack.empty()){
+    operatorStack.pop();
+  }
     Token token = scanner(source);
     Expression *expr;
 
-    switch(token.type){// TODO: + - 在樹的較高層
-        case PlusOp:
-            expr = (Expression *)malloc( sizeof(Expression) );
-            (expr->v).type = PlusNode;
-            (expr->v).val.op = Plus;
-            expr->leftOperand = lvalue;
-            expr->rightOperand = parseValue(source);
-            return parseExpressionTail(source, expr);
-        case MinusOp:
-            expr = (Expression *)malloc( sizeof(Expression) );
-            (expr->v).type = MinusNode;
-            (expr->v).val.op = Minus;
-            expr->leftOperand = lvalue;
-            expr->rightOperand = parseValue(source);
-            return parseExpressionTail(source, expr);
+    switch(token.type){// TODO: + - 在樹的較高層//this is the same as parseExpressiontail ..., can functionize
+    case PlusOp:
+      expr = (Expression *)malloc( sizeof(Expression) );
+      (expr->v).type = PlusNode;
+      (expr->v).val.op = Plus;
+      expr->leftOperand = lvalue;
+      expr->rightOperand = parseValue(source);
+      operatorStack.push('+');
+      return parseExpressionTail(source, expr);
+    case MinusOp:
+      expr = (Expression *)malloc( sizeof(Expression) );
+      (expr->v).type = MinusNode;
+      (expr->v).val.op = Minus;
+      expr->leftOperand = lvalue;
+      expr->rightOperand = parseValue(source);
+      operatorStack.push('-');
+      return parseExpressionTail(source, expr);
     case MulOp://TODO:
       expr = (Expression *)malloc( sizeof(Expression) );
       (expr->v).type = MulNode;
       (expr->v).val.op = Mul;
       expr->leftOperand = lvalue;
       expr->rightOperand = parseValue(source);
+      operatorStack.push('*');
       return parseExpressionTail(source, expr);
     case DivOp://TODO:
       expr = (Expression *)malloc( sizeof(Expression) );
@@ -309,6 +322,7 @@ Expression *parseExpression( FILE *source, Expression *lvalue )
       (expr->v).val.op = Div;
       expr->leftOperand = lvalue;
       expr->rightOperand = parseValue(source);
+      operatorStack.push('/');
       return parseExpressionTail(source, expr);
     case Alphabet:
       fseek(source, -strlen(token.tok), SEEK_CUR);
@@ -331,10 +345,15 @@ Statement parseStatement( FILE *source, Token token )
 
     switch(token.type){
         case Alphabet:
-            next_token = scanner(source);
+	  next_token = scanner(source);//second token
             if(next_token.type == AssignmentOp){
                 value = parseValue(source);
                 expr = parseExpression(source, value);
+		int operatorCount = 1;
+		while(!operatorStack.empty()){
+		  printf("stack[%d]: %c\n", operatorCount++, operatorStack.top());
+		  operatorStack.pop();
+		}
                 return makeAssignmentNode(token.tok, value, expr);
             }
             else{
@@ -441,7 +460,7 @@ Statement makePrintNode( char* id )
     return stmt;
 }
 
-Statements *makeStatementTree( Statement stmt, Statements *stmts )
+Statements *makeStatementTree( Statement stmt, Statements *stmts )//放到最左邊
 {
     Statements *new_tree = (Statements *)malloc( sizeof(Statements) );
     new_tree->first = stmt;
