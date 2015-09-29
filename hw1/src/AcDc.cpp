@@ -7,6 +7,11 @@
 
 std::stack<char> operatorStack;
 
+Expression* handlePlusOp(FILE* source, Expression* lvalue);
+Expression* handleMinusOp(FILE* source, Expression* lvalue);
+Expression* handleMulOp(FILE* source, Expression* lvalue);
+Expression* handleDivOp(FILE* source, Expression* lvalue);
+
 int main( int argc, char *argv[] )
 {
     FILE *source, *target;
@@ -234,41 +239,17 @@ Expression *parseValue( FILE *source )
 Expression *parseExpressionTail( FILE *source, Expression *lvalue )
 {
   Token token = scanner(source);
-  Expression *expr;
+  Expression *expr, *newexpr;
 
   switch(token.type){
   case PlusOp:
-    expr = (Expression *)malloc( sizeof(Expression) );
-    (expr->v).type = PlusNode;
-    (expr->v).val.op = Plus;
-    expr->leftOperand = lvalue;
-    expr->rightOperand = parseValue(source);
-    operatorStack.push('+');
-    return parseExpressionTail(source, expr);
+    return handlePlusOp(source, lvalue);
   case MinusOp:
-    expr = (Expression *)malloc( sizeof(Expression) );
-    (expr->v).type = MinusNode;
-    (expr->v).val.op = Minus;
-    expr->leftOperand = lvalue;
-    expr->rightOperand = parseValue(source);
-    operatorStack.push('-');
-    return parseExpressionTail(source, expr);
-  case MulOp://TODO:
-    expr = (Expression *)malloc( sizeof(Expression) );
-    (expr->v).type = MulNode;
-    (expr->v).val.op = Mul;
-    expr->leftOperand = lvalue;
-    expr->rightOperand = parseValue(source);
-    operatorStack.push('*');
-    return parseExpressionTail(source, expr);
-  case DivOp://TODO:
-    expr = (Expression *)malloc( sizeof(Expression) );
-    (expr->v).type = DivNode;
-    (expr->v).val.op = Div;
-    expr->leftOperand = lvalue;
-    expr->rightOperand = parseValue(source);
-    operatorStack.push('/');
-    return parseExpressionTail(source, expr);
+    return handleMinusOp(source, lvalue);
+  case MulOp:
+    return handleMulOp(source, lvalue);
+  case DivOp:
+    return handleDivOp(source, lvalue);
   case Alphabet:
     fseek(source, -strlen(token.tok), SEEK_CUR);
     return lvalue;
@@ -283,47 +264,77 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
   }
 }
 
+Expression* handlePlusOp(FILE* source, Expression* lvalue){
+  Expression *expr, *newexpr;
+  operatorStack.push('+');
+  expr = (Expression *)malloc( sizeof(Expression) );
+  (expr->v).type = PlusNode;
+  (expr->v).val.op = Plus;
+  expr->leftOperand = lvalue;
+
+  Expression* value = parseValue(source);
+  newexpr = parseExpression(source, value);
+  if(newexpr == NULL){
+    expr->rightOperand = value;
+  } else {
+    expr->rightOperand = newexpr;
+  }
+  return expr;
+}
+Expression* handleMinusOp(FILE* source, Expression* lvalue){
+  Expression *expr, *newexpr;
+  operatorStack.push('-');
+  expr = (Expression *)malloc( sizeof(Expression) );
+  (expr->v).type = MinusNode;
+  (expr->v).val.op = Minus;
+  expr->leftOperand = lvalue;
+
+  Expression* value = parseValue(source);
+  newexpr = parseExpression(source, value);
+  if(newexpr == NULL){
+    expr->rightOperand = value;
+  } else {
+    expr->rightOperand = newexpr;
+  }
+  return expr;
+}
+Expression* handleMulOp(FILE* source, Expression* lvalue){
+  Expression *expr, *newexpr;
+  expr = (Expression *)malloc( sizeof(Expression) );
+  (expr->v).type = MulNode;
+  (expr->v).val.op = Mul;
+  expr->leftOperand = lvalue;
+  expr->rightOperand = parseValue(source);
+  operatorStack.push('*');
+  return parseExpressionTail(source, expr);
+}
+Expression* handleDivOp(FILE* source, Expression* lvalue){
+  Expression *expr, *newexpr;
+  expr = (Expression *)malloc( sizeof(Expression) );
+  (expr->v).type = DivNode;
+  (expr->v).val.op = Div;
+  expr->leftOperand = lvalue;
+  expr->rightOperand = parseValue(source);
+  operatorStack.push('/');
+  return parseExpressionTail(source, expr);
+}
 Expression *parseExpression( FILE *source, Expression *lvalue )
 {
   while(!operatorStack.empty()){
     operatorStack.pop();
   }
     Token token = scanner(source);
-    Expression *expr;
+    Expression *expr, *newexpr;
 
     switch(token.type){// TODO: + - 在樹的較高層//this is the same as parseExpressiontail ..., can functionize
     case PlusOp:
-      expr = (Expression *)malloc( sizeof(Expression) );
-      (expr->v).type = PlusNode;
-      (expr->v).val.op = Plus;
-      expr->leftOperand = lvalue;
-      expr->rightOperand = parseValue(source);
-      operatorStack.push('+');
-      return parseExpressionTail(source, expr);
+      return handlePlusOp(source, lvalue);
     case MinusOp:
-      expr = (Expression *)malloc( sizeof(Expression) );
-      (expr->v).type = MinusNode;
-      (expr->v).val.op = Minus;
-      expr->leftOperand = lvalue;
-      expr->rightOperand = parseValue(source);
-      operatorStack.push('-');
-      return parseExpressionTail(source, expr);
-    case MulOp://TODO:
-      expr = (Expression *)malloc( sizeof(Expression) );
-      (expr->v).type = MulNode;
-      (expr->v).val.op = Mul;
-      expr->leftOperand = lvalue;
-      expr->rightOperand = parseValue(source);
-      operatorStack.push('*');
-      return parseExpressionTail(source, expr);
-    case DivOp://TODO:
-      expr = (Expression *)malloc( sizeof(Expression) );
-      (expr->v).type = DivNode;
-      (expr->v).val.op = Div;
-      expr->leftOperand = lvalue;
-      expr->rightOperand = parseValue(source);
-      operatorStack.push('/');
-      return parseExpressionTail(source, expr);
+      return handleMinusOp(source, lvalue);
+    case MulOp:
+      return handleMulOp(source, lvalue);
+    case DivOp:
+      return handleDivOp(source, lvalue);
     case Alphabet:
       fseek(source, -strlen(token.tok), SEEK_CUR);
       return NULL;
@@ -344,34 +355,34 @@ Statement parseStatement( FILE *source, Token token )
     Expression *value, *expr;
 
     switch(token.type){
-        case Alphabet:
-	  next_token = scanner(source);//second token
-            if(next_token.type == AssignmentOp){
-                value = parseValue(source);
-                expr = parseExpression(source, value);
-		int operatorCount = 1;
-		while(!operatorStack.empty()){
-		  printf("stack[%d]: %c\n", operatorCount++, operatorStack.top());
-		  operatorStack.pop();
-		}
-                return makeAssignmentNode(token.tok, value, expr);
-            }
-            else{
-                printf("Syntax Error: Expect an assignment op %s\n", next_token.tok);
-                exit(1);
-            }
-        case PrintOp:
-            next_token = scanner(source);
-            if(next_token.type == Alphabet)
-                return makePrintNode(next_token.tok);
-            else{
-                printf("Syntax Error: Expect an identifier %s\n", next_token.tok);
-                exit(1);
-            }
-            break;
-        default:
-            printf("Syntax Error: Expect a statement %s\n", token.tok);
-            exit(1);
+    case Alphabet:
+      next_token = scanner(source);//second token
+      if(next_token.type == AssignmentOp){
+	value = parseValue(source);
+	expr = parseExpression(source, value);
+	int operatorCount = 1;
+	while(!operatorStack.empty()){
+	  printf("stack[%d]: %c\n", operatorCount++, operatorStack.top());
+	  operatorStack.pop();
+	}
+	return makeAssignmentNode(token.tok, value, expr);
+      }
+      else{
+	printf("Syntax Error: Expect an assignment op %s\n", next_token.tok);
+	exit(1);
+      }
+    case PrintOp:
+      next_token = scanner(source);
+      if(next_token.type == Alphabet)
+	return makePrintNode(next_token.tok);
+      else{
+	printf("Syntax Error: Expect an identifier %s\n", next_token.tok);
+	exit(1);
+      }
+      break;
+    default:
+      printf("Syntax Error: Expect a statement %s\n", token.tok);
+      exit(1);
     }
 }
 
@@ -388,10 +399,10 @@ Statements *parseStatements( FILE * source )
             stmts = parseStatements(source);
             return makeStatementTree(stmt , stmts);
     case EOFsymbol:
-            return NULL;
-        default:
-            printf("Syntax Error: Expect statements %s\n", token.tok);
-            exit(1);
+      return NULL;
+    default:
+      printf("Syntax Error: Expect statements %s\n", token.tok);
+      exit(1);
     }
 }
 
@@ -431,7 +442,7 @@ Declarations *makeDeclarationTree( Declaration decl, Declarations *decls )
 }
 
 
-Statement makeAssignmentNode( char* id, Expression *v, Expression *expr_tail )
+Statement makeAssignmentNode( char* id, Expression *v, Expression *expr_tail )//do constant folding
 {
     Statement stmt;
     AssignmentStatement assign;
@@ -443,8 +454,10 @@ Statement makeAssignmentNode( char* id, Expression *v, Expression *expr_tail )
     strncpy(assign.id, id, VARIABLE_LENGTH);
     if(expr_tail == NULL)
         assign.expr = v;
-    else
+    else{
         assign.expr = expr_tail;
+	
+    }
     stmt.stmt.assign = assign;
 
     return stmt;
