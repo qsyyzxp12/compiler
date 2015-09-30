@@ -1,9 +1,9 @@
-i a
-i b
+f a
+f b
 i d
-i c
-a = 2
-b = 5
+f c
+a = 2.1
+b = 5.0
 d = 1
 c = a+b*d+b+a*b
 p c

@@ -67,7 +67,32 @@ typedef struct Value{
       float fvalue;              /* for float constant */
       val(){id = NULL;}//TODO: init and malloc
     }val;
+  bool isConst(){
+    return type == IntConst || type == FloatConst;
+  }
+  void print(){
+    if(type == IntConst){
+      printf("%d\n", val.ivalue);
+    } else if(type == FloatConst){
+      printf("%f\n", val.fvalue);
+    } else if(type == Identifier){
+      printf("%s\n", val.id);
+    } else {
+      printf("operation:%d\n", val.op);
+    }
+  }
 }Value;
+typedef struct ValueOperand{
+  ValueOperand(Value v1, Value v2){
+    v = v1; op = v2;
+  }
+  void print(){
+    v.print();
+    op.print();
+  }
+  Value v;
+  Value op;
+} ValueOperand;
 
 
 /* 

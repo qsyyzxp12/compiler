@@ -11,6 +11,14 @@ Expression* handlePlusOp(FILE* source, Expression* lvalue);
 Expression* handleMinusOp(FILE* source, Expression* lvalue);
 Expression* handleMulOp(FILE* source, Expression* lvalue);
 Expression* handleDivOp(FILE* source, Expression* lvalue);
+bool isConst(ValueType t){
+  return t == IntConst || t == FloatConst;
+}
+bool isLeaf(Expression* expr){
+  return expr->leftOperand == NULL && expr->rightOperand == NULL;
+}
+
+
 
 int main( int argc, char *argv[] )
 {
@@ -456,7 +464,18 @@ Statement makeAssignmentNode( char* id, Expression *v, Expression *expr_tail )//
         assign.expr = v;
     else{
         assign.expr = expr_tail;
-	
+    }
+
+    std::stack<ValueOperand> vstack;
+    Expression* head = assign.expr;
+    while(head != NULL && head->leftOperand != NULL && head->leftOperand->v.isConst() && isLeaf(head->leftOperand)){
+      vstack.push(ValueOperand(head->leftOperand->v, head->v));
+      head = head->rightOperand;
+    }
+    while(!vstack.empty()){
+      vstack.top().print();
+      vstack.pop();
+      
     }
     stmt.stmt.assign = assign;
 
@@ -473,13 +492,67 @@ Statement makePrintNode( char* id )
     return stmt;
 }
 
-Statements *makeStatementTree( Statement stmt, Statements *stmts )//放到最左邊
+Statements *makeStatementTree( Statement stmt, Statements *stmts )//許多statment
 {
     Statements *new_tree = (Statements *)malloc( sizeof(Statements) );
     new_tree->first = stmt;
     new_tree->rest = stmts;
 
     return new_tree;
+}
+
+
+void foldExpression(Expression* expr){
+  if(expr->leftOperand == NULL){
+    switch( (expr->v).type ){
+    case Identifier:
+      //fprintf(target,"l%s\n",(expr->v).val.id);
+      break;
+    case IntConst:
+      //      fprintf(target,"%d\n",(expr->v).val.ivalue);
+      break;
+    case FloatConst:
+      //fprintf(target,"%f\n", (expr->v).val.fvalue);
+      break;
+    default:
+      //fprintf(target,"Error In fprint_left_expr. (expr->v).type=%d\n",(expr->v).type);
+      break;
+    }
+  }
+  else{
+    //fprint_expr(target, expr->leftOperand);
+    if(expr->rightOperand == NULL){
+      //fprintf(target,"5k\n");
+    }
+    else{
+      //	fprint_right_expr(expr->rightOperand);
+      //fprint_expr(target, expr->rightOperand);
+      //fprint_op(target, (expr->v).type);
+    }
+  }
+}
+void constantFolding(Statements* stmts){//TODO:
+  //iterate all statement, find constant to fold
+  Statements* statePointer = stmts;
+  Statement toFold;
+  
+  while(statePointer != NULL){
+    toFold = statePointer->first;
+    switch(toFold.type){
+    case Print:
+      break;
+    case Assignment:
+      print_expr(toFold.stmt.assign.expr);
+      //foldExpression(toFold.stmt.assign.expr);
+      break;
+    }
+    statePointer=statePointer->rest;
+  }
+  
+  /*while(isConst(toFold->value.type)){
+    printf("fold %lf", double(toFold->leftOperand.Value));
+    toFold = toFold->rightOperand;
+    }*/
 }
 
 /* parser */
@@ -489,7 +562,6 @@ Program parser( FILE *source )
 
     program.declarations = parseDeclarations(source);
     program.statements = parseStatements(source);
-
     return program;
 }
 
@@ -703,29 +775,30 @@ void fprint_expr( FILE *target, Expression *expr)
 void gencode(Program prog, FILE * target)
 {
     Statements *stmts = prog.statements;
+    constantFolding(stmts);//TODO:
     Statement stmt;
 
     while(stmts != NULL){
-        stmt = stmts->first;
-        switch(stmt.type){
-            case Print:
-                fprintf(target,"l%s\n",stmt.stmt.variable);
-                fprintf(target,"p\n");
-                break;
-            case Assignment:
-                fprint_expr(target, stmt.stmt.assign.expr);
-                /*
-                   if(stmt.stmt.assign.type == Int){
-                   fprintf(target,"0 k\n");
-                   }
-                   else if(stmt.stmt.assign.type == Float){
-                   fprintf(target,"5 k\n");
-                   }*/
-                fprintf(target,"s%s\n",stmt.stmt.assign.id);
-                fprintf(target,"0 k\n");
-                break;
-        }
-        stmts=stmts->rest;
+      stmt = stmts->first;
+      switch(stmt.type){
+      case Print:
+	fprintf(target,"l%s\n",stmt.stmt.variable);
+	fprintf(target,"p\n");
+	break;
+      case Assignment:
+	fprint_expr(target, stmt.stmt.assign.expr);
+	/*
+	  if(stmt.stmt.assign.type == Int){
+	  fprintf(target,"0 k\n");
+	  }
+	  else if(stmt.stmt.assign.type == Float){
+	  fprintf(target,"5 k\n");
+	  }*/
+	fprintf(target,"s%s\n",stmt.stmt.assign.id);
+	fprintf(target,"0 k\n");
+	break;
+      }
+      stmts=stmts->rest;
     }
 }
 
