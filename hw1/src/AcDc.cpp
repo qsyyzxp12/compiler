@@ -12,14 +12,14 @@ Expression* handlePlusOp(FILE* source, Expression* lvalue);
 Expression* handleMinusOp(FILE* source, Expression* lvalue);
 Expression* handleMulOp(FILE* source, Expression* lvalue);
 Expression* handleDivOp(FILE* source, Expression* lvalue);
+Expression* handleMulOpTerm(FILE* source, Expression* lvalue);
+Expression* handleDivOpTerm(FILE* source, Expression* lvalue);
 bool isConst(ValueType t){
   return t == IntConst || t == FloatConst;
 }
 bool isLeaf(Expression* expr){
   return expr->leftOperand == NULL && expr->rightOperand == NULL;
 }
-
-
 
 int main( int argc, char *argv[] )
 {
@@ -273,46 +273,86 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
   }
 }
 
-Expression* handlePlusOp(FILE* source, Expression* lvalue){
+Expression *parseTerm( FILE *source, Expression* lvalue ) // precedence: expression -> term -> value
+{
+  
+  Token token = scanner(source);
   Expression *expr, *newexpr;
-  operatorStack.push('+');
+
+  switch(token.type){
+  case PlusOp:
+    ungetc(token.tok[0], source);
+    return lvalue;
+  case MinusOp:
+    ungetc(token.tok[0], source);
+    return lvalue;
+  case MulOp:
+    return handleMulOpTerm(source, lvalue);
+  case DivOp:
+    return handleDivOpTerm(source, lvalue);
+  case Alphabet:
+    fseek(source, -strlen(token.tok), SEEK_CUR);
+    return lvalue;
+  case PrintOp:
+    ungetc(token.tok[0], source);
+    return lvalue;
+  case EOFsymbol:
+    return lvalue;
+  default:
+    printf("Syntax Error: Expect a numeric value or an identifier %s\n", token.tok);
+    exit(1);
+  }
+}
+
+Expression *parseTermTail( FILE *source, Expression* lvalue ) // precedence: expression -> term -> value
+{
+  Token token = scanner(source);
+  Expression *expr, *newexpr;
+
+  switch(token.type){
+  case PlusOp:
+    ungetc(token.tok[0], source);
+    return lvalue;
+  case MinusOp:
+    ungetc(token.tok[0], source);
+    return lvalue;
+  case MulOp:
+    return handleMulOpTerm(source, lvalue);
+  case DivOp:
+    return handleDivOpTerm(source, lvalue);
+  case Alphabet:
+    fseek(source, -strlen(token.tok), SEEK_CUR);
+    return lvalue;
+  case PrintOp:
+    ungetc(token.tok[0], source);
+    return lvalue;
+  case EOFsymbol:
+    return lvalue;
+  default:
+    printf("Syntax Error: Expect a numeric value or an identifier %s\n", token.tok);
+    exit(1);
+  }
+}
+
+Expression* handlePlusOp(FILE* source, Expression* lvalue){
+    Expression *expr, *newexpr;
   expr = (Expression *)malloc( sizeof(Expression) );
   (expr->v).type = PlusNode;
   (expr->v).val.op = Plus;
   expr->leftOperand = lvalue;
-
-  Expression* value = parseValue(source);
-  newexpr = parseExpression(source, value);
-  if(newexpr == NULL){
-    expr->rightOperand = value;
-  } else {
-    expr->rightOperand = newexpr;
-  }
-  return expr;
+  newexpr = parseValue(source);
+  expr->rightOperand = parseTerm(source, newexpr);
+  return parseExpressionTail(source, expr);
 }
 Expression* handleMinusOp(FILE* source, Expression* lvalue){
   Expression *expr, *newexpr;
-  /*if(comparePrecedence(operatorStack.top(), '-')){
-    while(comparePrecedence(operatorStack.top(), '-')){
-      makePrecedenceTree(operatorStack.top(), lvalue, );
-      operatorStack.pop();
-    }
-  } else {
-    operatorStack.push('-');
-    }*/
   expr = (Expression *)malloc( sizeof(Expression) );
   (expr->v).type = MinusNode;
   (expr->v).val.op = Minus;
   expr->leftOperand = lvalue;
-
-  Expression* value = parseValue(source);
-  newexpr = parseExpression(source, value);
-  if(newexpr == NULL){
-    expr->rightOperand = value;
-  } else {
-    expr->rightOperand = newexpr;
-  }
-  return expr;
+  newexpr = parseValue(source);
+  expr->rightOperand = parseTerm(source, newexpr);
+  return parseExpressionTail(source, expr);
 }
 Expression* handleMulOp(FILE* source, Expression* lvalue){
   Expression *expr, *newexpr;
@@ -321,7 +361,6 @@ Expression* handleMulOp(FILE* source, Expression* lvalue){
   (expr->v).val.op = Mul;
   expr->leftOperand = lvalue;
   expr->rightOperand = parseValue(source);
-  operatorStack.push('*');
   return parseExpressionTail(source, expr);
 }
 Expression* handleDivOp(FILE* source, Expression* lvalue){
@@ -331,9 +370,28 @@ Expression* handleDivOp(FILE* source, Expression* lvalue){
   (expr->v).val.op = Div;
   expr->leftOperand = lvalue;
   expr->rightOperand = parseValue(source);
-  operatorStack.push('/');
   return parseExpressionTail(source, expr);
 }
+
+Expression* handleMulOpTerm(FILE* source, Expression* lvalue){
+  Expression *expr, *newexpr;
+  expr = (Expression *)malloc( sizeof(Expression) );
+  (expr->v).type = MulNode;
+  (expr->v).val.op = Mul;
+  expr->leftOperand = lvalue;
+  expr->rightOperand = parseValue(source);
+  return parseTermTail(source, expr);
+}
+Expression* handleDivOpTerm(FILE* source, Expression* lvalue){
+  Expression *expr, *newexpr;
+  expr = (Expression *)malloc( sizeof(Expression) );
+  (expr->v).type = DivNode;
+  (expr->v).val.op = Div;
+  expr->leftOperand = lvalue;
+  expr->rightOperand = parseValue(source);
+  return parseTermTail(source, expr);
+}
+
 Expression *parseExpression( FILE *source, Expression *lvalue )
 {
   while(!operatorStack.empty()){
@@ -376,11 +434,6 @@ Statement parseStatement( FILE *source, Token token )
       if(next_token.type == AssignmentOp){
 	value = parseValue(source);
 	expr = parseExpression(source, value);
-	int operatorCount = 1;
-	while(!operatorStack.empty()){
-	  printf("stack[%d]: %c\n", operatorCount++, operatorStack.top());
-	  operatorStack.pop();
-	}
 	return makeAssignmentNode(token.tok, value, expr);
       }
       else{
