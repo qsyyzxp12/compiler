@@ -8,6 +8,8 @@ originaltest:
 	./AcDc ../test/sample5.ac out5
 original:
 	gcc AcDc.c -g -o originalAcDc
+testsimple:
+	./AcDc ../test/testsimple.ac outs
 test1: AcDc
 	./AcDc ../test/test1-variable-length.ac test1
 test2: AcDc test2

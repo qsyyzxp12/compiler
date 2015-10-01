@@ -6,6 +6,7 @@
 #include "header.h"
 
 std::stack<char> operatorStack;
+std::stack<Value> valueStack;
 
 Expression* handlePlusOp(FILE* source, Expression* lvalue);
 Expression* handleMinusOp(FILE* source, Expression* lvalue);
@@ -42,7 +43,7 @@ int main( int argc, char *argv[] )
             fclose(source);
             symtab = build(program);
             check(&program, &symtab);
-            gencode(program, target);
+            gencode(program, target, &symtab);
         }
     }
     else{
@@ -291,7 +292,14 @@ Expression* handlePlusOp(FILE* source, Expression* lvalue){
 }
 Expression* handleMinusOp(FILE* source, Expression* lvalue){
   Expression *expr, *newexpr;
-  operatorStack.push('-');
+  /*if(comparePrecedence(operatorStack.top(), '-')){
+    while(comparePrecedence(operatorStack.top(), '-')){
+      makePrecedenceTree(operatorStack.top(), lvalue, );
+      operatorStack.pop();
+    }
+  } else {
+    operatorStack.push('-');
+    }*/
   expr = (Expression *)malloc( sizeof(Expression) );
   (expr->v).type = MinusNode;
   (expr->v).val.op = Minus;
@@ -579,6 +587,7 @@ void add_table( SymbolTable *table, char* s, DataType t )
   if(table->table.find(s) != table->table.end())
         printf("Error : id %s has been declared\n", s);//error
     table->table[s] = t;
+    table->addRegister(s);
 }
 
 SymbolTable build( Program program )
@@ -740,13 +749,13 @@ void fprint_op( FILE *target, ValueType op )
   }
 }
 
-void fprint_expr( FILE *target, Expression *expr)
+void fprint_expr( FILE *target, Expression *expr, SymbolTable *table)
 {
 
     if(expr->leftOperand == NULL){
         switch( (expr->v).type ){
             case Identifier:
-                fprintf(target,"l%s\n",(expr->v).val.id);
+                fprintf(target,"l%c\n",table->regID[(expr->v).val.id]);
                 break;
             case IntConst:
                 fprintf(target,"%d\n",(expr->v).val.ivalue);
@@ -760,19 +769,19 @@ void fprint_expr( FILE *target, Expression *expr)
         }
     }
     else{
-        fprint_expr(target, expr->leftOperand);
+      fprint_expr(target, expr->leftOperand, table);
         if(expr->rightOperand == NULL){
             fprintf(target,"5k\n");
         }
         else{
             //	fprint_right_expr(expr->rightOperand);
-            fprint_expr(target, expr->rightOperand);
+	  fprint_expr(target, expr->rightOperand, table);
             fprint_op(target, (expr->v).type);
         }
     }
 }
 
-void gencode(Program prog, FILE * target)
+void gencode(Program prog, FILE * target, SymbolTable* table)
 {
     Statements *stmts = prog.statements;
     constantFolding(stmts);//TODO:
@@ -782,11 +791,11 @@ void gencode(Program prog, FILE * target)
       stmt = stmts->first;
       switch(stmt.type){
       case Print:
-	fprintf(target,"l%s\n",stmt.stmt.variable);
+	fprintf(target,"l%c\n", table->regID[stmt.stmt.variable]);
 	fprintf(target,"p\n");
 	break;
       case Assignment:
-	fprint_expr(target, stmt.stmt.assign.expr);
+	fprint_expr(target, stmt.stmt.assign.expr, table);
 	/*
 	  if(stmt.stmt.assign.type == Int){
 	  fprintf(target,"0 k\n");
@@ -794,7 +803,7 @@ void gencode(Program prog, FILE * target)
 	  else if(stmt.stmt.assign.type == Float){
 	  fprintf(target,"5 k\n");
 	  }*/
-	fprintf(target,"s%s\n",stmt.stmt.assign.id);
+	fprintf(target,"s%c\n", table->regID[stmt.stmt.assign.id]);
 	fprintf(target,"0 k\n");
 	break;
       }

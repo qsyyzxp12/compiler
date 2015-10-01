@@ -4,6 +4,7 @@
 #include <string.h>
 #include <map>
 #define VARIABLE_LENGTH 64
+#define MAX_REGISTER_NUM 23
 
 /******************************************************************************************************************************************
     All enumeration literals
@@ -152,8 +153,17 @@ struct cmpStr{
   }
 };
 typedef struct SymbolTable{
-  std::map<char*, DataType, cmpStr> table;
-  void clear(){ table.clear();}
+  std::map<char*, DataType, cmpStr> table;//O(logn) time search, consider overhead of hash, it's good to use
+  std::map<char*, char, cmpStr> regID;//only used in gencode
+  int regCount;
+  void addRegister(char* s){
+    regID[s] = regCount + 'a';
+    regCount++;
+    if(regCount == 'p'-'a' || regCount == 'i'-'a' || regCount == 'f'-'a'){
+      regCount++;
+    }
+  }
+  void clear(){ table.clear(); regCount = 0;}
   
 } SymbolTable;
 
@@ -182,8 +192,8 @@ void checkexpression( Expression * expr, SymbolTable * table );
 void checkstmt( Statement *stmt, SymbolTable * table );
 void check( Program *program, SymbolTable * table);
 void fprint_op( FILE *target, ValueType op );
-void fprint_expr( FILE *target, Expression *expr );
-void gencode( Program prog, FILE * target );
+void fprint_expr( FILE *target, Expression *expr, SymbolTable* table );
+void gencode( Program prog, FILE * target , SymbolTable* table);
 
 void print_expr( Expression *expr );
 void test_parser( FILE *source );
