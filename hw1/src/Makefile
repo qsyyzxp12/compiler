@@ -9,16 +9,16 @@ originaltest:
 original:
 	gcc AcDc.c -g -o originalAcDc
 testsimple:
-	./AcDc ../test/testsimple.ac outs
-test1: AcDc
-	./AcDc ../test/test1-variable-length.ac test1
+	./AcDc ../test/testsimple.ac outs; dc outs
+test1: AcDc test1
+	./AcDc ../test/test1-variable-length.ac test1; dc test1
 test2: AcDc test2
-	./AcDc ../test/test2-Mul-Div.ac test2
+	./AcDc ../test/test2-Mul-Div.ac test2; dc test2
 test3: AcDc test3
-	./AcDc ../test/test3-Mul-Div-Float.ac test3
+	./AcDc ../test/test3-Mul-Div-Float.ac test3; dc test3
 test4: AcDc test4
-	./AcDc ../test/test4-Constant-Folding test4
-test5: AcDc
-	./AcDc ../test/test5-Mul-Div-Hard.ac test5
+	./AcDc ../test/test4-Constant-Folding test4; dc test4
+test5: AcDc All
+	./AcDc ../test/test5-Mul-Div-Hard.ac t5.dc; dc t5.dc
 clean:
 	rm AcDc test1 test2

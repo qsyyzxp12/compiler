@@ -9,10 +9,17 @@ abd = 5
 qwe = 4
 
 abc = qwe * abc + dba
+p abc
 abc = dba + qwe * abd
+p abc
 abc = dba / qwe * abd
+p abc
 abc = dba + qwe * abd + 122
+p abc
 abc = dba / qwe * abd - 122
+p abc
 abc = dba / qwe - abd * 122 + qwe
+p abc
 abc = dba / qwe - abd * 122 - qwe
+p abc
 

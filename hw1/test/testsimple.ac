@@ -1,7 +1,12 @@
 i a
 i b
 i c
+i d
 
 a = 1
 b = 2
-c = a - b - c
+c = 4
+d = c * a - b * c - a
+p d
+d = c * a - 111* b * c - a - 131
+p d
