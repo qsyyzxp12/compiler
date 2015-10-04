@@ -14,6 +14,7 @@ Expression* handleMulOp(FILE* source, Expression* lvalue);
 Expression* handleDivOp(FILE* source, Expression* lvalue);
 Expression* handleMulOpTerm(FILE* source, Expression* lvalue);
 Expression* handleDivOpTerm(FILE* source, Expression* lvalue);
+void constantFolding(Statement* stmt);
 bool isConst(ValueType t){
   return t == IntConst || t == FloatConst;
 }
@@ -125,14 +126,13 @@ Token scanner( FILE *source )
 	      while((c = fgetc(source)) != EOF  && isalpha(c)){
 		token.tok[nowi++] = c;
 	      }
-	      printf("next word is %d. Stop, ", c);
-	      printf("now position is %d.\n", int(ftell(source)));
+	      //printf("next word is %d. Stop, ", c);
+	      //printf("now position is %d.\n", int(ftell(source)));
 	      token.tok[nowi] = '\0';
-
-	      printf("scan variable (%s)\n", token.tok);
+	      //printf("scan variable (%s)\n", token.tok);
 	      if(c != EOF){//space
 		fseek(source, -1, SEEK_CUR);//back 1 character
-		printf("back 1 character, now position is %d.\n", int(ftell(source)));
+		//printf("back 1 character, now position is %d.\n", int(ftell(source)));
 	      }
 	    }
             return token;
@@ -527,18 +527,8 @@ Statement makeAssignmentNode( char* id, Expression *v, Expression *expr_tail )//
         assign.expr = expr_tail;
     }
 
-    std::stack<ValueOperand> vstack;
-    Expression* head = assign.expr;
-    while(head != NULL && head->leftOperand != NULL && head->leftOperand->v.isConst() && isLeaf(head->leftOperand)){
-      vstack.push(ValueOperand(head->leftOperand->v, head->v));
-      head = head->rightOperand;
-    }
-    while(!vstack.empty()){
-      vstack.top().print();
-      vstack.pop();
-      
-    }
     stmt.stmt.assign = assign;
+    constantFolding(&stmt);//TODO:
 
     return stmt;
 }
@@ -563,57 +553,104 @@ Statements *makeStatementTree( Statement stmt, Statements *stmts )//許多statme
 }
 
 
-void foldExpression(Expression* expr){
-  if(expr->leftOperand == NULL){
+void foldFloatNode(Expression* expr, Expression* l, Expression* r){// . precedence is greater than ->
+  float f;
+  float lf, rf;
+  if(l->v.type == FloatConst){
+    lf = (l->v).val.fvalue;
+  } else {
+    lf = (l->v).val.ivalue;
+  }
+  if(r->v.type == FloatConst){
+    rf = (r->v).val.fvalue;
+  } else {
+    rf = (r->v).val.ivalue;
+  }
+  switch((expr->v).type){
+  case PlusNode:
+    f = lf + rf;
+    break;
+  case MinusNode:
+    f = lf - rf;
+    break;
+  case MulNode:
+    f = lf * rf;
+    break;
+  case DivNode:
+    f = lf / rf;
+    break;
+  }
+  (expr->v).type = FloatConst;
+  (expr->v).val.fvalue = f;
+  expr->type = Float;
+  free(l);
+  free(r);
+  expr->leftOperand = NULL;
+  expr->rightOperand = NULL;
+}
+void foldIntNode(Expression* expr, Expression* l, Expression* r){
+  int i;
+  switch((expr->v).type){
+  case PlusNode:
+    i = (l->v).val.ivalue + (r->v).val.ivalue;
+    break;
+  case MinusNode:
+    i = (l->v).val.ivalue - (r->v).val.ivalue;
+    break;
+  case MulNode:
+    i = (l->v).val.ivalue * (r->v).val.ivalue;
+    break;
+  case DivNode:
+    i = (l->v).val.ivalue / (r->v).val.ivalue;
+    break;
+  }
+  (expr->v).type = IntConst;
+  (expr->v).val.ivalue = i;
+  expr->type = Int;
+  free(l);
+  free(r);
+  expr->leftOperand = NULL;
+  expr->rightOperand = NULL;
+}
+void foldExpression(Expression* expr){//post-order traversal to simulate bottom-up search
+  if(expr == NULL)
+    return;
+  foldExpression(expr->rightOperand);
+  foldExpression(expr->leftOperand);
+
+  if(expr->leftOperand && expr->rightOperand && (expr->leftOperand->v).isConst() && (expr->rightOperand->v).isConst()){
+    Expression *l = expr->leftOperand ,*r = expr->rightOperand;
     switch( (expr->v).type ){
-    case Identifier:
-      //fprintf(target,"l%s\n",(expr->v).val.id);
-      break;
-    case IntConst:
-      //      fprintf(target,"%d\n",(expr->v).val.ivalue);
-      break;
-    case FloatConst:
-      //fprintf(target,"%f\n", (expr->v).val.fvalue);
+    case PlusNode:
+    case MinusNode:
+    case MulNode:
+    case DivNode:
+      if((l->v).type == FloatConst || (r->v).type == FloatConst){
+	foldFloatNode(expr, l, r);
+      } else {
+	foldIntNode(expr, l, r);
+      }
       break;
     default:
-      //fprintf(target,"Error In fprint_left_expr. (expr->v).type=%d\n",(expr->v).type);
+      printf("fold expression : found children are const and parent is");
+      (expr->v).print();
+      puts("");
       break;
-    }
-  }
-  else{
-    //fprint_expr(target, expr->leftOperand);
-    if(expr->rightOperand == NULL){
-      //fprintf(target,"5k\n");
-    }
-    else{
-      //	fprint_right_expr(expr->rightOperand);
-      //fprint_expr(target, expr->rightOperand);
-      //fprint_op(target, (expr->v).type);
     }
   }
 }
-void constantFolding(Statements* stmts){//TODO:
+void constantFolding(Statement* toFold){//TODO:
   //iterate all statement, find constant to fold
-  Statements* statePointer = stmts;
-  Statement toFold;
-  
-  while(statePointer != NULL){
-    toFold = statePointer->first;
-    switch(toFold.type){
-    case Print:
-      break;
-    case Assignment:
-      print_expr(toFold.stmt.assign.expr);
-      //foldExpression(toFold.stmt.assign.expr);
-      break;
-    }
-    statePointer=statePointer->rest;
+  switch(toFold->type){
+  case Print:
+    break;
+  case Assignment:
+    foldExpression(toFold->stmt.assign.expr);
+    puts("after constant folding-----");
+    print_expr(toFold->stmt.assign.expr);
+    puts("\nafter constant folding-----");
+    break;
   }
-  
-  /*while(isConst(toFold->value.type)){
-    printf("fold %lf", double(toFold->leftOperand.Value));
-    toFold = toFold->rightOperand;
-    }*/
 }
 
 /* parser */
@@ -837,7 +874,6 @@ void fprint_expr( FILE *target, Expression *expr, SymbolTable *table)
 void gencode(Program prog, FILE * target, SymbolTable* table)
 {
     Statements *stmts = prog.statements;
-    constantFolding(stmts);//TODO:
     Statement stmt;
 
     while(stmts != NULL){

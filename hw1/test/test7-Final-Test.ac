@@ -1,0 +1,14 @@
+i abc
+i bcde
+f cdakq
+f dc
+
+abc = 1
+p abc
+bcde = 200-100+abc*1
+p bcde
+cdakq = 100*100.0 - bcde * bcde
+p cdakq
+dc = abc + 100*100/bcde -200 + 199 + 100000/cdakq - 10/10*abc
+p dc
+
