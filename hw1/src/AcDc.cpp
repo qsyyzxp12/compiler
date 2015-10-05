@@ -114,28 +114,29 @@ Token scanner( FILE *source )
         token.tok[0] = c;
         token.tok[1] = '\0';
         if( islower(c) ){
-            if( c == 'f' )
-                token.type = FloatDeclaration;
-            else if( c == 'i' )
-                token.type = IntegerDeclaration;
-            else if( c == 'p' )
-                token.type = PrintOp;
-            else{
-	      token.type = Alphabet;
-	      int nowi = 1;
-	      while((c = fgetc(source)) != EOF  && isalpha(c)){
-		token.tok[nowi++] = c;
-	      }
-	      //printf("next word is %d. Stop, ", c);
-	      //printf("now position is %d.\n", int(ftell(source)));
-	      token.tok[nowi] = '\0';
-	      //printf("scan variable (%s)\n", token.tok);
-	      if(c != EOF){//space
-		fseek(source, -1, SEEK_CUR);//back 1 character
-		//printf("back 1 character, now position is %d.\n", int(ftell(source)));
-	      }
+	  int nowi = 1;
+	  char cc;
+	  while((cc = fgetc(source)) != EOF && isalpha(cc)){
+	    token.tok[nowi++] = cc;
+	  }
+	  token.tok[nowi] = '\0';
+	  printf("scan %s\n", token.tok);
+	  printf("meet[%c],leave, length = %d\n", cc, nowi);
+	  if(cc != EOF){//space
+	    fseek(source, -1, SEEK_CUR);//back 1 character
+	  }
+	  if(nowi > 1){
+	    token.type = Alphabet;
+	    if(nowi > VARIABLE_LENGTH){
+	      fprintf(stderr, "error : variable length exceed\n");
 	    }
-            return token;
+	  } else if(c == 'f')
+	    token.type = FloatDeclaration;
+	  else if( c == 'i' )
+	    token.type = IntegerDeclaration;
+	  else if( c == 'p' )
+	    token.type = PrintOp;
+	  return token;
         }
         switch(c){
             case '=':
