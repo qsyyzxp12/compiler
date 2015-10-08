@@ -34,6 +34,7 @@ int main( int argc, char *argv[] )
 		fclose(source);
 		symtab = build(program);
 		check(&program, &symtab);
+		optimize(&program);
 		gencode(program, target);
 	}
     }
@@ -45,6 +46,41 @@ int main( int argc, char *argv[] )
     return 0;
 }
 
+
+/********************************************* 
+  Constant fold
+ *********************************************/
+void optimize(Program* prog)
+{
+	while(prog->statements)
+	{
+		do
+		{
+			Statement stmt = prog->statements->first;
+		}while(stmt.type != Assignment && stmt);
+		
+		if(stmt)
+		{
+			Expression* expr = stmt.stmt.assign.expr;
+			const_fold(expr);
+		}
+		prog->statements = prog->statements->rest;
+	}
+
+}
+
+void const_fold(Expression* expr)
+{
+	check_expr(expr->leftOperand) == termial;
+	
+}
+
+Value check_expr(Expression* expr)
+{
+	Value v;
+	if(!expr->leftOperand)
+		return expr->v;
+}
 
 /********************************************* 
   Scanning 
