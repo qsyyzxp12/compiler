@@ -33,8 +33,8 @@ int main( int argc, char *argv[] )
 */		program = parser(source);
 		fclose(source);
 		symtab = build(program);
-		check(&program, &symtab);
 		optimize(&program);
+		check(&program, &symtab);
 		gencode(program, target);
 	}
     }
@@ -52,34 +52,190 @@ int main( int argc, char *argv[] )
  *********************************************/
 void optimize(Program* prog)
 {
-	while(prog->statements)
+	Statements *stmts = prog->statements;
+	while(stmts)
 	{
-		do
+		Statement* stmt = &(stmts->first);
+		if(stmt->type == Assignment)
 		{
-			Statement stmt = prog->statements->first;
-		}while(stmt.type != Assignment && stmt);
-		
-		if(stmt)
-		{
-			Expression* expr = stmt.stmt.assign.expr;
-			const_fold(expr);
+printf("in\n");
+			Expression* expr = stmt->stmt.assign.expr;
+
+			stmt->stmt.assign.expr = const_fold(expr);
+printf("4\n");
+//			stmt->stmt.assign.expr = NULL;
 		}
-		prog->statements = prog->statements->rest;
+		stmts = stmts->rest;
 	}
 
 }
 
-void const_fold(Expression* expr)
+Expression* const_fold(Expression* expr)
 {
-	check_expr(expr->leftOperand) == termial;
-	
-}
+	Expression* ret = (Expression*)malloc(sizeof(Expression));
+	if(!expr->leftOperand && !expr->rightOperand)
+		return expr;
+	else
+	{	
+		Expression* lexp = const_fold(expr->leftOperand);
+		Expression* rexp = const_fold(expr->rightOperand);
+		if( (lexp->v.type == FloatConst || lexp->v.type == IntConst) &&
+		    (rexp->v.type == FloatConst || rexp->v.type == IntConst) )
+		{
+			switch(expr->v.val.op)
+			{
+			case Plus:
+				if( lexp->v.type == FloatConst || rexp->v.type == FloatConst )
+				{
+					ret->type = Float;
+					ret->leftOperand = ret->rightOperand = NULL;
+					if(lexp->v.type == FloatConst)
+					{
+						ret->v.val.fvalue = lexp->v.val.fvalue;
+						if(rexp->v.type == FloatConst)
+							ret->v.val.fvalue += rexp->v.val.fvalue;
+						else
+							ret->v.val.fvalue += (float)rexp->leftOperand->v.val.ivalue;
+					}
+					else
+					{
+						ret->v.val.fvalue = (float)lexp->leftOperand->v.val.ivalue;
+						if(rexp->v.type == FloatConst)
+							ret->v.val.fvalue += rexp->v.val.fvalue;
+						else
+				            		ret->v.val.fvalue += (float)rexp->leftOperand->v.val.ivalue;
+					}
+					ret->v.type = FloatConst;
+					return ret;
+				}
+				else if(lexp->v.type == IntConst && rexp->v.type == IntConst)
+				{
+					ret->type = Int;
+					ret->leftOperand = ret->rightOperand = NULL;
+					ret->v.val.ivalue = lexp->v.val.ivalue + rexp->v.val.ivalue;
+					ret->v.type = IntConst;
+					return ret;
+				}
+				printf("err1\n");
+				break;
 
-Value check_expr(Expression* expr)
-{
-	Value v;
-	if(!expr->leftOperand)
-		return expr->v;
+			case Minus:
+				if( lexp->v.type == FloatConst || rexp->v.type == FloatConst )
+				{
+					ret->type = Float;
+					ret->leftOperand = ret->rightOperand = NULL;
+					if(lexp->v.type == FloatConst)
+					{
+						ret->v.val.fvalue = lexp->v.val.fvalue;
+						if(rexp->v.type == FloatConst)
+							ret->v.val.fvalue -= rexp->v.val.fvalue;
+						else
+							ret->v.val.fvalue -= (float)rexp->leftOperand->v.val.ivalue;
+					}
+					else
+					{
+						ret->v.val.fvalue = (float)lexp->leftOperand->v.val.ivalue;
+						if(rexp->v.type == FloatConst)
+							ret->v.val.fvalue -= rexp->v.val.fvalue;
+						else
+				            		ret->v.val.fvalue -= (float)rexp->leftOperand->v.val.ivalue;
+					}
+					ret->v.type = FloatConst;
+					return ret;
+				}
+				else if(lexp->v.type == IntConst && rexp->v.type == IntConst)
+				{
+					ret->type = Int;
+					ret->leftOperand = ret->rightOperand = NULL;
+					ret->v.val.ivalue = lexp->v.val.ivalue - rexp->v.val.ivalue;
+					ret->v.type = IntConst;
+					return ret;
+				}
+				printf("err2\n");
+				break;
+
+			case Mul:
+				if( lexp->v.type == FloatConst || rexp->v.type == FloatConst )
+				{
+					ret->type = Float;
+					ret->leftOperand = ret->rightOperand = NULL;
+					if(lexp->v.type == FloatConst)
+					{
+						ret->v.val.fvalue = lexp->v.val.fvalue;
+						if(rexp->v.type == FloatConst)
+							ret->v.val.fvalue *= rexp->v.val.fvalue;
+						else
+							ret->v.val.fvalue *= (float)rexp->leftOperand->v.val.ivalue;
+					}
+					else
+					{
+						ret->v.val.fvalue = (float)lexp->leftOperand->v.val.ivalue;
+						if(rexp->v.type == FloatConst)
+							ret->v.val.fvalue *= rexp->v.val.fvalue;
+						else
+				            		ret->v.val.fvalue *= (float)rexp->leftOperand->v.val.ivalue;
+					}
+					ret->v.type = FloatConst;
+					return ret;
+				}
+				else if(lexp->v.type == IntConst && rexp->v.type == IntConst)
+				{
+					ret->type = Int;
+					ret->leftOperand = ret->rightOperand = NULL;
+					ret->v.val.ivalue = lexp->v.val.ivalue * rexp->v.val.ivalue;
+					ret->v.type = IntConst;
+					return ret;
+				}
+				printf("err3\n");
+				break;
+
+			case Div:
+				if( lexp->v.type == FloatConst || rexp->v.type == FloatConst )
+				{
+					ret->type = Float;
+					ret->leftOperand = ret->rightOperand = NULL;
+					if(lexp->v.type == FloatConst)
+					{
+						ret->v.val.fvalue = lexp->v.val.fvalue;
+						if(rexp->v.type == FloatConst)
+							ret->v.val.fvalue /= rexp->v.val.fvalue;
+						else
+							ret->v.val.fvalue /= (float)rexp->leftOperand->v.val.ivalue;
+					}
+					else
+					{
+						ret->v.val.fvalue = (float)lexp->leftOperand->v.val.ivalue;
+						if(rexp->v.type == FloatConst)
+							ret->v.val.fvalue /= rexp->v.val.fvalue;
+						else
+				            		ret->v.val.fvalue /= (float)rexp->leftOperand->v.val.ivalue;
+					}
+					ret->v.type = FloatConst;
+					return ret;
+				}
+				else if(lexp->v.type == IntConst && rexp->v.type == IntConst)
+				{
+					ret->type = Int;
+					ret->leftOperand = ret->rightOperand = NULL;
+					ret->v.val.ivalue = lexp->v.val.ivalue / rexp->v.val.ivalue;
+					ret->v.type = IntConst;
+					return ret;
+				}
+				printf("err4\n");
+				break;
+
+			default:
+				printf("err5\n");
+				break;
+			}
+		}	
+		else
+		{
+			expr->leftOperand = lexp;
+			expr->rightOperand = rexp;
+			return expr;
+		}
+	}
 }
 
 /********************************************* 

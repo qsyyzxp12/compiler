@@ -20,7 +20,6 @@ typedef enum StmtType { Print, Assignment } StmtType;
 typedef enum ValueType { Identifier, IntConst, FloatConst, PlusNode, MinusNode, MulNode, DivNode, IntToFloatConvertNode } ValueType;
 typedef enum Operation { Plus, Minus, Mul, Div, Assign, IntToFloatConvert } Operation;
 
-
 /**************************************************************************************** 
    All structures to facilitate the processes of 
    scanning, parsing, AST, type-checking, building the symbol table, and code generation.
@@ -142,7 +141,7 @@ void fprint_op( FILE *target, ValueType op );
 void fprint_expr( FILE *target, Expression *expr );
 void gencode( Program prog, FILE * target );
 void optimize(Program* prog);
-void const_fold(Expression* expr);
+Expression* const_fold(Expression* expr);
 
 void print_expr( Expression *expr );
 void test_parser( FILE *source );
