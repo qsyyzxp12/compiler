@@ -24,13 +24,7 @@ int main( int argc, char *argv[] )
             exit(2);
         }
         else{
-/*		Token token;
-		do
-		{
-			token = scanner(source);
-			printf("%s\n", token.tok);
-		}while(token.type != 11);
-*/		program = parser(source);
+		program = parser(source);
 		fclose(source);
 		symtab = build(program);
 		optimize(&program);
@@ -58,12 +52,8 @@ void optimize(Program* prog)
 		Statement* stmt = &(stmts->first);
 		if(stmt->type == Assignment)
 		{
-printf("in\n");
 			Expression* expr = stmt->stmt.assign.expr;
-
 			stmt->stmt.assign.expr = const_fold(expr);
-printf("4\n");
-//			stmt->stmt.assign.expr = NULL;
 		}
 		stmts = stmts->rest;
 	}
@@ -99,7 +89,7 @@ Expression* const_fold(Expression* expr)
 					}
 					else
 					{
-						ret->v.val.fvalue = (float)lexp->leftOperand->v.val.ivalue;
+						ret->v.val.fvalue = (float)lexp->v.val.ivalue;
 						if(rexp->v.type == FloatConst)
 							ret->v.val.fvalue += rexp->v.val.fvalue;
 						else
@@ -108,7 +98,7 @@ Expression* const_fold(Expression* expr)
 					ret->v.type = FloatConst;
 					return ret;
 				}
-				else if(lexp->v.type == IntConst && rexp->v.type == IntConst)
+				else// if(lexp->v.type == IntConst && rexp->v.type == IntConst)
 				{
 					ret->type = Int;
 					ret->leftOperand = ret->rightOperand = NULL;
@@ -116,8 +106,6 @@ Expression* const_fold(Expression* expr)
 					ret->v.type = IntConst;
 					return ret;
 				}
-				printf("err1\n");
-				break;
 
 			case Minus:
 				if( lexp->v.type == FloatConst || rexp->v.type == FloatConst )
@@ -134,7 +122,7 @@ Expression* const_fold(Expression* expr)
 					}
 					else
 					{
-						ret->v.val.fvalue = (float)lexp->leftOperand->v.val.ivalue;
+						ret->v.val.fvalue = (float)lexp->v.val.ivalue;
 						if(rexp->v.type == FloatConst)
 							ret->v.val.fvalue -= rexp->v.val.fvalue;
 						else
@@ -143,7 +131,7 @@ Expression* const_fold(Expression* expr)
 					ret->v.type = FloatConst;
 					return ret;
 				}
-				else if(lexp->v.type == IntConst && rexp->v.type == IntConst)
+				else// if(lexp->v.type == IntConst && rexp->v.type == IntConst)
 				{
 					ret->type = Int;
 					ret->leftOperand = ret->rightOperand = NULL;
@@ -151,8 +139,6 @@ Expression* const_fold(Expression* expr)
 					ret->v.type = IntConst;
 					return ret;
 				}
-				printf("err2\n");
-				break;
 
 			case Mul:
 				if( lexp->v.type == FloatConst || rexp->v.type == FloatConst )
@@ -178,7 +164,7 @@ Expression* const_fold(Expression* expr)
 					ret->v.type = FloatConst;
 					return ret;
 				}
-				else if(lexp->v.type == IntConst && rexp->v.type == IntConst)
+				else// if(lexp->v.type == IntConst && rexp->v.type == IntConst)
 				{
 					ret->type = Int;
 					ret->leftOperand = ret->rightOperand = NULL;
@@ -186,8 +172,6 @@ Expression* const_fold(Expression* expr)
 					ret->v.type = IntConst;
 					return ret;
 				}
-				printf("err3\n");
-				break;
 
 			case Div:
 				if( lexp->v.type == FloatConst || rexp->v.type == FloatConst )
@@ -213,7 +197,7 @@ Expression* const_fold(Expression* expr)
 					ret->v.type = FloatConst;
 					return ret;
 				}
-				else if(lexp->v.type == IntConst && rexp->v.type == IntConst)
+				else// if(lexp->v.type == IntConst && rexp->v.type == IntConst)
 				{
 					ret->type = Int;
 					ret->leftOperand = ret->rightOperand = NULL;
@@ -221,11 +205,9 @@ Expression* const_fold(Expression* expr)
 					ret->v.type = IntConst;
 					return ret;
 				}
-				printf("err4\n");
-				break;
 
 			default:
-				printf("err5\n");
+				printf("Got Error when constant folding, Unexpect Operation type: %d\n", expr->v.val.op);
 				break;
 			}
 		}	
@@ -449,26 +431,29 @@ Expression *parseValue( FILE *source )
 	return value;
 }
 
-Expression *parseExpressionTail( FILE *source, Expression *lvalue )
+Expression* nextExpression(FILE* source, Expression* lvalue)
 {
 	Token token = scanner(source);
-	Expression *expr;
 	int i;
-	switch(token.type){
+	Expression* expr = (Expression*)malloc(sizeof(Expression));
+	switch(token.type)
+	{
 		case PlusOp:
-			expr = (Expression *)malloc( sizeof(Expression) );
-			(expr->v).type = PlusNode;
-			(expr->v).val.op = Plus;
-			expr->leftOperand = lvalue;
-			expr->rightOperand = parseValue(source);
-			return parseExpressionTail(source, expr);
 		case MinusOp:
-			expr = (Expression *)malloc( sizeof(Expression) );
-			(expr->v).type = MinusNode;
-			(expr->v).val.op = Minus;
+			ungetc(token.tok[0], source);
+			return lvalue;
+		case MulOp:
+			expr->v.type = MulNode;
+			expr->v.val.op = Mul;
 			expr->leftOperand = lvalue;
 			expr->rightOperand = parseValue(source);
-			return parseExpressionTail(source, expr);
+			return nextExpression(source, expr);
+		case DivOp:
+			expr->v.type = DivNode;
+			expr->v.val.op = Div;
+			expr->leftOperand = lvalue;
+			expr->rightOperand = parseValue(source);
+			return nextExpression(source, expr);
 		case Alphabet:
 			for( i = strlen(token.tok)-1; i>=0; i--)
 				ungetc(token.tok[i], source);
@@ -481,6 +466,7 @@ Expression *parseExpressionTail( FILE *source, Expression *lvalue )
 		default:
 			printf("Syntax Error: Expect a numeric value or an identifier %s\n", token.tok);
 			exit(1);
+		
 	}
 }
 
@@ -496,12 +482,12 @@ Expression *parseExpression( FILE *source, Expression *lvalue )
 			(expr->v).val.op = Plus;
 			expr->leftOperand = lvalue;
 			next_token = parseValue(source);
-			next_expr = parseExpression(source, next_token);
+			next_expr = nextExpression(source, next_token);
 			if(!next_expr)
 				expr->rightOperand = next_token;
 			else
 				expr->rightOperand = next_expr;
-			return expr;
+			return parseExpression(source, expr);
 		case MinusOp:
 			expr = (Expression *)malloc( sizeof(Expression) );
 			(expr->v).type = MinusNode;
@@ -513,38 +499,30 @@ Expression *parseExpression( FILE *source, Expression *lvalue )
 				expr->rightOperand = next_token;
 			else
 				expr->rightOperand = next_expr;
-			return expr;
+			return parseExpression(source, expr);
 		case MulOp:
 			expr = (Expression*)malloc( sizeof(Expression) );
 			(expr->v).type = MulNode;
 			(expr->v).val.op = Mul;
 			expr->leftOperand = lvalue;
 			expr->rightOperand = parseValue(source);
-			next_expr = parseExpression(source, expr);
-			if(!next_expr)
-				return expr;
-			else
-				return next_expr;
+			return parseExpression(source, expr);
 		case DivOp:
 			expr = (Expression*)malloc( sizeof(Expression) );
 			(expr->v).type = DivNode;
 			(expr->v).val.op = Div;
 			expr->leftOperand = lvalue;
 			expr->rightOperand = parseValue(source);
-			next_expr = parseExpression(source, expr);
-			if(!next_expr)
-				return expr;
-			else
-				return next_expr;
+			return parseExpression(source, expr);
 		case Alphabet:
 			for( i = strlen(token.tok)-1; i>=0; i--)
 				ungetc(token.tok[i], source);
-			return NULL;
+			return lvalue;
 		case PrintOp:
 			ungetc(token.tok[0], source);
-			return NULL;
+			return lvalue;
 		case EOFsymbol:
-			return NULL;
+			return lvalue;
 		default:
 			printf("Syntax Error: Expect a numeric value or an identifier %s\n", token.tok);
 			exit(1);
