@@ -29,7 +29,7 @@ int main( int argc, char *argv[] )
 		symtab = build(program);
 		optimize(&program);
 		check(&program, &symtab);
-		gencode(program, target);
+		gencode(program, target, symtab);
 	}
     }
     else{
@@ -875,13 +875,17 @@ void fprint_op( FILE *target, ValueType op )
 	}
 }
 
-void fprint_expr( FILE *target, Expression *expr)
+void fprint_expr( FILE *target, Expression *expr, SymbolTable table)
 {
 
     if(expr->leftOperand == NULL){
+	int i;
         switch( (expr->v).type ){
             case Identifier:
-                fprintf(target,"l%s\n",(expr->v).val.id);
+		i = 0;
+		while(strcmp(table.name[i], (expr->v).val.id))
+			i++;	
+                fprintf(target,"l%c\n", (char)(i+65));
                 break;
             case IntConst:
                 fprintf(target,"%d\n",(expr->v).val.ivalue);
@@ -902,27 +906,31 @@ void fprint_expr( FILE *target, Expression *expr)
         }
         else
 	{
-       		fprint_expr(target, expr->leftOperand);
-            	fprint_expr(target, expr->rightOperand);
+       		fprint_expr(target, expr->leftOperand, table);
+            	fprint_expr(target, expr->rightOperand, table);
             	fprint_op(target, (expr->v).type);
         }
     }
 }
 
-void gencode(Program prog, FILE * target)
+void gencode(Program prog, FILE * target, SymbolTable table)
 {
 	Statements *stmts = prog.statements;
 	Statement stmt;
+	int i;
 
 	while(stmts != NULL){
 		stmt = stmts->first;
 		switch(stmt.type){
 			case Print:
-				fprintf(target,"l%s\n",stmt.stmt.variable);
+				i = 0;
+				while(strcmp(table.name[i], stmt.stmt.variable))
+					i++;	
+				fprintf(target,"l%c\n", (char)(i+65));
 				fprintf(target,"p\n");
 				break;
 			case Assignment:
-				fprint_expr(target, stmt.stmt.assign.expr);
+				fprint_expr(target, stmt.stmt.assign.expr, table);
 				/*
 				   if(stmt.stmt.assign.type == Int){
 				   fprintf(target,"0 k\n");
@@ -930,7 +938,10 @@ void gencode(Program prog, FILE * target)
 				   else if(stmt.stmt.assign.type == Float){
 				   fprintf(target,"5 k\n");
 				   }*/
-				fprintf(target,"s%s\n",stmt.stmt.assign.id);
+				i = 0;
+				while(strcmp(table.name[i], stmt.stmt.assign.id))
+					i++;
+       			        fprintf(target,"s%c\n", (char)(i+65));
 				fprintf(target,"0 k\n");
 				break;
 		}

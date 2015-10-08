@@ -138,8 +138,8 @@ void checkexpression( Expression * expr, SymbolTable * table );
 void checkstmt( Statement *stmt, SymbolTable * table );
 void check( Program *program, SymbolTable * table);
 void fprint_op( FILE *target, ValueType op );
-void fprint_expr( FILE *target, Expression *expr );
-void gencode( Program prog, FILE * target );
+void fprint_expr( FILE *target, Expression *expr, SymbolTable table );
+void gencode( Program prog, FILE * target, SymbolTable table);
 void optimize(Program* prog);
 Expression* const_fold(Expression* expr);
 
