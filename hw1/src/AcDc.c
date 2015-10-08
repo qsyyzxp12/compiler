@@ -895,14 +895,16 @@ void fprint_expr( FILE *target, Expression *expr)
         }
     }
     else{
-        fprint_expr(target, expr->leftOperand);
-        if(expr->rightOperand == NULL){
-            fprintf(target,"5k\n");
+        if(expr->rightOperand == NULL)
+	{	
+                fprintf(target,"%f\n", (float)(expr->leftOperand->v).val.ivalue);
+        	fprintf(target,"5k\n");
         }
-        else{
-            //	fprint_right_expr(expr->rightOperand);
-            fprint_expr(target, expr->rightOperand);
-            fprint_op(target, (expr->v).type);
+        else
+	{
+       		fprint_expr(target, expr->leftOperand);
+            	fprint_expr(target, expr->rightOperand);
+            	fprint_op(target, (expr->v).type);
         }
     }
 }
