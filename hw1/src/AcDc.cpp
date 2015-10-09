@@ -120,12 +120,10 @@ Token scanner( FILE *source )
 	    token.tok[nowi++] = cc;
 	  }
 	  token.tok[nowi] = '\0';
-	  printf("scan %s\n", token.tok);
-	  printf("meet[%c],leave, length = %d\n", cc, nowi);
 	  if(cc != EOF){//space
 	    fseek(source, -1, SEEK_CUR);//back 1 character
 	  }
-	  if(nowi > 1){
+	  if(nowi > 1 || (nowi == 1 && c != 'f' && c != 'i' && c != 'p')){
 	    token.type = Alphabet;
 	    if(nowi > VARIABLE_LENGTH){
 	      fprintf(stderr, "error : variable length exceed\n");
@@ -647,9 +645,9 @@ void constantFolding(Statement* toFold){//TODO:
     break;
   case Assignment:
     foldExpression(toFold->stmt.assign.expr);
-    puts("after constant folding-----");
-    print_expr(toFold->stmt.assign.expr);
-    puts("\nafter constant folding-----");
+    //puts("after constant folding-----");
+    //print_expr(toFold->stmt.assign.expr);
+    //puts("\nafter constant folding-----");
     break;
   }
 }

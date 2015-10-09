@@ -26,5 +26,9 @@ test7: All
 	./AcDc ../test/test7-Final-Test.ac test7; dc test7
 test8: All
 	./AcDc ../test/test8-Fringe-Condition.ac test8; dc test8
+test9: All
+	./AcDc ../test/test9-simple test9; dc test9
+test10: All
+	./AcDc ../test/test10-real-simple test10; dc test10
 clean:
 	rm AcDc test1 test2
