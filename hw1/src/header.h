@@ -34,6 +34,11 @@ typedef struct Token{
 
 /*** The following are nodes of the AST. ***/
 
+typedef struct Variable{
+	char* ac_name;
+	char dc_name;
+}Variable;
+
 /* For decl production or say one declaration statement */
 typedef struct Declaration{
     DataType type;
@@ -55,7 +60,7 @@ typedef struct Declarations{
 typedef struct Value{
     ValueType type;
     union{
-        char* id;                   /* if the node represent the access of the identifier */
+        Variable id;                   /* if the node represent the access of the identifier */
         Operation op;              /* store +, -, *, /, =, type_convert */
         int ivalue;                /* for integer constant in the expression */
         float fvalue;              /* for float constant */
@@ -78,7 +83,7 @@ typedef struct Expression{
 
 /* For one assignment statement */
 typedef struct AssignmentStatement{
-    char* id;
+    Variable id;
     Expression *expr;
     DataType type;      /* For type checking to store the type of all expression on the right. */
 }AssignmentStatement;
@@ -88,7 +93,7 @@ typedef struct AssignmentStatement{
 typedef struct Statement{
     StmtType type;
     union{
-        char* variable;              /* print statement */
+        Variable var;             /* print statement */
         AssignmentStatement assign;
     }stmt;
 }Statement;
@@ -133,13 +138,14 @@ void add_table( SymbolTable *table, char* c, DataType t );
 SymbolTable build( Program program );
 void convertType( Expression * old, DataType type );
 DataType generalize( Expression *left, Expression *right );
-DataType lookup_table( SymbolTable *table, char* name );
+void lookup_and_map_stmt( SymbolTable *table, Statement* stmt );
+void lookup_and_map_expr( SymbolTable *table, Expression* expr);
 void checkexpression( Expression * expr, SymbolTable * table );
 void checkstmt( Statement *stmt, SymbolTable * table );
 void check( Program *program, SymbolTable * table);
 void fprint_op( FILE *target, ValueType op );
-void fprint_expr( FILE *target, Expression *expr, SymbolTable table );
-void gencode( Program prog, FILE * target, SymbolTable table);
+void fprint_expr( FILE *target, Expression *expr);
+void gencode( Program prog, FILE * target);
 void optimize(Program* prog);
 Expression* const_fold(Expression* expr);
 

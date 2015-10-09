@@ -29,7 +29,7 @@ int main( int argc, char *argv[] )
 		symtab = build(program);
 		optimize(&program);
 		check(&program, &symtab);
-		gencode(program, target, symtab);
+		gencode(program, target);
 	}
     }
     else{
@@ -412,8 +412,8 @@ Expression *parseValue( FILE *source )
 	switch(token.type){
 		case Alphabet:
 			(value->v).type = Identifier;
-			(value->v).val.id = (char*)malloc( sizeof(char) * (strlen(token.tok)+1) );
-			strcpy((value->v).val.id, token.tok);
+			(value->v).val.id.ac_name = (char*)malloc( sizeof(char) * (strlen(token.tok)+1) );
+			strcpy((value->v).val.id.ac_name, token.tok);
 			break;
 		case IntValue:
 			(value->v).type = IntConst;
@@ -620,8 +620,8 @@ Statement makeAssignmentNode( char* id, Expression *v, Expression *expr_tail )
 	AssignmentStatement assign;
 
 	stmt.type = Assignment;
-	assign.id = (char*)malloc( sizeof(char) * (strlen(id)+1) );
-	strcpy(assign.id, id);
+	assign.id.ac_name = (char*)malloc( sizeof(char) * (strlen(id)+1) );
+	strcpy(assign.id.ac_name, id);
 	if(expr_tail == NULL)
 		assign.expr = v;
 	else
@@ -635,8 +635,8 @@ Statement makePrintNode( char* id )
 {
 	Statement stmt;
 	stmt.type = Print;
-	stmt.stmt.variable = (char*)malloc( sizeof(char) * (strlen(id)+1) );
-	strcpy(stmt.stmt.variable, id);
+	stmt.stmt.var.ac_name = (char*)malloc( sizeof(char) * (strlen(id)+1) );
+	strcpy(stmt.stmt.var.ac_name, id);
 
 	return stmt;
 }
@@ -740,7 +740,7 @@ void convertType( Expression * old, DataType type )
 	if(old->type == Int && type == Float){
 		Expression *tmp = (Expression *)malloc( sizeof(Expression) );
 		if(old->v.type == Identifier)
-			printf("convert to float %s \n",old->v.val.id);
+			printf("convert to float %s \n",old->v.val.id.ac_name);
 		else
 			printf("convert to float %d \n", old->v.val.ivalue);
 		tmp->v = old->v;
@@ -769,20 +769,6 @@ DataType generalize( Expression *left, Expression *right )
 	return Int;
 }
 
-DataType lookup_table( SymbolTable *table, char* name )
-{
-	int i = 0;
-	while( i<table->top && strcmp(table->name[i], name))
-		i++;
-	
-	if( i == table->top)
-	{
-		printf("Error : identifier %s is not declared\n", name);//error
-		return Notype;
-	}
-	return table->type[i];
-}
-
 void checkexpression( Expression * expr, SymbolTable * table )
 {
 	char* name;
@@ -790,9 +776,9 @@ void checkexpression( Expression * expr, SymbolTable * table )
 	//expr is a value, it's integer or float or a variable
 		switch(expr->v.type){
 			case Identifier:
-				name = expr->v.val.id;
+				name = expr->v.val.id.ac_name;
 				printf("identifier : %s\n",name);
-				expr->type = lookup_table(table, name);
+				lookup_and_map_expr(table, expr);
 				break;
 			case IntConst:
 				printf("constant : int\n");
@@ -821,13 +807,69 @@ void checkexpression( Expression * expr, SymbolTable * table )
 	}
 }
 
+void lookup_and_map_expr( SymbolTable *table, Expression* expr)
+{
+	char* name = expr->v.val.id.ac_name;
+	int i = 0;
+	while( i<table->top && strcmp(table->name[i], name))
+		i++;
+	if( i == table->top)
+	{
+		printf("Error : identifier %s is not declared\n", name);//error
+		expr->type = Notype;
+		return;
+	}
+	if(i < 26)
+		expr->v.val.id.dc_name = (char)(i+97);
+	else
+		expr->v.val.id.dc_name = (char)(i-26+65);
+	expr->type = table->type[i];
+}
+
+void lookup_and_map_stmt( SymbolTable *table, Statement *stmt )
+{
+	char* name;
+	if(stmt->type == Assignment)
+		name = stmt->stmt.assign.id.ac_name;
+	else
+		name = stmt->stmt.var.ac_name;
+	
+	int i = 0;
+	while( i<table->top && strcmp(table->name[i], name))
+		i++;
+	
+	if( i == table->top)
+	{
+		printf("Error : identifier %s is not declared\n", name);//error
+		if(stmt->type == Assignment)
+			stmt->stmt.assign.type = Notype;
+		return;
+	}
+	
+	if(stmt->type == Assignment)
+	{
+		if(i < 26)
+			stmt->stmt.assign.id.dc_name =  (char)(i+97);
+		else
+			stmt->stmt.assign.id.dc_name = (char)(i-26+65);
+		stmt->stmt.assign.type = table->type[i];
+	}
+	else
+	{
+		if(i < 26)
+			stmt->stmt.var.dc_name = (char)(i+97);
+		else
+			stmt->stmt.var.dc_name = (char)(i-26+65);
+	}
+}
+
 void checkstmt( Statement *stmt, SymbolTable * table )
 {
 	if(stmt->type == Assignment){
 		AssignmentStatement assign = stmt->stmt.assign;
-		printf("assignment : %s \n",assign.id);
+		printf("assignment : %s \n",assign.id.ac_name);
 		checkexpression(assign.expr, table);
-		stmt->stmt.assign.type = lookup_table(table, assign.id);
+		lookup_and_map_stmt(table, stmt);
 		if (assign.expr->type == Float && stmt->stmt.assign.type == Int) {
 			printf("error : can't convert float to integer\n");
 		} else {
@@ -835,8 +877,8 @@ void checkstmt( Statement *stmt, SymbolTable * table )
 		}
 	}
 	else if (stmt->type == Print){
-		printf("print : %s \n",stmt->stmt.variable);
-		lookup_table(table, stmt->stmt.variable);
+		printf("print : %s \n",stmt->stmt.var.ac_name);
+		lookup_and_map_stmt(table, stmt);
 	}
 	else printf("error : statement error\n");//error
 }
@@ -875,17 +917,14 @@ void fprint_op( FILE *target, ValueType op )
 	}
 }
 
-void fprint_expr( FILE *target, Expression *expr, SymbolTable table)
+void fprint_expr( FILE *target, Expression *expr)
 {
 
     if(expr->leftOperand == NULL){
 	int i;
         switch( (expr->v).type ){
             case Identifier:
-		i = 0;
-		while(strcmp(table.name[i], (expr->v).val.id))
-			i++;	
-                fprintf(target,"l%c\n", (char)(i+65));
+                fprintf(target,"l%c\n", (expr->v).val.id.dc_name);
                 break;
             case IntConst:
                 fprintf(target,"%d\n",(expr->v).val.ivalue);
@@ -899,21 +938,18 @@ void fprint_expr( FILE *target, Expression *expr, SymbolTable table)
         }
     }
     else{
+    	fprint_expr(target, expr->leftOperand);
         if(expr->rightOperand == NULL)
-	{	
-                fprintf(target,"%f\n", (float)(expr->leftOperand->v).val.ivalue);
         	fprintf(target,"5k\n");
-        }
         else
 	{
-       		fprint_expr(target, expr->leftOperand, table);
-            	fprint_expr(target, expr->rightOperand, table);
+            	fprint_expr(target, expr->rightOperand);
             	fprint_op(target, (expr->v).type);
         }
     }
 }
 
-void gencode(Program prog, FILE * target, SymbolTable table)
+void gencode(Program prog, FILE * target)
 {
 	Statements *stmts = prog.statements;
 	Statement stmt;
@@ -923,14 +959,11 @@ void gencode(Program prog, FILE * target, SymbolTable table)
 		stmt = stmts->first;
 		switch(stmt.type){
 			case Print:
-				i = 0;
-				while(strcmp(table.name[i], stmt.stmt.variable))
-					i++;	
-				fprintf(target,"l%c\n", (char)(i+65));
+				fprintf(target,"l%c\n", stmt.stmt.var.dc_name);
 				fprintf(target,"p\n");
 				break;
 			case Assignment:
-				fprint_expr(target, stmt.stmt.assign.expr, table);
+				fprint_expr(target, stmt.stmt.assign.expr);
 				/*
 				   if(stmt.stmt.assign.type == Int){
 				   fprintf(target,"0 k\n");
@@ -938,10 +971,7 @@ void gencode(Program prog, FILE * target, SymbolTable table)
 				   else if(stmt.stmt.assign.type == Float){
 				   fprintf(target,"5 k\n");
 				   }*/
-				i = 0;
-				while(strcmp(table.name[i], stmt.stmt.assign.id))
-					i++;
-       			        fprintf(target,"s%c\n", (char)(i+65));
+       			        fprintf(target,"s%c\n", stmt.stmt.assign.id.dc_name);
 				fprintf(target,"0 k\n");
 				break;
 		}
@@ -963,7 +993,7 @@ void print_expr(Expression *expr)
 		print_expr(expr->leftOperand);
 		switch((expr->v).type){
 			case Identifier:
-				printf("%s ", (expr->v).val.id);
+				printf("%s ", (expr->v).val.id.ac_name);
 				break;
 			case IntConst:
 				printf("%d ", (expr->v).val.ivalue);
@@ -1019,11 +1049,11 @@ void test_parser( FILE *source )
     while(stmts != NULL){
         stmt = stmts->first;
         if(stmt.type == Print){
-            printf("p %s ", stmt.stmt.variable);
+            printf("p %s ", stmt.stmt.var.ac_name);
         }
 
         if(stmt.type == Assignment){
-            printf("%s = ", stmt.stmt.assign.id);
+            printf("%s = ", stmt.stmt.assign.id.ac_name);
             print_expr(stmt.stmt.assign.expr);
         }
         stmts = stmts->rest;
