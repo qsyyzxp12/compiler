@@ -1,0 +1,20 @@
+C-- scanner
+use basic symbol table manipulation routines (lookup(), insertID() and printSymTab()) provided to handle all identifiers. 
+1) operators, 2) separators, 3) identifiers, 4) reserved words and 5) constants
+Comments are considered as white spaces, and should be stripped off
+required to define comments as a token, just to practice RE writing skills
+
+only needs to handle the following jobs:
+1. Print each comment captured by your token RE (regular expression
+2. Print the frequency of each identifier
+
+a) It is required that the outputs be sorted. You could simply use the strcmp library function to do the sorting
+b) the entire " (double quote) delimited string is treated as a single token i.e. a string constant. In the case of some unknown tokens, your scanner should issue an error message, and print out the unrecognized token, then exit.
+c) names will not exceed 64 characters. However, the number of distinct identifiers should not be limited.
+d) In the hw2  directory you may find the following files:
+1) src/lexer.l 		 the lex template code that you may start with
+2) src/symboltable.c	 contains symbol table manipulation routines
+3) src/header.h		 	  contains a sample symbol table structure
+4) src/Makefile
+5) test/			a test directory containing some sample tests
+6) tar.sh			  package script
