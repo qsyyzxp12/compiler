@@ -27,6 +27,7 @@ void 	 printSymTab();
 letter   [A-Za-z]
 digit    [0-9]
 /* TODO Reserved words: return typedef if else int float for void while */
+reserved "return"|"typedef"|"if"|"else"|"int"|"float"|"for"|"void"|"while"
 ID	 {letter}({letter}|{digit}|"_")*
 WS	 [ \t]+
 Int_constant {digit}+
@@ -37,7 +38,7 @@ b. Floating point literals: The same as defined in ANSI C.1
 c. String literals: String literal consist of a sequence of characters
 between double quotes (i.e. “ and “).
 */
-Float_constant {digit}+.?{digit}+
+Float_constant (digit+)(e(+|-)?digit+) | (digit+ (\. digit+) (e (+|-)?digit+)?) | (digit+)? (\. digit+) (e (+|-)?digit+)?
 /* http://stackoverflow.com/questions/2039795/regular-expression-for-a-string-literal-in-flex-lex */
 String_constant \"(\\.|[^"])*\"
 comment "/*"([^*]|\*+[^*/])*\*+"/"
@@ -88,7 +89,7 @@ error    .
 			else 
 			     ptr->counter++;
 		}
-
+{reserved} /* return OP_ASSIGN; */ 
 
 /* TODO */
 {OP_geq} /* return OP_ASSIGN; */ 

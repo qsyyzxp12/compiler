@@ -1,5 +1,18 @@
 C-- scanner
 
+The output from your scanner looks like the following:
+
+/* 1: this is * just a / sample */
+/* 2: this is a 3-line
+   comment
+*/
+/* 3: this is /* the end ***/
+
+Frequency of identifiers:
+a1	     1
+abc		4
+
+
 Requirements:  use lookup(), insertID() and printSymTab() to handle all identifiers.
 1. Print each comment
 2. Print the frequency of each identifier
