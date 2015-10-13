@@ -157,6 +157,9 @@ typedef struct SymbolTable{
   std::map<char*, char, cmpStr> regID;//only used in gencode
   int regCount;
   void addRegister(char* s){
+    if(regCount > 'z'-'a'){
+      fprintf(stderr, "ERROR : number of variables exceed 23\n");
+    }
     regID[s] = regCount + 'a';
     regCount++;
     if(regCount == 'p'-'a' || regCount == 'i'-'a' || regCount == 'f'-'a'){
