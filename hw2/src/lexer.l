@@ -10,40 +10,55 @@ void 	 printSymTab();
 
 /* TODO */
 #define INT		10
-#define FLOAT 		11 
+#define FLOAT 		11
+#define STRING 		99
 #define OP_ASSIGN 	12 
 #define OP_OR 		13
 #define OP_AND 		14
 #define OP_NOT 		15
+#define OP_GEQ 1321
+#define OP_LEQ 123123
+#define OP_NEQ 12312
+#define OP_EQEQ 1231
+#define OP_LESS 3131
+#define OP_GREATER 123123
+#define OP_ADD 123123
+#define OP_MINUS 123123
+#define OP_DIV 12313
+#define OP_MUL 1231
+
 #define MK_LPAREN 	16 
 #define MK_RPAREN 	17
+#define MK_LBRACE       211
+#define MK_RBRACE        122
+#define MK_LBRACKET 232
+#define MK_RBRACKET 123
+#define MK_COMMA  321
+#define MK_SEMICOL 321
+#define MK_DOT  321
+
+#define NEWLINE  123112321
 
 #define COMMENT 20
 
 #define ERROR 		100 
 
+/* http://stackoverflow.com/questions/2039795/regular-expression-for-a-string-literal-in-flex-lex */
+/* http://stackoverflow.com/questions/13569827/complete-comments-regex-for-lex */
+
 %}
 
+reserved "return"|"typedef"|"if"|"else"|"int"|"float"|"for"|"void"|"while"
 letter   [A-Za-z]
 digit    [0-9]
-/* TODO Reserved words: return typedef if else int float for void while */
-reserved "return"|"typedef"|"if"|"else"|"int"|"float"|"for"|"void"|"while"
 ID	 {letter}({letter}|{digit}|"_")*
 WS	 [ \t]+
+Float_constant {digit}+(e[+-]?{digit}+)|({digit}+(\.{digit}+)(e[+-]?{digit}+)?)|({digit}+)?(\.{digit}+)(e[+-]?{digit}+)?
 Int_constant {digit}+
-
-/*
-TODO
-b. Floating point literals: The same as defined in ANSI C.1
-c. String literals: String literal consist of a sequence of characters
-between double quotes (i.e. “ and “).
-*/
-Float_constant (digit+)(e(+|-)?digit+) | (digit+ (\. digit+) (e (+|-)?digit+)?) | (digit+)? (\. digit+) (e (+|-)?digit+)?
-/* http://stackoverflow.com/questions/2039795/regular-expression-for-a-string-literal-in-flex-lex */
 String_constant \"(\\.|[^"])*\"
+
 comment "/*"([^*]|\*+[^*/])*\*+"/"
 
-/* ok */
 OP_geq ">="
 OP_leq "<="
 OP_neq "!="
@@ -80,8 +95,11 @@ error    .
 %%
 
 {WS}            {}
-{Int_constant}  { return INT;  }
-{Float_constant} { return FLOAT; }
+{Int_constant}  { /*printf("int %s\n", yytext);*/   }
+{Float_constant} { /*printf("float %s\n", yytext);*/  }
+{String_constant} { /*printf("string %s\n", yytext);*/ }
+{reserved} {/*printf("reserved %s\n", yytext);*/}
+{comment} {/*printf("comment [%s]", yytext);*/ insertComment(yytext);}
 {ID}            { 
 			ptr = lookup(yytext);
 			if (ptr == NULL)
@@ -89,9 +107,7 @@ error    .
 			else 
 			     ptr->counter++;
 		}
-{reserved} /* return OP_ASSIGN; */ 
 
-/* TODO */
 {OP_geq} /* return OP_ASSIGN; */ 
 {OP_leq} /* return OP_ASSIGN; */ 
 {OP_neq} /* return OP_ASSIGN; */ 
@@ -127,6 +143,9 @@ main(int argc, char **argv)
    else
       yyin = stdin;
    yylex();
-   printSymTab();
+   printComment();
+   printf("Frequency of identifiers:\n");
+   printIDFrequency();
+   //printSymTab();
 }
 

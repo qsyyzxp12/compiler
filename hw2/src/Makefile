@@ -7,6 +7,12 @@ LIBS = -lfl
 scanner: lex.yy.o symboltable.o
 	$(CC) -o scanner lex.yy.o symboltable.o
 
+test1: scanner
+	./scanner ../test/test.c
+
+test2: scanner
+	./scanner ../test/test-spec.c
+
 symboltable.o: symboltable.c 
 	$(CC) -c symboltable.c 
 

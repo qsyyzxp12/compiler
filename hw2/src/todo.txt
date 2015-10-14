@@ -19,9 +19,9 @@ Requirements:  use lookup(), insertID() and printSymTab() to handle all identifi
    1) operators, 2) separators, 3) identifiers, 4) reserved words and 5) constants
    Identifiers are strings of one or more letters, digits and underscore characters. They must begin with a letter.
    
-outputs should be sorted. You could simply use the strcmp
+outputs should be sorted
 ?????? the entire " (double quote) delimited string is treated as a single token i.e. a string constant
-your scanner should issue an error message, and print out the unrecognized token, then exit.
+should issue an error message, and print out the unrecognized token, then exit.
 names will not exceed 64 characters
 number of distinct identifiers should not be limited
 test on linux
