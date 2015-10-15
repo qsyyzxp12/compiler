@@ -54,7 +54,22 @@ void insertComment(char* comment){
   previusComment = newc;
 }
 
+char reservedWordList[][12] = {"return", "typedef", "if", "else", "int", "float", "for", "void", "while"};
+const int reservedWordNum = 9;
+int checkReservedWords(char *name){
+  int i;
+  for(i = 0; i < reservedWordNum; i++){
+    if(strcmp(reservedWordList[i], name) == 0){
+      return 1;
+    }
+  }
+  return 0;
+}
+
 void insertID(char *name){
+  if(checkReservedWords(name) == 1){
+    return;
+  }
   int hash_key;
   symtab* ptr;
   symtab* symptr=(symtab*)malloc(sizeof(symtab));	

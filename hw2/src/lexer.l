@@ -49,7 +49,6 @@ void 	 printSymTab();
 
 %}
 
-reserved "return"|"typedef"|"if"|"else"|"int"|"float"|"for"|"void"|"while"
 letter   [A-Za-z]
 digit    [0-9]
 ID	 {letter}({letter}|{digit}|"_")*
@@ -98,7 +97,6 @@ error    .
 {Int_constant}  { printf("int %s\n", yytext);   }
 {Float_constant} { /*printf("float %s\n", yytext);*/  }
 {String_constant} { printf("string %s\n", yytext); }
-{reserved} {/*printf("reserved %s\n", yytext);*/}
 {comment} {/*printf("comment [%s]", yytext);*/ insertComment(yytext);}
 {ID}            {
 
@@ -135,7 +133,7 @@ error    .
 {DL_comma}      {}
 {DL_semicol}    {}
 {newline}       linenumber += 1;
-{error}         {printf("ERROR : Unrecognized Token %s\n", yytext); exit(0);}
+{error}         {printf("ERROR : Unrecognized Token %s\n", yytext);}
 
 %%
 
