@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "header.h" 
 int linenumber;
+int IDcount;
 symtab * lookup();
 symtab * ptr;
 void     insertID();
@@ -56,7 +57,6 @@ WS	 [ \t]+
 Float_constant {digit}+(e[+-]?{digit}+)|({digit}+(\.{digit}+)(e[+-]?{digit}+)?)|({digit}+)?(\.{digit}+)(e[+-]?{digit}+)?
 Int_constant {digit}+
 String_constant \"(\\.|[^"])*\"
-
 comment "/*"([^*]|\*+[^*/])*\*+"/"
 
 OP_geq ">="
@@ -95,15 +95,19 @@ error    .
 %%
 
 {WS}            {}
-{Int_constant}  { /*printf("int %s\n", yytext);*/   }
+{Int_constant}  { printf("int %s\n", yytext);   }
 {Float_constant} { /*printf("float %s\n", yytext);*/  }
-{String_constant} { /*printf("string %s\n", yytext);*/ }
+{String_constant} { printf("string %s\n", yytext); }
 {reserved} {/*printf("reserved %s\n", yytext);*/}
 {comment} {/*printf("comment [%s]", yytext);*/ insertComment(yytext);}
-{ID}            { 
+{ID}            {
+
 			ptr = lookup(yytext);
-			if (ptr == NULL)
-			     insertID(yytext);	
+			if (ptr == NULL){
+                             IDcount++;
+                             printf("new id [%s]", yytext);
+			     insertID(yytext);
+                        }
 			else 
 			     ptr->counter++;
 		}
@@ -131,7 +135,7 @@ error    .
 {DL_comma}      {}
 {DL_semicol}    {}
 {newline}       linenumber += 1;
-{error}         printf("ERR \n");/* return ERROR; */
+{error}         {printf("ERROR : Unrecognized Token %s\n", yytext); exit(0);}
 
 %%
 
@@ -147,5 +151,6 @@ main(int argc, char **argv)
    printf("Frequency of identifiers:\n");
    printIDFrequency();
    //printSymTab();
+  return 0;
 }
 

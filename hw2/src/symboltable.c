@@ -10,6 +10,7 @@
 symtab * hash_table[TABLE_SIZE];
 Comment* comment_root, *previusComment;
 extern int linenumber;
+extern int IDcount;
 
 int HASH(char * str){
   int idx=0;
@@ -102,36 +103,22 @@ int compstr(const void* ai, const void* bi){
 
 void printIDFrequency(){
   int i;
-  symtab* hashList = NULL, *nowp = NULL;
-  int count = 0;
+  int nowcount = 0; symtab* nowp;
+  //printf("count = %d\n", IDcount);
+  symtab** newhashtable = (symtab**)malloc(sizeof(symtab*)*IDcount);
   for (i=0; i<TABLE_SIZE; i++){
-    symtab* symptr = hash_table[i];
-    if (symptr != NULL){
-      if(hashList == NULL){
-	hashList = symptr;
-	nowp = symptr;
-	count++;
-      } else {
-	symptr->back = nowp;
-	nowp->front = symptr;
-      }
-      while(nowp != NULL && nowp->front != NULL){
+    nowp = hash_table[i];
+    if (nowp != NULL){
+      while(nowp != NULL){
+	newhashtable[nowcount++] = nowp;
 	nowp = nowp->front;
-	count++;
       }
     }
   }
-  printf("new count = %d\n", count);
-  symtab** newhashtable = (symtab**)malloc(sizeof(symtab*)*count);
-  for (i=0; i<count; i++){
-    newhashtable[i] = hashList;
-    //printf("prei = %d: %s %d\n", i, hashList->lexeme, hashList->counter);
-    hashList = hashList->front;
-  }
-  qsort(newhashtable, count, sizeof(symtab*), compstr);
-  for (i=0; i<count; i++){
+  qsort(newhashtable, nowcount, sizeof(symtab*), compstr);
+  for (i=0; i<nowcount; i++){
     symtab* symptr = newhashtable[i];
-    printf("i = %d: %s %d\n", i, symptr->lexeme, symptr->counter);
+    printf("%s\t%d\n",symptr->lexeme, symptr->counter);
   }  
 }
 

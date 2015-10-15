@@ -21,7 +21,15 @@ Requirements:  use lookup(), insertID() and printSymTab() to handle all identifi
    
 outputs should be sorted
 ?????? the entire " (double quote) delimited string is treated as a single token i.e. a string constant
-should issue an error message, and print out the unrecognized token, then exit.
+TODO: should issue an error message, and print out the unrecognized token, then exit.
 names will not exceed 64 characters
 number of distinct identifiers should not be limited
-test on linux
+
+TODO: should issue an error message, and print out the unrecognized token, then exit.
+      after error, should still continue???
+OK: put list in array, to additional link(that make structure changes)
+TODO: reserved word -> look as ID
+TODO: check output format, add more test data
+TODO: test on linux
+
+http://stackoverflow.com/questions/3265266/hash-tables-v-self-balancing-search-trees

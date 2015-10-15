@@ -13,6 +13,12 @@ test1: scanner
 test2: scanner
 	./scanner ../test/test-spec.c
 
+test3: scanner
+	./scanner ../test/test3-unrecognizedtoken.c
+
+test4: scanner
+	./scanner ../test/teststr.c
+
 symboltable.o: symboltable.c 
 	$(CC) -c symboltable.c 
 
