@@ -20,6 +20,5 @@ int main()
     func(c,e);
 	write(d);
 	d = 0;  /* 3: this is /* the end ***/
-	
     return 0;
 }

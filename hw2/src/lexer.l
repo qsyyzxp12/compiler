@@ -26,18 +26,18 @@ WS		[ \t]+
 /*	constants	*/
 Int_constant	{digit}+
 Float_constant	{digit}+.{digit}+
-String_constant	["](.)*["]
+String_constant	\"([^\"])*\"
 
 /*	Reserve Word	*/
 
-RWInt		int
-RWFloat		float
-RWreturn	return
-RWif		if
-RWelse		else
-RWfor		for
-RWvoid		void
-RWwhile		while
+RWInt		"int"
+RWFloat		"float"
+RWreturn	"return"
+RWif		"if"
+RWelse		"else"
+RWfor		"for"
+RWvoid		"void"
+RWwhile		"while"
 
 /* You need to define the following RE's 
 Float_constant
