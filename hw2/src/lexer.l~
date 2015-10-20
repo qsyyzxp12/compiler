@@ -83,11 +83,11 @@ error    	.
 
 %%
 
-{WS}            {}
-{RWInt}         {}
-{RWFloat}       {}
-{RWreturn}	{}
-{RWif}		{}
+{WS}            { printf("%s", yytext);}
+{RWInt}         { printf("%s",yytext);}
+{RWFloat}       { printf("%s",yytext);}
+{RWreturn}	{ printf("%s",yytext);}
+{RWif}		{ printf("%s", yytext);}
 {RWelse}	{}
 {RWfor}		{}
 {RWwhile}	{}
@@ -99,40 +99,41 @@ error    	.
 			else 
 			     ptr->counter++;
 		}
-{Int_constant}		{}
-{Float_constant}	{}
-{String_constant}	{}
+{Int_constant}		{ printf("int %s", yytext);}
+{Float_constant}	{ printf("float %s", yytext);}
+{String_constant}	{ printf("%s", yytext);}
 
-{OP_assign}     	{}
-{OP_plus}	     	{}
-{OP_minus}     		{}
-{OP_mul}     		{}
-{OP_div}     		{}
+{OP_assign}     	{ printf("%s", yytext);}
+{OP_plus}	     	{ printf("%s", yytext);}
+{OP_minus}     		{ printf("%s", yytext);}
+{OP_mul}     		{ printf("%s", yytext);}
+{OP_div}     		{ printf("%s", yytext);}
 
-{Comment_block}		{}
-{Comment_line}		{}
+{Comment_block}		{ printf("Comment block: %s\nEND", yytext);}
+{Comment_line}		{ printf("Comment line: %s\n", yytext);}
 
-{OP_less}		{}
-{OP_greater}		{}
-{OP_notLess}		{}
-{OP_notGreater}		{}
-{OP_equal}		{}
-{OP_notEqual}		{}
+{OP_less}		{ printf("%s", yytext);}
+{OP_greater}		{ printf("%s", yytext);}
+{OP_notLess}		{ printf("%s", yytext);}
+{OP_notGreater}		{ printf("%s", yytext);}
+{OP_equal}		{ printf("%s", yytext);}
+{OP_notEqual}		{ printf("%s", yytext);}
 
-{OP_and}     		{}
-{OP_or}        		{}
-{OP_not}		{}
+{OP_and}     		{ printf("%s", yytext);}
+{OP_or}        		{ printf("%s", yytext);}
+{OP_not}		{ printf("%s", yytext);}
 
-{DL_lparen}    		{}
-{DL_rparen}     	{}
-{DL_lbracket}		{}
-{DL_rbracket}		{}
-{DL_lbrace}     	{}
-{DL_rbrace}     	{}
-{DL_comma}      	{}
-{DL_semicol}    	{}
+{DL_lparen}    		{ printf("%s", yytext);}
+{DL_rparen}     	{ printf("%s", yytext);}
+{DL_lbracket}		{ printf("%s", yytext);}
+{DL_rbracket}		{ printf("%s", yytext);}
+{DL_lbrace}     	{ printf("%s", yytext);}
+{DL_rbrace}     	{ printf("%s", yytext);}
+{DL_comma}      	{ printf("%s", yytext);}
+{DL_semicol}    	{ printf("%s", yytext);}
 {newline}       	{ 
 				linenumber += 1;
+				printf("%s", yytext);
 			}
 {error}         	printf("ERR: %s\n", yytext);/* return ERROR; */
 
