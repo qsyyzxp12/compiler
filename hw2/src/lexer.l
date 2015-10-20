@@ -25,7 +25,7 @@ WS		[ \t]+
 
 /*	constants	*/
 Int_constant	{digit}+
-Float_constant	{digit}+.{digit}+
+Float_constant	{digit}+(.{digit}+|\0)
 String_constant	\"([^\"])*\"
 
 /*	Reserve Word	*/
@@ -39,33 +39,43 @@ RWfor		"for"
 RWvoid		"void"
 RWwhile		"while"
 
-/* You need to define the following RE's 
-Float_constant
-String_constant
-comment
-*/
+/*	comments	*/
+Comment_block	\/\*(.|\n)*\*\/
+Comment_line	\/\/(.)*
 
-/*Operators*/
+/*	Arithmetic Operators	*/
 
 OP_assign       "="
 OP_plus		"+"
 OP_minus	"-"
 OP_mul		"*"
 OP_div		"/"
+
+/*	Relational Operators	*/
+OP_less		"<"
+OP_greater	">"
+OP_notLess	">="
+OP_notGreater	"<="
+OP_equal	"=="
+OP_notEqual	"!="
+
+/*	Logical Operators	*/
 OP_or  		"||"
 OP_and		"&&"
+OP_not		"!"
 
 
-/* Other separators appear here */
+/*	Separators	*/
 
 newline  	"\n"
 DL_lparen	"("
 DL_rparen 	")"
+DL_lbracket	"["
+DL_rbracket	"]"
 DL_lbrace 	"{"
 DL_rbrace 	"}"
 DL_comma  	","
 DL_semicol 	";"
-DL_colon	":"
 DL_dot  	"."
 
 
@@ -99,14 +109,28 @@ error    	.
 {OP_minus}     		{ printf("%s", yytext);}
 {OP_mul}     		{ printf("%s", yytext);}
 {OP_div}     		{ printf("%s", yytext);}
+
+{Comment_block}		{ printf("Comment block: %s\nEND", yytext);}
+{Comment_line}		{ printf("Comment line: %s\n", yytext);}
+
+{OP_less}		{ printf("%s", yytext);}
+{OP_greater}		{ printf("%s", yytext);}
+{OP_notLess}		{ printf("%s", yytext);}
+{OP_notGreater}		{ printf("%s", yytext);}
+{OP_equal}		{ printf("%s", yytext);}
+{OP_notEqual}		{ printf("%s", yytext);}
+
 {OP_and}     		{ printf("%s", yytext);}
 {OP_or}        		{ printf("%s", yytext);}
+{OP_not}		{ printf("%s", yytext);}
+
 {DL_lparen}    		{ printf("%s", yytext);}
 {DL_rparen}     	{ printf("%s", yytext);}
+{DL_lbracket}		{ printf("%s", yytext);}
+{DL_rbracket}		{ printf("%s", yytext);}
 {DL_lbrace}     	{ printf("%s", yytext);}
 {DL_rbrace}     	{ printf("%s", yytext);}
 {DL_comma}      	{ printf("%s", yytext);}
-{DL_colon}		{ printf("%s", yytext);}
 {DL_semicol}    	{ printf("%s", yytext);}
 {newline}       	{ 
 				linenumber += 1;
