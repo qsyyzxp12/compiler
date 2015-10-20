@@ -7,17 +7,13 @@ symtab * lookup();
 symtab * ptr;
 void     insertID();
 void 	 printSymTab();
-/* You need to define for all tokens in C--, here are some examples */
-#define INT		10
-#define FLOAT 		11 
-#define OP_ASSIGN 	12 
-#define OP_OR 		13 
-#define MK_LPAREN 	14 
-#define MK_RPAREN 	15 
-#define ERROR 		100 
-
 %}
 
+/*	comments	*/
+Comment_block	\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\/
+Comment_line	\/\/(.)*
+
+/*	example		*/
 letter		[A-Za-z]
 digit		[0-9]
 ID		{letter}({letter}|{digit}|"_")*
@@ -38,10 +34,6 @@ RWelse		"else"
 RWfor		"for"
 RWvoid		"void"
 RWwhile		"while"
-
-/*	comments	*/
-Comment_block	\/\*(.|\n)*\*\/
-Comment_line	\/\/(.)*
 
 /*	Arithmetic Operators	*/
 
@@ -67,7 +59,7 @@ OP_not		"!"
 
 /*	Separators	*/
 
-newline  	"\n"
+newline  	\n
 DL_lparen	"("
 DL_rparen 	")"
 DL_lbracket	"["
@@ -83,15 +75,19 @@ error    	.
 
 %%
 
-{WS}            {}
-{RWInt}         {}
-{RWFloat}       {}
-{RWreturn}	{}
-{RWif}		{}
-{RWelse}	{}
-{RWfor}		{}
-{RWwhile}	{}
-{RWvoid}	{}
+{WS}			{}
+{RWInt}			{}
+{RWFloat}		{}
+{RWreturn}		{}
+{RWif}			{}
+{RWelse}		{}
+{RWfor}			{}
+{RWwhile}		{}
+{RWvoid}		{}
+
+{Comment_block}		{ printf("xxx %s\n", yytext);}
+{Comment_line}		{}
+
 {ID}            { 
 			ptr = lookup(yytext);
 			if (ptr == NULL)
@@ -108,9 +104,6 @@ error    	.
 {OP_minus}     		{}
 {OP_mul}     		{}
 {OP_div}     		{}
-
-{Comment_block}		{}
-{Comment_line}		{}
 
 {OP_less}		{}
 {OP_greater}		{}
@@ -131,9 +124,7 @@ error    	.
 {DL_rbrace}     	{}
 {DL_comma}      	{}
 {DL_semicol}    	{}
-{newline}       	{ 
-				linenumber += 1;
-			}
+{newline}       	{ linenumber += 1; }
 {error}         	printf("ERR: %s\n", yytext);/* return ERROR; */
 
 
@@ -141,12 +132,12 @@ error    	.
 
 main(int argc, char **argv)
 {
- argc--; ++argv;
-   if (argc > 0)
-      yyin = fopen(argv[0], "r");
-   else
-      yyin = stdin;
-   yylex();
-   printSymTab();
+	argc--; ++argv;
+	if (argc > 0)
+		yyin = fopen(argv[0], "r");
+	else
+		yyin = stdin;
+	yylex();
+//	printSymTab();
 }
 
