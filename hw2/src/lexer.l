@@ -25,7 +25,7 @@ WS		[ \t]+
 
 /*	constants	*/
 Int_constant	{digit}+
-Float_constant	{digit}+(.{digit}+|\0)
+Float_constant	({digit}+\.{digit}+)|({digit}+)
 String_constant	\"([^\"])*\"
 
 /*	Reserve Word	*/
@@ -78,7 +78,7 @@ DL_comma  	","
 DL_semicol 	";"
 DL_dot  	"."
 
-
+/*	Error	*/
 error    	.
 
 %%
@@ -100,8 +100,8 @@ error    	.
 			else 
 			     ptr->counter++;
 */		}
-{Int_constant}		{ printf("%s", yytext);}
-{Float_constant}	{ printf("%s", yytext);}
+{Int_constant}		{ printf("int %s", yytext);}
+{Float_constant}	{ printf("float %s", yytext);}
 {String_constant}	{ printf("%s", yytext);}
 
 {OP_assign}     	{ printf("%s", yytext);}
