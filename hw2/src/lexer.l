@@ -9,10 +9,6 @@ void     insertID();
 void 	 printSymTab();
 %}
 
-/*	comments	*/
-Comment_block	\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\/
-Comment_line	\/\/(.)*
-
 /*	example		*/
 letter		[A-Za-z]
 digit		[0-9]
@@ -25,7 +21,6 @@ Float_constant	({digit}+\.{digit}+)|({digit}+)
 String_constant	\"([^\"])*\"
 
 /*	Reserve Word	*/
-
 RWInt		"int"
 RWFloat		"float"
 RWreturn	"return"
@@ -34,6 +29,10 @@ RWelse		"else"
 RWfor		"for"
 RWvoid		"void"
 RWwhile		"while"
+
+/*	comments	*/
+Comment_block	\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\/
+Comment_line	\/\/(.)*
 
 /*	Arithmetic Operators	*/
 
@@ -58,7 +57,6 @@ OP_not		"!"
 
 
 /*	Separators	*/
-
 newline  	\n
 DL_lparen	"("
 DL_rparen 	")"
@@ -85,10 +83,11 @@ error    	.
 {RWwhile}		{}
 {RWvoid}		{}
 
-{Comment_block}		{ printf("xxx %s\n", yytext);}
+{Comment_block}		{ printf("%s\n", yytext);}
 {Comment_line}		{}
 
 {ID}            { 
+//			printf("ID = %s\n", yytext);
 			ptr = lookup(yytext);
 			if (ptr == NULL)
 			     insertID(yytext);	
@@ -138,6 +137,7 @@ main(int argc, char **argv)
 	else
 		yyin = stdin;
 	yylex();
+	printFreqOfSymb();
 //	printSymTab();
 }
 
