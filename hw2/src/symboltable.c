@@ -94,7 +94,7 @@ void printFreqOfSymb()
 	symtab* head = NULL;
 	symtab* curr = NULL;
 	symtab* prev = NULL;
-	printf("Frequency of identifiers:\n");
+	printf("\nFrequency of identifiers:\n");
 	int i;
 	for(i=0; i<TABLE_SIZE; i++)
 	{
@@ -168,7 +168,7 @@ void printFreqOfSymb()
 	curr = head;
 	while(curr)
 	{
-		if(strlen(curr->lexeme) > 6)
+		if(strlen(curr->lexeme) > 7)
 			printf("%s\t%d\n", curr->lexeme, curr->counter);
 		else
 			printf("%s\t\t%d\n", curr->lexeme, curr->counter);

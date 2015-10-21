@@ -124,7 +124,7 @@ error    	.
 {DL_comma}      	{}
 {DL_semicol}    	{}
 {newline}       	{ linenumber += 1; }
-{error}         	printf("ERR: %s\n", yytext);/* return ERROR; */
+{error}         	printf("ERR: %s, line: %d\n", yytext, linenumber);/* return ERROR; */
 
 
 %%
