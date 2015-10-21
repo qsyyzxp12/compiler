@@ -124,7 +124,7 @@ error    	.
 {DL_comma}      	{}
 {DL_semicol}    	{}
 {newline}       	{ linenumber += 1; }
-{error}         	printf("ERR: %s, line: %d\n", yytext, linenumber);/* return ERROR; */
+{error}         	printf("ERR");/* return ERROR; */
 
 
 %%
@@ -137,7 +137,9 @@ main(int argc, char **argv)
 	else
 		yyin = stdin;
 	yylex();
-	printFreqOfSymb();
+	sort();
+	printf("\nFrequency of identifiers:\n");
+	printFreqOfSymb(head);
 //	printSymTab();
 }
 

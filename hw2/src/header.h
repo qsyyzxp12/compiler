@@ -4,10 +4,13 @@ struct symtab{
 	struct symtab *back;
 	int line;
 	int counter;
-	struct symtab* next;
+	struct symtab* rchild;
+	struct symtab* lchild;
 };
-
+struct symtab* head;
 typedef struct symtab symtab;
 symtab * lookup(char *name);
 void insert(char *name);
-void printFreqOfSymb();
+void addNode(symtab* head, symtab* symptr);
+void sort();
+void printFreqOfSymb(symtab* head);

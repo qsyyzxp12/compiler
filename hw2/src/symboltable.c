@@ -89,13 +89,52 @@ void printSymTab()
     }
 }
 
-void printFreqOfSymb()
+void addNode(symtab* head, symtab* symptr)
 {
-	symtab* head = NULL;
-	symtab* curr = NULL;
-	symtab* prev = NULL;
-	printf("\nFrequency of identifiers:\n");
+	symptr->lchild = NULL;
+	symptr->rchild = NULL;
+	int symptr_len = strlen(symptr->lexeme);
+	int head_len = strlen(head->lexeme);
+	int j = 0;
+	while( j < min( head_len, symptr_len) && head->lexeme[j] == symptr->lexeme[j])
+		j++;
+	if(j == min( head_len, symptr_len))
+	{
+		if(head_len > symptr_len)
+		{
+			if(head->lchild)
+				addNode(head->lchild, symptr);
+			else
+				head->lchild = symptr;
+		}
+		else if(head_len < symptr_len)
+		{
+			if(head->rchild)
+				addNode(head->rchild, symptr);
+			else
+				head->rchild = symptr;
+		}
+	}
+	else if(head->lexeme[j] > symptr->lexeme[j])
+	{
+		if(head->lchild)
+			addNode(head->lchild, symptr);
+		else
+			head->lchild = symptr;
+	}
+	else
+	{
+		if(head->rchild)
+			addNode(head->rchild, symptr);
+		else
+			head->rchild = symptr;
+	}
+}
+
+void sort()
+{
 	int i;
+	head = NULL;
 	for(i=0; i<TABLE_SIZE; i++)
 	{
 		symtab* symptr;
@@ -105,73 +144,25 @@ void printFreqOfSymb()
 			if(!head)
 			{
 				head = symptr;
-				head->next = NULL;
+				head->rchild = NULL;
+				head->lchild = NULL;
 			}
 			else
-			{
-				prev = head;
-				curr = head;
-				int symptr_len = strlen(symptr->lexeme);
-				while(curr)
-				{
-					int curr_len = strlen(curr->lexeme);
-					int j = 0;
-					while( j < min( curr_len, symptr_len) && curr->lexeme[j] == symptr->lexeme[j])
-						j++;
-					if(j == min( curr_len, symptr_len))
-					{
-						if(curr_len > symptr_len)
-						{
-							prev->next = symptr;
-							symptr->next = curr;
-						}
-						else if(curr_len < symptr_len)
-						{
-							prev = curr;
-							curr = curr->next;
-							continue;
-						}
-						else
-						{
-							printf("WRONG\n");
-							printf("curr = %s\nsymptr = %s\n", curr->lexeme, symptr->lexeme);
-							printf("curr_len = %d, symptr_len = %d\n", curr_len, symptr_len);
-						}
-						break;
-					}
-					if(curr->lexeme[j] > symptr->lexeme[j])
-					{
-						if(!strcmp(curr->lexeme, head->lexeme))
-						{
-							head = symptr;
-							symptr->next = curr;
-						}
-						else
-						{
-							prev->next = symptr;
-							symptr->next = curr;
-						}
-						break;
-					}
-					prev = curr;
-					curr = curr->next;
-				}
-				if(!curr)
-				{
-					prev->next = symptr;
-					symptr->next = NULL;
-				}
-			}
+				addNode(head, symptr);
 			symptr = symptr->front;
 		}
 	}
-	curr = head;
-	while(curr)
-	{
-		if(strlen(curr->lexeme) > 7)
-			printf("%s\t%d\n", curr->lexeme, curr->counter);
-		else
-			printf("%s\t\t%d\n", curr->lexeme, curr->counter);
-		curr = curr->next;
-	}
+
+}
+
+void printFreqOfSymb(symtab* head)
+{
+	if(head->lchild)
+		printFreqOfSymb(head->lchild);
+	if(strlen(head->lexeme) > 7)
+		printf("%s\t%d\n", head->lexeme, head->counter);
+	else
+		printf("%s\t\t%d\n", head->lexeme, head->counter);
+	if(head->rchild)
+		printFreqOfSymb(head->rchild);
 }
