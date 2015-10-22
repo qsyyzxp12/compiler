@@ -34,7 +34,6 @@ RWwhile		"while"
 
 /*	comments	*/
 Comment_block	\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\/
-Comment_line	\/\/(.)*
 
 /*	Arithmetic Operators	*/
 
@@ -86,10 +85,6 @@ error    	.
 {RWvoid}		{}
 
 {Comment_block}		{ 
-				printf("%s\n", yytext);
-				haveComment = 1;
-			}
-{Comment_line}		{ 
 				printf("%s\n", yytext);
 				haveComment = 1;
 			}
