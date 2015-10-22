@@ -20,4 +20,4 @@ clean:
 	rm -f $(TARGET) $(OBJECT) 
 	rm -f *yy*
 	rm -f *.o
-
+	rm -f *~
