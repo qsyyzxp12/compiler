@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "header.h" 
 int linenumber;
+int haveComment = 0;
 symtab * lookup();
 symtab * ptr;
 void     insertID();
@@ -17,7 +18,8 @@ WS		[ \t]+
 
 /*	constants	*/
 Int_constant	{digit}+
-Float_constant	({digit}+\.{digit}+)|({digit}+)
+Fraction	{digit}+\.{digit}*|{Int_constant}
+Float_constant	{Fraction}|{Fraction}[eE]-?{Int_constant}
 String_constant	\"("\""|[^\"])*\"
 
 /*	Reserve Word	*/
@@ -83,20 +85,25 @@ error    	.
 {RWwhile}		{}
 {RWvoid}		{}
 
-{Comment_block}		{ printf("%s\n", yytext);}
-{Comment_line}		{}
+{Comment_block}		{ 
+				printf("%s\n", yytext);
+				haveComment = 1;
+			}
+{Comment_line}		{ 
+				printf("%s\n", yytext);
+				haveComment = 1;
+			}
 
-{ID}            { 
-//			printf("ID = %s\n", yytext);
-			ptr = lookup(yytext);
-			if (ptr == NULL)
-			     insertID(yytext);	
-			else 
-			     ptr->counter++;
-		}
+{ID}            	{ 
+				ptr = lookup(yytext);
+				if (ptr == NULL)
+				     insertID(yytext);	
+				else 
+				     ptr->counter++;
+			}
 {Int_constant}		{}
 {Float_constant}	{}
-{String_constant}	{printf("string : %s\n", yytext);}
+{String_constant}	{}
 
 {OP_assign}     	{}
 {OP_plus}	     	{}
@@ -124,7 +131,10 @@ error    	.
 {DL_comma}      	{}
 {DL_semicol}    	{}
 {newline}       	{ linenumber += 1; }
-{error}         	printf("ERR");/* return ERROR; */
+{error}         	{
+				printf("ERR: %s\n", yytext);/* return ERROR; */
+				exit(1);
+			}
 
 
 %%
@@ -138,8 +148,11 @@ main(int argc, char **argv)
 		yyin = stdin;
 	yylex();
 	sort();
-	printf("\nFrequency of identifiers:\n");
-	printFreqOfSymb(head);
+	if(haveComment)
+		printf("\n");
+	printf("Frequency of identifiers:\n");
+	if(head)
+		printFreqOfSymb(head);
 //	printSymTab();
 }
 

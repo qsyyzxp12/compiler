@@ -21,3 +21,4 @@ clean:
 	rm -f *yy*
 	rm -f *.o
 	rm -f *~
+	rm -f test
