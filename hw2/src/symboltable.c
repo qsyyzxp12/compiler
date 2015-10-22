@@ -93,29 +93,7 @@ void addNode(symtab* head, symtab* symptr)
 {
 	symptr->lchild = NULL;
 	symptr->rchild = NULL;
-	int symptr_len = strlen(symptr->lexeme);
-	int head_len = strlen(head->lexeme);
-	int j = 0;
-	while( j < min( head_len, symptr_len) && head->lexeme[j] == symptr->lexeme[j])
-		j++;
-	if(j == min( head_len, symptr_len))
-	{
-		if(head_len > symptr_len)
-		{
-			if(head->lchild)
-				addNode(head->lchild, symptr);
-			else
-				head->lchild = symptr;
-		}
-		else if(head_len < symptr_len)
-		{
-			if(head->rchild)
-				addNode(head->rchild, symptr);
-			else
-				head->rchild = symptr;
-		}
-	}
-	else if(head->lexeme[j] > symptr->lexeme[j])
+	if(strcmp(symptr->lexeme, head->lexeme) < 0)
 	{
 		if(head->lchild)
 			addNode(head->lchild, symptr);
