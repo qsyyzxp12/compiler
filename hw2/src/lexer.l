@@ -142,10 +142,10 @@ main(int argc, char **argv)
 	else
 		yyin = stdin;
 	yylex();
-	sort();
 	if(haveComment)
 		printf("\n");
 	printf("Frequency of identifiers:\n");
+	sort();
 	if(head)
 		printFreqOfSymb(head);
 //	printSymTab();

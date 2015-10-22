@@ -89,26 +89,6 @@ void printSymTab()
     }
 }
 
-void addNode(symtab* head, symtab* symptr)
-{
-	symptr->lchild = NULL;
-	symptr->rchild = NULL;
-	if(strcmp(symptr->lexeme, head->lexeme) < 0)
-	{
-		if(head->lchild)
-			addNode(head->lchild, symptr);
-		else
-			head->lchild = symptr;
-	}
-	else
-	{
-		if(head->rchild)
-			addNode(head->rchild, symptr);
-		else
-			head->rchild = symptr;
-	}
-}
-
 void sort()
 {
 	int i;
@@ -119,14 +99,37 @@ void sort()
 		symptr = hash_table[i];
 		while(symptr)
 		{
+			symptr->lchild = NULL;
+			symptr->rchild = NULL;
 			if(!head)
-			{
 				head = symptr;
-				head->rchild = NULL;
-				head->lchild = NULL;
-			}
 			else
-				addNode(head, symptr);
+			{
+				symtab* curr = head;
+				while(1)
+				{
+					if(strcmp(symptr->lexeme, curr->lexeme) < 0)
+					{
+						if(curr->lchild)
+							curr = curr->lchild;
+						else
+						{
+							curr->lchild = symptr;
+							break;
+						}
+					}
+					else
+					{
+						if(curr->rchild)
+							curr = curr->rchild;
+						else
+						{
+							curr->rchild = symptr;
+							break;
+						}
+					}
+				}
+			}
 			symptr = symptr->front;
 		}
 	}
