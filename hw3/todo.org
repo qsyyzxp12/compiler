@@ -1,0 +1,5 @@
+* 1. fill the missing productions in parser.l
+* 2. build AST using the node structure in the header.h
+The generated AST will be printed out to an AST.gv file via the printGV() call
+AST.gv can be viewed graphically by the GVedit tool
+
