@@ -41,10 +41,10 @@ symtab * lookup(char *name){
 }
 
 void insertComment(char* comment){
-  Comment* newc = (Comment*)malloc(sizeof(Comment));
+  Comment* newc = (Comment*)malloc(strlen(comment)+1);
   int len = strlen(comment);
-  newc->s = (char*)malloc(sizeof(char)*len);
-  strncpy(newc->s, comment, len);
+  newc->s = (char*)malloc(len+1);
+  strncpy(newc->s, comment, len+1);
   newc->next = NULL;
   if(comment_root == NULL){
     comment_root = newc;

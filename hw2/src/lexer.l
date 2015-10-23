@@ -53,8 +53,8 @@ letter   [A-Za-z]
 digit    [0-9]
 ID	 {letter}({letter}|{digit}|"_")*
 WS	 [ \t]+
-Float_constant {digit}+(e[+-]?{digit}+)|({digit}+(\.{digit}+)(e[+-]?{digit}+)?)|({digit}+)?(\.{digit}+)(e[+-]?{digit}+)?
 Int_constant {digit}+
+Float_constant {digit}+(e[+-]?{digit}+)|({digit}+(\.{digit}+)(e[+-]?{digit}+)?)|({digit}+)?(\.{digit}+)(e[+-]?{digit}+)?
 String_constant \"(\\.|[^"])*\"
 comment "/*"([^*]|\*+[^*/])*\*+"/"
 
@@ -95,11 +95,10 @@ error    .
 
 {WS}            {}
 {Int_constant}  { printf("int %s\n", yytext);   }
-{Float_constant} { /*printf("float %s\n", yytext);*/  }
+{Float_constant} { printf("float %s\n", yytext);  }
 {String_constant} { printf("string %s\n", yytext); }
-{comment} {/*printf("comment [%s]", yytext);*/ insertComment(yytext);}
+{comment} { insertComment(yytext);}
 {ID}            {
-
 			ptr = lookup(yytext);
 			if (ptr == NULL){
                              IDcount++;
