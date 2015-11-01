@@ -28,7 +28,7 @@ number of distinct identifiers should not be limited
 TODO: should issue an error message, and print out the unrecognized token, then exit.
       after error, should still continue???
 OK: put list in array, to additional link(that make structure changes)
-TODO: reserved word -> look as ID
+OK: reserved word -> look as ID
 TODO: check output format, add more test data
 TODO: test on linux
 
