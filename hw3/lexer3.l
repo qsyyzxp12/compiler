@@ -47,7 +47,7 @@ error            .
 %%
 
 {ws}            ;   /* do nothing with whitespace */
-{comment}	    {
+{comment}	{
                     int i=0;
                     while (yytext[i]!='\0') {
                         if (yytext[i]=='\n')
@@ -57,14 +57,14 @@ error            .
                 }	
 {kwInt}         return INT;
 {kwFloat}       return FLOAT;
-{kwVoid}		return VOID;
+{kwVoid}	return VOID;
 {kwIf}          return IF;
 {kwElse}        return ELSE;
 {kwWhile}       return WHILE;
 {kwFor}      	return FOR;
 {kwTypedef}     return TYPEDEF;
 {kwReturn}      return RETURN;
-{ID}			{
+{ID}		{
                     yylval.lexeme = strdup(yytext);
                     if (!yylval.lexeme) {
                         printf("out of memory\n");
@@ -118,7 +118,7 @@ error            .
 {mk_rsqbrace}   return MK_RB;
 {mk_comma}      return MK_COMMA;
 {mk_semicolon}  return MK_SEMICOLON;
-{mk_dot}		return MK_DOT;
+{mk_dot}	return MK_DOT;
 {newline}       linenumber += 1;
 {error}         return ERROR;
 
