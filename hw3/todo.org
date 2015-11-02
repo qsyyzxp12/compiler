@@ -3,3 +3,8 @@
 The generated AST will be printed out to an AST.gv file via the printGV() call
 AST.gv can be viewed graphically by the GVedit tool
 
+
+control check ok
+decl
+func
+expr
