@@ -423,7 +423,16 @@ stmt		: MK_LBRACE block MK_RBRACE
                 {
                 	$$ = $2;
                 }
-            	/*TODO: | While Statement */
+            	| WHILE MK_LPAREN expr MK_RPAREN stmt
+		{
+			$$ = makeStmtNode(WHILE_STMT);
+			makeFamily($$, 2, $3, $5);
+		}
+            	| WHILE MK_LPAREN relop_expr_list MK_RPAREN stmt
+		{
+			$$ = makeStmtNode(WHILE_STMT);
+			makeFamily($$, 2, $3, $5);
+		}
             	| FOR MK_LPAREN assign_expr_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt
                 {
                 	$$ = makeStmtNode(FOR_STMT);
