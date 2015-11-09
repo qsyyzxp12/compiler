@@ -807,239 +807,241 @@ case 2:
 YY_RULE_SETUP
 #line 50 "lexer3.l"
 {
-                    int i=0;
-                    while (yytext[i]!='\0') {
-                        if (yytext[i]=='\n')
-                            linenumber++;
-                        i++;
-                    }
-                }	
+			int i=0;
+			while (yytext[i]!='\0')
+			{
+				if (yytext[i]=='\n')
+					linenumber++;
+				i++;
+			}
+		}	
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 58 "lexer3.l"
+#line 59 "lexer3.l"
 return INT;
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 59 "lexer3.l"
+#line 60 "lexer3.l"
 return FLOAT;
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 60 "lexer3.l"
+#line 61 "lexer3.l"
 return VOID;
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 61 "lexer3.l"
+#line 62 "lexer3.l"
 return IF;
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 62 "lexer3.l"
+#line 63 "lexer3.l"
 return ELSE;
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 63 "lexer3.l"
+#line 64 "lexer3.l"
 return WHILE;
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 64 "lexer3.l"
+#line 65 "lexer3.l"
 return FOR;
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 65 "lexer3.l"
+#line 66 "lexer3.l"
 return TYPEDEF;
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 66 "lexer3.l"
+#line 67 "lexer3.l"
 return RETURN;
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 67 "lexer3.l"
+#line 68 "lexer3.l"
 {
-                    yylval.lexeme = strdup(yytext);
-                    if (!yylval.lexeme) {
-                        printf("out of memory\n");
-                        exit(0);
-                    }
-                    return ID;
-                }
+			yylval.lexeme = strdup(yytext);
+			if (!yylval.lexeme)
+			{
+				printf("out of memory\n");
+				exit(0);
+			}
+			return ID;
+		}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 75 "lexer3.l"
+#line 77 "lexer3.l"
 return OP_ASSIGN;
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 76 "lexer3.l"
+#line 78 "lexer3.l"
 return OP_AND;
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 77 "lexer3.l"
+#line 79 "lexer3.l"
 return OP_OR;
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 78 "lexer3.l"
+#line 80 "lexer3.l"
 return OP_NOT;
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 79 "lexer3.l"
+#line 81 "lexer3.l"
 return OP_EQ;
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 80 "lexer3.l"
+#line 82 "lexer3.l"
 return OP_NE;
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 81 "lexer3.l"
+#line 83 "lexer3.l"
 return OP_LT;
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 82 "lexer3.l"
+#line 84 "lexer3.l"
 return OP_GT;
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 83 "lexer3.l"
+#line 85 "lexer3.l"
 return OP_LE;
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 84 "lexer3.l"
+#line 86 "lexer3.l"
 return OP_GE;
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 85 "lexer3.l"
+#line 87 "lexer3.l"
 return OP_PLUS;
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 86 "lexer3.l"
+#line 88 "lexer3.l"
 return OP_MINUS;
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 87 "lexer3.l"
+#line 89 "lexer3.l"
 return OP_TIMES;
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 88 "lexer3.l"
+#line 90 "lexer3.l"
 return OP_DIVIDE;
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 89 "lexer3.l"
+#line 91 "lexer3.l"
 {
-                    CON_Type *p;
-                    p = (CON_Type *)malloc(sizeof(CON_Type));
-                    p->const_type = INTEGERC;
-                    p->const_u.intval = atoi(yytext);
-                    yylval.const1 = p;
-                    return CONST;
-                }
+			CON_Type *p;
+			p = (CON_Type *)malloc(sizeof(CON_Type));
+			p->const_type = INTEGERC;
+			p->const_u.intval = atoi(yytext);
+			yylval.const1 = p;
+			return CONST;
+		}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 97 "lexer3.l"
+#line 99 "lexer3.l"
 {
-                    CON_Type *p;
-                    p = (CON_Type *)malloc(sizeof(CON_Type));
-                    p->const_type = FLOATC;
-                    p->const_u.fval = atof(yytext);
-                    yylval.const1 = p;
-                    return CONST;
-                }
+			CON_Type *p;
+			p = (CON_Type *)malloc(sizeof(CON_Type));
+			p->const_type = FLOATC;
+			p->const_u.fval = atof(yytext);
+			yylval.const1 = p;
+			return CONST;
+		}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 105 "lexer3.l"
+#line 107 "lexer3.l"
 {
-                    CON_Type *p;
-                    p = (CON_Type *)malloc(sizeof(CON_Type));
-                    p->const_type = STRINGC;
-                    p->const_u.sc = strdup(yytext);
-                    yylval.const1 = p;
-                    return CONST;
-                }
+			CON_Type *p;
+			p = (CON_Type *)malloc(sizeof(CON_Type));
+			p->const_type = STRINGC;
+			p->const_u.sc = strdup(yytext);
+			yylval.const1 = p;
+			return CONST;
+		}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 113 "lexer3.l"
+#line 115 "lexer3.l"
 return MK_LPAREN;
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 114 "lexer3.l"
+#line 116 "lexer3.l"
 return MK_RPAREN;
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 115 "lexer3.l"
+#line 117 "lexer3.l"
 return MK_LBRACE;
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 116 "lexer3.l"
+#line 118 "lexer3.l"
 return MK_RBRACE;
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 117 "lexer3.l"
+#line 119 "lexer3.l"
 return MK_LB;
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 118 "lexer3.l"
+#line 120 "lexer3.l"
 return MK_RB;
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 119 "lexer3.l"
+#line 121 "lexer3.l"
 return MK_COMMA;
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 120 "lexer3.l"
+#line 122 "lexer3.l"
 return MK_SEMICOLON;
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 121 "lexer3.l"
+#line 123 "lexer3.l"
 return MK_DOT;
 	YY_BREAK
 case 39:
 /* rule 39 can match eol */
 YY_RULE_SETUP
-#line 122 "lexer3.l"
+#line 124 "lexer3.l"
 linenumber += 1;
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 123 "lexer3.l"
+#line 125 "lexer3.l"
 return ERROR;
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 125 "lexer3.l"
+#line 127 "lexer3.l"
 ECHO;
 	YY_BREAK
-#line 1043 "lex.yy.c"
+#line 1045 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2034,7 +2036,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 124 "lexer3.l"
+#line 126 "lexer3.l"
 
 
 

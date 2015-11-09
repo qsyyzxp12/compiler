@@ -156,11 +156,12 @@ struct AST_NODE {
 	AST_TYPE nodeType;
         DATA_TYPE dataType;
 	int linenumber;
-	union {
-        IdentifierSemanticValue identifierSemanticValue;
-        STMTSemanticValue stmtSemanticValue;
-        DECLSemanticValue declSemanticValue;
-        EXPRSemanticValue exprSemanticValue;
+	union 
+	{
+        	IdentifierSemanticValue identifierSemanticValue;
+		STMTSemanticValue stmtSemanticValue;
+		DECLSemanticValue declSemanticValue;
+		EXPRSemanticValue exprSemanticValue;
 		CON_Type *const1;
 	} semantic_value;
 };

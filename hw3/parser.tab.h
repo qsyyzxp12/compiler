@@ -88,7 +88,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 112 "parser.y" /* yacc.c:1909  */
+#line 115 "parser.y" /* yacc.c:1909  */
 
 	char *lexeme;
 	CON_Type  *const1;
