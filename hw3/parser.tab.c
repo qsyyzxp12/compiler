@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.0.4.  */
+/* A Bison parser, made by GNU Bison 3.0.2.  */
 
 /* Bison implementation for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "3.0.4"
+#define YYBISON_VERSION "3.0.2"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -246,7 +246,7 @@ extern int yydebug;
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-
+typedef union YYSTYPE YYSTYPE;
 union YYSTYPE
 {
 #line 115 "parser.y" /* yacc.c:355  */
@@ -257,8 +257,6 @@ union YYSTYPE
 
 #line 259 "parser.tab.c" /* yacc.c:355  */
 };
-
-typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif
@@ -272,7 +270,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 276 "parser.tab.c" /* yacc.c:358  */
+#line 274 "parser.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -1513,7 +1511,7 @@ yyreduce:
 	 		makeChild((yyval.node),(yyvsp[0].node)); 
 			prog=(yyval.node);
 		}
-#line 1517 "parser.tab.c" /* yacc.c:1646  */
+#line 1515 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
@@ -1521,7 +1519,7 @@ yyreduce:
     { 
 			(yyval.node)=Allocate(PROGRAM_NODE); prog=(yyval.node);
 		}
-#line 1525 "parser.tab.c" /* yacc.c:1646  */
+#line 1523 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 4:
@@ -1529,7 +1527,7 @@ yyreduce:
     {
 				(yyval.node) = makeSibling((yyvsp[-1].node), (yyvsp[0].node));
                     	}
-#line 1533 "parser.tab.c" /* yacc.c:1646  */
+#line 1531 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 5:
@@ -1537,7 +1535,7 @@ yyreduce:
     {
                         	(yyval.node) = (yyvsp[0].node);
                     	}
-#line 1541 "parser.tab.c" /* yacc.c:1646  */
+#line 1539 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 6:
@@ -1545,7 +1543,7 @@ yyreduce:
     {
                     (yyval.node) = makeSibling(makeChild(Allocate(VARIABLE_DECL_LIST_NODE), (yyvsp[-1].node)), (yyvsp[0].node));
                 }
-#line 1549 "parser.tab.c" /* yacc.c:1646  */
+#line 1547 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 7:
@@ -1553,7 +1551,7 @@ yyreduce:
     {
                     (yyval.node) = (yyvsp[0].node);
                 }
-#line 1557 "parser.tab.c" /* yacc.c:1646  */
+#line 1555 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 8:
@@ -1564,7 +1562,7 @@ yyreduce:
                         makeChild(parameterList, (yyvsp[-4].node));
                         makeFamily((yyval.node), 4, (yyvsp[-7].node), makeIDNode((yyvsp[-6].lexeme), NORMAL_ID), parameterList, (yyvsp[-1].node));
 		}
-#line 1568 "parser.tab.c" /* yacc.c:1646  */
+#line 1566 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 9:
@@ -1572,7 +1570,7 @@ yyreduce:
     {
                         /*TODO*/
 		}
-#line 1576 "parser.tab.c" /* yacc.c:1646  */
+#line 1574 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 10:
@@ -1582,7 +1580,7 @@ yyreduce:
                         AST_NODE* emptyParameterList = Allocate(PARAM_LIST_NODE);
                         makeFamily((yyval.node), 4, (yyvsp[-6].node), makeIDNode((yyvsp[-5].lexeme), NORMAL_ID), emptyParameterList, (yyvsp[-1].node));
 		}
-#line 1586 "parser.tab.c" /* yacc.c:1646  */
+#line 1584 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 11:
@@ -1590,7 +1588,7 @@ yyreduce:
     {
                         /*TODO*/
 		}
-#line 1594 "parser.tab.c" /* yacc.c:1646  */
+#line 1592 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 12:
@@ -1598,7 +1596,7 @@ yyreduce:
     {
                     (yyval.node) = makeSibling((yyvsp[-2].node), (yyvsp[0].node));
                 }
-#line 1602 "parser.tab.c" /* yacc.c:1646  */
+#line 1600 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 13:
@@ -1606,7 +1604,7 @@ yyreduce:
     {
                     (yyval.node) = (yyvsp[0].node);
                 }
-#line 1610 "parser.tab.c" /* yacc.c:1646  */
+#line 1608 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 14:
@@ -1615,7 +1613,7 @@ yyreduce:
                     (yyval.node) = makeDeclNode(FUNCTION_PARAMETER_DECL);
                     makeFamily((yyval.node), 2, (yyvsp[-1].node), makeIDNode((yyvsp[0].lexeme), NORMAL_ID));
                 }
-#line 1619 "parser.tab.c" /* yacc.c:1646  */
+#line 1617 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 15:
@@ -1623,7 +1621,7 @@ yyreduce:
     {
                     /*TODO*/
                 }
-#line 1627 "parser.tab.c" /* yacc.c:1646  */
+#line 1625 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 16:
@@ -1631,7 +1629,7 @@ yyreduce:
     {
                     (yyval.node) = (yyvsp[-1].node);
                 }
-#line 1635 "parser.tab.c" /* yacc.c:1646  */
+#line 1633 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 17:
@@ -1639,7 +1637,7 @@ yyreduce:
     {
                     (yyval.node) = makeSibling((yyvsp[-3].node), (yyvsp[-1].node));
                 }
-#line 1643 "parser.tab.c" /* yacc.c:1646  */
+#line 1641 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 18:
@@ -1647,7 +1645,7 @@ yyreduce:
     {
                     /*TODO*/
                 }
-#line 1651 "parser.tab.c" /* yacc.c:1646  */
+#line 1649 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 19:
@@ -1655,7 +1653,7 @@ yyreduce:
     {
                     (yyval.node) = Allocate(NUL_NODE); 
                 }
-#line 1659 "parser.tab.c" /* yacc.c:1646  */
+#line 1657 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 20:
@@ -1666,7 +1664,7 @@ yyreduce:
 			AST_NODE* stmt_list = makeChild(Allocate(STMT_LIST_NODE), (yyvsp[0].node));
 			makeFamily((yyval.node), 2, decl_list, stmt_list);
 		}
-#line 1670 "parser.tab.c" /* yacc.c:1646  */
+#line 1668 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 21:
@@ -1675,7 +1673,7 @@ yyreduce:
 			(yyval.node) = Allocate(BLOCK_NODE);
 			makeChild((yyval.node), makeChild(Allocate(STMT_LIST_NODE), (yyvsp[0].node)));
 		}
-#line 1679 "parser.tab.c" /* yacc.c:1646  */
+#line 1677 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 22:
@@ -1684,7 +1682,7 @@ yyreduce:
 			(yyval.node) = Allocate(BLOCK_NODE);
 			makeChild((yyval.node), makeChild(Allocate(VARIABLE_DECL_LIST_NODE), (yyvsp[0].node)));
 		}
-#line 1688 "parser.tab.c" /* yacc.c:1646  */
+#line 1686 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 23:
@@ -1692,7 +1690,7 @@ yyreduce:
     {
                         (yyval.node) = Allocate(BLOCK_NODE);/*?*/
 		}
-#line 1696 "parser.tab.c" /* yacc.c:1646  */
+#line 1694 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 24:
@@ -1701,7 +1699,7 @@ yyreduce:
                         (yyval.node) = (yyvsp[-1].node);	/*?*/
 			makeSibling((yyval.node), (yyvsp[-1].node));
                 }
-#line 1705 "parser.tab.c" /* yacc.c:1646  */
+#line 1703 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 25:
@@ -1709,7 +1707,7 @@ yyreduce:
     {			/*?*/
                         (yyval.node) = (yyvsp[0].node);
                 }
-#line 1713 "parser.tab.c" /* yacc.c:1646  */
+#line 1711 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 26:
@@ -1717,7 +1715,7 @@ yyreduce:
     {
 			(yyval.node) = (yyvsp[0].node);
                 }
-#line 1721 "parser.tab.c" /* yacc.c:1646  */
+#line 1719 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 27:
@@ -1725,7 +1723,7 @@ yyreduce:
     {
 			(yyval.node) = (yyvsp[0].node);
                 }
-#line 1729 "parser.tab.c" /* yacc.c:1646  */
+#line 1727 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 28:
@@ -1734,7 +1732,7 @@ yyreduce:
 			(yyval.node) = makeDeclNode(TYPE_DECL);
 			makeFamily((yyval.node), 2, (yyvsp[-2].node), (yyvsp[-1].node));
                 }
-#line 1738 "parser.tab.c" /* yacc.c:1646  */
+#line 1736 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
@@ -1743,7 +1741,7 @@ yyreduce:
 			(yyval.node) = makeDeclNode(TYPE_DECL);
 			makeFamily((yyval.node), 2, makeIDNode("void", NORMAL_ID), (yyvsp[-1].node));
                 }
-#line 1747 "parser.tab.c" /* yacc.c:1646  */
+#line 1745 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 30:
@@ -1753,7 +1751,7 @@ yyreduce:
 			makeSibling((yyval.node), (yyvsp[-1].node));
 
                 }
-#line 1757 "parser.tab.c" /* yacc.c:1646  */
+#line 1755 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 31:
@@ -1762,7 +1760,7 @@ yyreduce:
 			(yyval.node) = makeDeclNode(VARIABLE_DECL);
 			makeFamily((yyval.node), 2, makeIDNode((yyvsp[-2].lexeme), NORMAL_ID), (yyvsp[-1].node));
                 }
-#line 1766 "parser.tab.c" /* yacc.c:1646  */
+#line 1764 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 32:
@@ -1770,7 +1768,7 @@ yyreduce:
     {
                 	(yyval.node) = makeIDNode("int", NORMAL_ID);  
                 }
-#line 1774 "parser.tab.c" /* yacc.c:1646  */
+#line 1772 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 33:
@@ -1778,7 +1776,7 @@ yyreduce:
     {
                 	(yyval.node) = makeIDNode("float", NORMAL_ID);
                 }
-#line 1782 "parser.tab.c" /* yacc.c:1646  */
+#line 1780 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 34:
@@ -1786,7 +1784,7 @@ yyreduce:
     {
                 	(yyval.node) = makeIDNode((yyvsp[0].lexeme), NORMAL_ID);
                 }
-#line 1790 "parser.tab.c" /* yacc.c:1646  */
+#line 1788 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 35:
@@ -1795,7 +1793,7 @@ yyreduce:
 			(yyval.node) = (yyvsp[-2].node);
 			makeSibling((yyval.node), makeIDNode((yyvsp[0].lexeme), NORMAL_ID));
                 }
-#line 1799 "parser.tab.c" /* yacc.c:1646  */
+#line 1797 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 36:
@@ -1803,7 +1801,7 @@ yyreduce:
     {
                     /*TODO*/
                 }
-#line 1807 "parser.tab.c" /* yacc.c:1646  */
+#line 1805 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 37:
@@ -1812,7 +1810,7 @@ yyreduce:
 			(yyval.node) = makeIDNode((yyvsp[-1].lexeme), ARRAY_ID);
 			makeChild((yyval.node), (yyvsp[0].node));
                 }
-#line 1816 "parser.tab.c" /* yacc.c:1646  */
+#line 1814 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 38:
@@ -1820,7 +1818,7 @@ yyreduce:
     {
 			(yyval.node) = (yyvsp[-1].node);
                 }
-#line 1824 "parser.tab.c" /* yacc.c:1646  */
+#line 1822 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 39:
@@ -1829,7 +1827,7 @@ yyreduce:
 			(yyval.node) = (yyvsp[-2].node);
 			makeSibling((yyval.node), (yyvsp[0].node));
 		}
-#line 1833 "parser.tab.c" /* yacc.c:1646  */
+#line 1831 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 40:
@@ -1838,7 +1836,7 @@ yyreduce:
 			(yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_ADD);
 			makeFamily((yyval.node), 2, (yyvsp[-2].node), (yyvsp[0].node));
                 }
-#line 1842 "parser.tab.c" /* yacc.c:1646  */
+#line 1840 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 41:
@@ -1847,7 +1845,7 @@ yyreduce:
 			(yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_SUB);
 			makeFamily((yyval.node), 2, (yyvsp[-2].node), (yyvsp[0].node));
                 }
-#line 1851 "parser.tab.c" /* yacc.c:1646  */
+#line 1849 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 42:
@@ -1855,7 +1853,7 @@ yyreduce:
     {
 			(yyval.node) = (yyvsp[0].node);
                 }
-#line 1859 "parser.tab.c" /* yacc.c:1646  */
+#line 1857 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 43:
@@ -1864,7 +1862,7 @@ yyreduce:
 			(yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_MUL);
 			makeFamily((yyval.node), 2, (yyvsp[-2].node), (yyvsp[0].node));
                 }
-#line 1868 "parser.tab.c" /* yacc.c:1646  */
+#line 1866 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 44:
@@ -1873,7 +1871,7 @@ yyreduce:
 			(yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_DIV);
 			makeFamily((yyval.node), 2, (yyvsp[-2].node), (yyvsp[0].node));
                 }
-#line 1877 "parser.tab.c" /* yacc.c:1646  */
+#line 1875 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 45:
@@ -1881,7 +1879,7 @@ yyreduce:
     {
 			(yyval.node) = (yyvsp[0].node);
                 }
-#line 1885 "parser.tab.c" /* yacc.c:1646  */
+#line 1883 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 46:
@@ -1890,7 +1888,7 @@ yyreduce:
 			(yyval.node) = Allocate(CONST_VALUE_NODE);
 			(yyval.node)->semantic_value.const1 = (yyvsp[0].const1);
                 }
-#line 1894 "parser.tab.c" /* yacc.c:1646  */
+#line 1892 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 47:
@@ -1898,7 +1896,7 @@ yyreduce:
     {
 			(yyval.node) = (yyvsp[-1].node);
                 }
-#line 1902 "parser.tab.c" /* yacc.c:1646  */
+#line 1900 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 48:
@@ -1906,7 +1904,7 @@ yyreduce:
     {
 			(yyval.node) = (yyvsp[0].node);
 		}
-#line 1910 "parser.tab.c" /* yacc.c:1646  */
+#line 1908 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 49:
@@ -1915,7 +1913,7 @@ yyreduce:
 			(yyval.node) = (yyvsp[-2].node);
 			makeSibling((yyval.node), (yyvsp[0].node));
 		}
-#line 1919 "parser.tab.c" /* yacc.c:1646  */
+#line 1917 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 50:
@@ -1923,7 +1921,7 @@ yyreduce:
     {
 			(yyval.node) = makeIDNode((yyvsp[0].lexeme), NORMAL_ID);
                 }
-#line 1927 "parser.tab.c" /* yacc.c:1646  */
+#line 1925 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 51:
@@ -1931,7 +1929,7 @@ yyreduce:
     {
                     /*TODO*/
                 }
-#line 1935 "parser.tab.c" /* yacc.c:1646  */
+#line 1933 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 52:
@@ -1940,7 +1938,7 @@ yyreduce:
 			(yyval.node) = makeIDNode((yyvsp[-2].lexeme), NORMAL_ID);
 			makeChild((yyval.node), (yyvsp[0].node));
                 }
-#line 1944 "parser.tab.c" /* yacc.c:1646  */
+#line 1942 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 53:
@@ -1949,7 +1947,7 @@ yyreduce:
                     	(yyval.node) = (yyvsp[-1].node);
 			makeSibling((yyval.node), (yyvsp[0].node));
                 }
-#line 1953 "parser.tab.c" /* yacc.c:1646  */
+#line 1951 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 54:
@@ -1957,7 +1955,7 @@ yyreduce:
     {
                 	(yyval.node) = (yyvsp[0].node);
                 }
-#line 1961 "parser.tab.c" /* yacc.c:1646  */
+#line 1959 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 55:
@@ -1965,7 +1963,7 @@ yyreduce:
     {
                 	(yyval.node) = (yyvsp[-1].node);
                 }
-#line 1969 "parser.tab.c" /* yacc.c:1646  */
+#line 1967 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 56:
@@ -1974,7 +1972,7 @@ yyreduce:
 			(yyval.node) = makeStmtNode(WHILE_STMT);
 			makeFamily((yyval.node), 2, (yyvsp[-2].node), (yyvsp[0].node));
 		}
-#line 1978 "parser.tab.c" /* yacc.c:1646  */
+#line 1976 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 57:
@@ -1983,7 +1981,7 @@ yyreduce:
 			(yyval.node) = makeStmtNode(WHILE_STMT);
 			makeFamily((yyval.node), 2, (yyvsp[-2].node), (yyvsp[0].node));
 		}
-#line 1987 "parser.tab.c" /* yacc.c:1646  */
+#line 1985 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 58:
@@ -1992,7 +1990,7 @@ yyreduce:
                 	(yyval.node) = makeStmtNode(FOR_STMT);
 			makeFamily((yyval.node), 4, (yyvsp[-6].node), (yyvsp[-4].node), (yyvsp[-2].node), (yyvsp[0].node));
                 }
-#line 1996 "parser.tab.c" /* yacc.c:1646  */
+#line 1994 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 59:
@@ -2000,7 +1998,7 @@ yyreduce:
     {
                     /*TODO*/
                 }
-#line 2004 "parser.tab.c" /* yacc.c:1646  */
+#line 2002 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 60:
@@ -2009,7 +2007,7 @@ yyreduce:
 			(yyval.node) = makeStmtNode(IF_STMT);
 			makeFamily((yyval.node), 3, (yyvsp[-3].node), (yyvsp[-1].node), (yyvsp[0].node));
 		}
-#line 2013 "parser.tab.c" /* yacc.c:1646  */
+#line 2011 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 61:
@@ -2018,7 +2016,7 @@ yyreduce:
 			(yyval.node) = makeStmtNode(FUNCTION_CALL_STMT);
 			makeFamily((yyval.node), 2, makeIDNode((yyvsp[-4].lexeme), NORMAL_ID), (yyvsp[-2].node));
 		}
-#line 2022 "parser.tab.c" /* yacc.c:1646  */
+#line 2020 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 62:
@@ -2026,7 +2024,7 @@ yyreduce:
     {
                     /*TODO*/
                 }
-#line 2030 "parser.tab.c" /* yacc.c:1646  */
+#line 2028 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 63:
@@ -2034,7 +2032,7 @@ yyreduce:
     {
                     /*TODO*/
                 }
-#line 2038 "parser.tab.c" /* yacc.c:1646  */
+#line 2036 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 64:
@@ -2042,7 +2040,7 @@ yyreduce:
     {
                     /*TODO*/
                 }
-#line 2046 "parser.tab.c" /* yacc.c:1646  */
+#line 2044 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 65:
@@ -2051,7 +2049,7 @@ yyreduce:
 				(yyval.node) = makeStmtNode(IF_STMT);
 				makeFamily((yyval.node), 3, (yyvsp[-3].node), (yyvsp[-1].node), (yyvsp[0].node));
 			}
-#line 2055 "parser.tab.c" /* yacc.c:1646  */
+#line 2053 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 66:
@@ -2059,7 +2057,7 @@ yyreduce:
     {
 				(yyval.node) = (yyvsp[0].node);
 			}
-#line 2063 "parser.tab.c" /* yacc.c:1646  */
+#line 2061 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 67:
@@ -2067,7 +2065,7 @@ yyreduce:
     {
 				(yyval.node) = Allocate(NUL_NODE);
 			}
-#line 2071 "parser.tab.c" /* yacc.c:1646  */
+#line 2069 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 68:
@@ -2076,7 +2074,7 @@ yyreduce:
                         	(yyval.node) = Allocate(NONEMPTY_ASSIGN_EXPR_LIST_NODE);
 				makeChild((yyval.node), (yyvsp[0].node));
                      	}
-#line 2080 "parser.tab.c" /* yacc.c:1646  */
+#line 2078 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 69:
@@ -2084,7 +2082,7 @@ yyreduce:
     {
 				(yyval.node) = Allocate(NUL_NODE); 
 			}
-#line 2088 "parser.tab.c" /* yacc.c:1646  */
+#line 2086 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 70:
@@ -2093,7 +2091,7 @@ yyreduce:
                                         (yyval.node) = (yyvsp[-2].node);
 					makeSibling((yyval.node), (yyvsp[0].node));
 				}
-#line 2097 "parser.tab.c" /* yacc.c:1646  */
+#line 2095 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 71:
@@ -2101,7 +2099,7 @@ yyreduce:
     {
                                         (yyval.node) = (yyvsp[0].node);
 				}
-#line 2105 "parser.tab.c" /* yacc.c:1646  */
+#line 2103 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 72:
@@ -2110,7 +2108,7 @@ yyreduce:
 			(yyval.node) = makeStmtNode(ASSIGN_STMT);
 			makeFamily((yyval.node), 2, makeIDNode((yyvsp[-2].lexeme), NORMAL_ID), (yyvsp[0].node));
 		}
-#line 2114 "parser.tab.c" /* yacc.c:1646  */
+#line 2112 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 73:
@@ -2118,7 +2116,7 @@ yyreduce:
     {
 			(yyval.node) = (yyvsp[0].node);
 		}
-#line 2122 "parser.tab.c" /* yacc.c:1646  */
+#line 2120 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 74:
@@ -2126,7 +2124,7 @@ yyreduce:
     {
                     (yyval.node) = (yyvsp[0].node);
                 }
-#line 2130 "parser.tab.c" /* yacc.c:1646  */
+#line 2128 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 75:
@@ -2135,7 +2133,7 @@ yyreduce:
                     (yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_OR);
                     makeFamily((yyval.node), 2, (yyvsp[-2].node), (yyvsp[0].node));
                 }
-#line 2139 "parser.tab.c" /* yacc.c:1646  */
+#line 2137 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 76:
@@ -2143,7 +2141,7 @@ yyreduce:
     {
                 	(yyval.node) = (yyvsp[0].node);
                 }
-#line 2147 "parser.tab.c" /* yacc.c:1646  */
+#line 2145 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 77:
@@ -2152,7 +2150,7 @@ yyreduce:
                 	(yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_ADD);
 			makeFamily((yyval.node), 2, (yyvsp[-2].node), (yyvsp[0].node));
                 }
-#line 2156 "parser.tab.c" /* yacc.c:1646  */
+#line 2154 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 78:
@@ -2160,7 +2158,7 @@ yyreduce:
     {
 			(yyval.node) = (yyvsp[0].node);
 		}
-#line 2164 "parser.tab.c" /* yacc.c:1646  */
+#line 2162 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 79:
@@ -2169,7 +2167,7 @@ yyreduce:
 			(yyval.node) = (yyvsp[-1].node);
 			makeFamily((yyval.node), 2, (yyvsp[-2].node), (yyvsp[0].node));
 		}
-#line 2173 "parser.tab.c" /* yacc.c:1646  */
+#line 2171 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 80:
@@ -2177,7 +2175,7 @@ yyreduce:
     {
 			(yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_EQ);
                 }
-#line 2181 "parser.tab.c" /* yacc.c:1646  */
+#line 2179 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 81:
@@ -2185,7 +2183,7 @@ yyreduce:
     {
 			(yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_GE);
                 }
-#line 2189 "parser.tab.c" /* yacc.c:1646  */
+#line 2187 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 82:
@@ -2193,7 +2191,7 @@ yyreduce:
     {
 			(yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_LE);
                 }
-#line 2197 "parser.tab.c" /* yacc.c:1646  */
+#line 2195 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 83:
@@ -2201,7 +2199,7 @@ yyreduce:
     {
 			(yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_NE);
                 }
-#line 2205 "parser.tab.c" /* yacc.c:1646  */
+#line 2203 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 84:
@@ -2209,7 +2207,7 @@ yyreduce:
     {
 			(yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_GT);
                 }
-#line 2213 "parser.tab.c" /* yacc.c:1646  */
+#line 2211 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 85:
@@ -2217,7 +2215,7 @@ yyreduce:
     {
 			(yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_LT);
                 }
-#line 2221 "parser.tab.c" /* yacc.c:1646  */
+#line 2219 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 86:
@@ -2226,7 +2224,7 @@ yyreduce:
                         (yyval.node) = Allocate(NONEMPTY_RELOP_EXPR_LIST_NODE);
 			makeChild((yyval.node), (yyvsp[0].node));
 		}
-#line 2230 "parser.tab.c" /* yacc.c:1646  */
+#line 2228 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 87:
@@ -2234,7 +2232,7 @@ yyreduce:
     {
 			(yyval.node) = Allocate(NUL_NODE);
 		}
-#line 2238 "parser.tab.c" /* yacc.c:1646  */
+#line 2236 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 88:
@@ -2242,7 +2240,7 @@ yyreduce:
     {
                                     /*TODO*/
                                 }
-#line 2246 "parser.tab.c" /* yacc.c:1646  */
+#line 2244 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 89:
@@ -2250,7 +2248,7 @@ yyreduce:
     {
                                     (yyval.node) = (yyvsp[0].node);
                                 }
-#line 2254 "parser.tab.c" /* yacc.c:1646  */
+#line 2252 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 90:
@@ -2258,7 +2256,7 @@ yyreduce:
     {
                     /*TODO*/
                 }
-#line 2262 "parser.tab.c" /* yacc.c:1646  */
+#line 2260 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 91:
@@ -2266,7 +2264,7 @@ yyreduce:
     {
                     (yyval.node) = (yyvsp[0].node);
                 }
-#line 2270 "parser.tab.c" /* yacc.c:1646  */
+#line 2268 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 92:
@@ -2274,7 +2272,7 @@ yyreduce:
     {
                     (yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_ADD);
                 }
-#line 2278 "parser.tab.c" /* yacc.c:1646  */
+#line 2276 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 93:
@@ -2282,7 +2280,7 @@ yyreduce:
     {
                     (yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_SUB);
                 }
-#line 2286 "parser.tab.c" /* yacc.c:1646  */
+#line 2284 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 94:
@@ -2290,7 +2288,7 @@ yyreduce:
     {
                     /*TODO*/
                 }
-#line 2294 "parser.tab.c" /* yacc.c:1646  */
+#line 2292 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 95:
@@ -2298,7 +2296,7 @@ yyreduce:
     {
                     (yyval.node) = (yyvsp[0].node);
                 }
-#line 2302 "parser.tab.c" /* yacc.c:1646  */
+#line 2300 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 96:
@@ -2306,7 +2304,7 @@ yyreduce:
     {
                     (yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_MUL);
                 }
-#line 2310 "parser.tab.c" /* yacc.c:1646  */
+#line 2308 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 97:
@@ -2314,7 +2312,7 @@ yyreduce:
     {
                     (yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_DIV);
                 }
-#line 2318 "parser.tab.c" /* yacc.c:1646  */
+#line 2316 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 98:
@@ -2322,7 +2320,7 @@ yyreduce:
     {
 			(yyval.node) = (yyvsp[-1].node); /*?*/
                 }
-#line 2326 "parser.tab.c" /* yacc.c:1646  */
+#line 2324 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 99:
@@ -2330,7 +2328,7 @@ yyreduce:
     {
 			(yyval.node) = makeSibling(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), (yyvsp[-1].node)); /*?*/
                 }
-#line 2334 "parser.tab.c" /* yacc.c:1646  */
+#line 2332 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 100:
@@ -2339,7 +2337,7 @@ yyreduce:
 			(yyval.node) = Allocate(CONST_VALUE_NODE);
 			(yyval.node)->semantic_value.const1 = (yyvsp[0].const1);
                 }
-#line 2343 "parser.tab.c" /* yacc.c:1646  */
+#line 2341 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 101:
@@ -2350,7 +2348,7 @@ yyreduce:
 			CONST->semantic_value.const1 = (yyvsp[0].const1);
 			(yyval.node) = makeSibling(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), CONST);
                 }
-#line 2354 "parser.tab.c" /* yacc.c:1646  */
+#line 2352 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 102:
@@ -2358,7 +2356,7 @@ yyreduce:
     {
 			/*TODO*/
                 }
-#line 2362 "parser.tab.c" /* yacc.c:1646  */
+#line 2360 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 103:
@@ -2366,7 +2364,7 @@ yyreduce:
     {
 			/*TODO*/
                 }
-#line 2370 "parser.tab.c" /* yacc.c:1646  */
+#line 2368 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 104:
@@ -2374,7 +2372,7 @@ yyreduce:
     {
 			(yyval.node) = (yyvsp[0].node);
                 }
-#line 2378 "parser.tab.c" /* yacc.c:1646  */
+#line 2376 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 105:
@@ -2382,7 +2380,7 @@ yyreduce:
     {
 			/*TODO*/
                 }
-#line 2386 "parser.tab.c" /* yacc.c:1646  */
+#line 2384 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 106:
@@ -2390,7 +2388,7 @@ yyreduce:
     {
 			(yyval.node) = makeIDNode((yyvsp[0].lexeme), NORMAL_ID);
                 }
-#line 2394 "parser.tab.c" /* yacc.c:1646  */
+#line 2392 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 107:
@@ -2398,7 +2396,7 @@ yyreduce:
     {
                     /*TODO*/
                 }
-#line 2402 "parser.tab.c" /* yacc.c:1646  */
+#line 2400 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 108:
@@ -2406,7 +2404,7 @@ yyreduce:
     {
                     /*TODO*/
                 }
-#line 2410 "parser.tab.c" /* yacc.c:1646  */
+#line 2408 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 109:
@@ -2414,11 +2412,11 @@ yyreduce:
     {
                     /*TODO*/
                 }
-#line 2418 "parser.tab.c" /* yacc.c:1646  */
+#line 2416 "parser.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 2422 "parser.tab.c" /* yacc.c:1646  */
+#line 2420 "parser.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires

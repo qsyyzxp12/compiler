@@ -8,6 +8,8 @@ LIBS = -lfl
 
 parser: parser.tab.o alloc.o functions.o
 	$(CC) -o $(TARGET) parser.tab.o alloc.o functions.o $(LIBS)
+	rm -f *~
+	dot AST_Graph.gv -T png -o result.png
 
 parser.tab.o: parser.tab.c lex.yy.c alloc.o functions.c
 	$(CC) -c parser.tab.c
@@ -25,5 +27,5 @@ functions.o: functions.c
 	$(CC) -c functions.c
 
 clean:
-	rm -f $(TARGET) $(OBJECT) 
+	rm -f $(TARGET) $(OBJECT)
 
