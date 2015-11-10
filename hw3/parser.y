@@ -446,7 +446,7 @@ stmt		: MK_LBRACE block MK_RBRACE
                 {
                 	$$ = $2;
                 }
-            	| WHILE MK_LPAREN expr MK_RPAREN stmt
+            	| WHILE MK_LPAREN relop_factor MK_RPAREN stmt
 		{
 			$$ = makeStmtNode(WHILE_STMT);
 			makeFamily($$, 2, $3, $5);
@@ -609,9 +609,9 @@ expr		: expr add_op term
 			$$ = $2;
 			makeFamily($$, 2, $1, $3);
                 }
-            	| term 
+            	| term
                 {
-                    $$ = $1;
+			$$ = $1;
                 };
 
 add_op		: OP_PLUS

@@ -97,7 +97,7 @@
    53          | stmt
 
    54 stmt: MK_LBRACE block MK_RBRACE
-   55     | WHILE MK_LPAREN expr MK_RPAREN stmt
+   55     | WHILE MK_LPAREN relop_factor MK_RPAREN stmt
    56     | FOR MK_LPAREN assign_expr_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt
    57     | var_ref OP_ASSIGN relop_expr MK_SEMICOLON
    58     | IF MK_LPAREN relop_factor MK_RPAREN stmt else_if_list
@@ -279,7 +279,7 @@ relop_expr (66)
 relop_term (67)
     於左側： 73 74, 於右側： 71 72 74
 relop_factor (68)
-    於左側： 75 76, 於右側： 58 73 74
+    於左側： 75 76, 於右側： 55 58 73 74
 rel_op (69)
     於左側： 77 78 79 80 81 82, 於右側： 76
 relop_expr_list (70)
@@ -287,7 +287,7 @@ relop_expr_list (70)
 nonempty_relop_expr_list (71)
     於左側： 85 86, 於右側： 83 85
 expr (72)
-    於左側： 87 88, 於右側： 16 17 55 75 76 87 109 110
+    於左側： 87 88, 於右側： 16 17 75 76 87 109 110
 add_op (73)
     於左側： 89 90, 於右側： 87
 term (74)
@@ -1529,7 +1529,7 @@ dim_list (78)
 
 狀態 115
 
-   55 stmt: WHILE . MK_LPAREN expr MK_RPAREN stmt
+   55 stmt: WHILE . MK_LPAREN relop_factor MK_RPAREN stmt
 
     MK_LPAREN  偏移，並進入狀態 149
 
@@ -1992,7 +1992,7 @@ dim_list (78)
 
 狀態 149
 
-   55 stmt: WHILE MK_LPAREN . expr MK_RPAREN stmt
+   55 stmt: WHILE MK_LPAREN . relop_factor MK_RPAREN stmt
 
     ID         偏移，並進入狀態 51
     CONST      偏移，並進入狀態 52
@@ -2000,10 +2000,11 @@ dim_list (78)
     OP_MINUS   偏移，並進入狀態 54
     MK_LPAREN  偏移，並進入狀態 55
 
-    expr     進入狀態 175
-    term     進入狀態 60
-    factor   進入狀態 61
-    var_ref  進入狀態 62
+    relop_factor  進入狀態 175
+    expr          進入狀態 59
+    term          進入狀態 60
+    factor        進入狀態 61
+    var_ref       進入狀態 62
 
 
 狀態 150
@@ -2265,14 +2266,9 @@ dim_list (78)
 
 狀態 175
 
-   55 stmt: WHILE MK_LPAREN expr . MK_RPAREN stmt
-   87 expr: expr . add_op term
+   55 stmt: WHILE MK_LPAREN relop_factor . MK_RPAREN stmt
 
-    OP_PLUS    偏移，並進入狀態 98
-    OP_MINUS   偏移，並進入狀態 99
     MK_RPAREN  偏移，並進入狀態 194
-
-    add_op  進入狀態 101
 
 
 狀態 176
@@ -2437,7 +2433,7 @@ dim_list (78)
 
 狀態 194
 
-   55 stmt: WHILE MK_LPAREN expr MK_RPAREN . stmt
+   55 stmt: WHILE MK_LPAREN relop_factor MK_RPAREN . stmt
 
     ID            偏移，並進入狀態 156
     IF            偏移，並進入狀態 114
@@ -2548,7 +2544,7 @@ dim_list (78)
 
 狀態 202
 
-   55 stmt: WHILE MK_LPAREN expr MK_RPAREN stmt .
+   55 stmt: WHILE MK_LPAREN relop_factor MK_RPAREN stmt .
 
     $預設  使用規則 55 以縮減 (stmt)
 
