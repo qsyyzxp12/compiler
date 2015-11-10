@@ -1,12 +1,14 @@
-int ABC;
-float ABCD, AAA = 4.0, KKK = 5.5;
-typedef float GFLOAT;
-int main() 
-{
-	typedef int INT, INT2, INT3;
-	typedef float FLOAT;
-	typedef void VOID;
-	typedef void VOID2, VOID3;
-	INT f[3][3*3-(4+2)/2];
-	FLOAT f2;
+int fn1() {
+    int ABC = 5;
+    return ABC+5;
+}
+void fn2() {
+}
+void fn3(int a, int b[3][4]) {
+}
+int main() {
+    int b[4][4];
+    fn1();
+    fn2();
+    fn3(2, b);
 }

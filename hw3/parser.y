@@ -204,7 +204,10 @@ function_decl	: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE
 		}
                 | VOID ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE      
 		{
-                        /*TODO*/
+                        $$ = makeDeclNode(FUNCTION_DECL);
+			AST_NODE* parameterList = Allocate(PARAM_LIST_NODE);
+			makeChild(parameterList, $4);
+			makeFamily($$, 4, makeIDNode("void", NORMAL_ID), makeIDNode($2, NORMAL_ID), parameterList, $7);
 		}
                 | type ID MK_LPAREN  MK_RPAREN MK_LBRACE block MK_RBRACE 
 		{
@@ -214,43 +217,52 @@ function_decl	: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE
 		}
                 | VOID ID MK_LPAREN  MK_RPAREN MK_LBRACE block MK_RBRACE 
 		{
-                        /*TODO*/
+                        $$ = makeDeclNode(FUNCTION_DECL);
+                        AST_NODE* emptyParameterList = Allocate(PARAM_LIST_NODE);
+                        makeFamily($$, 4, makeIDNode("void", NORMAL_ID), makeIDNode($2, NORMAL_ID), emptyParameterList, $6);
 		};
 
 param_list	: param_list MK_COMMA  param 
                 {
-                    $$ = makeSibling($1, $3);
+			$$ = makeSibling($1, $3);
                 }
             	| param	
                 {
-                    $$ = $1;
+			$$ = $1;
                 };
 
 param		: type ID 
                 {
-                    $$ = makeDeclNode(FUNCTION_PARAMETER_DECL);
-                    makeFamily($$, 2, $1, makeIDNode($2, NORMAL_ID));
+			$$ = makeDeclNode(FUNCTION_PARAMETER_DECL);
+			makeFamily($$, 2, $1, makeIDNode($2, NORMAL_ID));
                 }
-            | type ID dim_fn 
+            	| type ID dim_fn 
                 {
-                    /*TODO*/
-                }
-            ;
+			$$ = makeDeclNode(FUNCTION_PARAMETER_DECL);
+			AST_NODE* array_id = makeIDNode($2, ARRAY_ID);
+			makeChild(array_id, $3);
+			makeFamily($$, 2, $1, array_id);
+                };
+
 dim_fn		: MK_LB expr_null MK_RB 
                 {
-                    $$ = $2;
+			$$ = $2;
                 }
-            | dim_fn MK_LB expr MK_RB
+            	| dim_fn MK_LB expr MK_RB
                 {
-                    $$ = makeSibling($1, $3);
+			$$ = makeSibling($1, $3);
                 }
-		;
+		| MK_LB expr MK_RB
+		{
+			$$ = $2;
+		};
 
 expr_null	:expr 
                 {
+			printf("todo1\n");
                     /*TODO*/
                 }
-            |
+            	|
                 {
                     $$ = Allocate(NUL_NODE); 
                 };
@@ -274,12 +286,12 @@ block           : decl_list stmt_list
 		}
                 |   
 		{
-                        $$ = Allocate(BLOCK_NODE);/*?*/
+                        $$ = Allocate(BLOCK_NODE);
 		};
  
 decl_list	: decl_list decl 
                 {
-                        $$ = $1;	/*?*/
+                        $$ = $1;
 			makeSibling($$, $2);
                 }
             	| decl 
@@ -339,6 +351,7 @@ id_list		: ID
                 }
 		| id_list MK_COMMA ID dim_decl
                 {
+			printf("todo2\n");
                     /*TODO*/
                 }
 		| ID dim_decl
@@ -413,7 +426,8 @@ init_id		: ID
                 }
 		| ID dim_decl 
                 {
-                    /*TODO*/
+                    	$$ = makeIDNode($1, ARRAY_ID);
+			makeChild($$, $2);
                 }
 		| ID OP_ASSIGN relop_expr 
                 {
@@ -452,11 +466,11 @@ stmt		: MK_LBRACE block MK_RBRACE
                 }
             	| var_ref OP_ASSIGN relop_expr MK_SEMICOLON
                 {
+			printf("todo3\n");
                     /*TODO*/
                 }
 		| IF MK_LPAREN relop_factor MK_RPAREN stmt else_if_list
 		{
-			printf("1\n");
 			$$ = makeStmtNode(IF_STMT);
 			makeFamily($$, 3, $3, $5, $6);
 		}
@@ -467,15 +481,16 @@ stmt		: MK_LBRACE block MK_RBRACE
 		}
             	| MK_SEMICOLON 
                 {
-                    /*TODO*/
+			$$ = Allocate(NUL_NODE);/*?*/
                 }
             	| RETURN MK_SEMICOLON  
                 {
-                    /*TODO*/
+			$$ = makeStmtNode(RETURN_STMT);
                 }
             	| RETURN relop_expr MK_SEMICOLON
                 {
-                    /*TODO*/
+			$$ = makeStmtNode(RETURN_STMT);
+			makeChild($$, $2);
                 };
 
 else_if_list		: ELSE stmt
@@ -589,7 +604,8 @@ relop_expr_list	: nonempty_relop_expr_list
 
 nonempty_relop_expr_list	: nonempty_relop_expr_list MK_COMMA relop_expr
                                 {
-                                    /*TODO*/
+					$$ = $1;
+					makeSibling($$, $3);
                                 }
 				| relop_expr 
                                 {
@@ -617,6 +633,7 @@ add_op		: OP_PLUS
 
 term		: term mul_op factor
                 {
+			printf("todo5\n");
                     /*TODO*/
                 }
 		| factor
@@ -635,12 +652,12 @@ mul_op		: OP_TIMES
 
 factor		: MK_LPAREN relop_expr MK_RPAREN
                 {
-			$$ = $2; /*?*/
+			$$ = $2;
                 }
             	/*TODO: | -(<relop_expr>) e.g. -(4) */
             	| OP_NOT MK_LPAREN relop_expr MK_RPAREN
                 {
-			$$ = makeSibling(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), $3); /*?*/
+			$$ = makeSibling(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), $3);
                 }
             	| CONST
                 {
@@ -650,18 +667,19 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
             	/*TODO: | -<constant> e.g. -4 */
             	| OP_NOT CONST
                 {
-			/*?*/
                         AST_NODE* CONST = Allocate(CONST_VALUE_NODE);
 			CONST->semantic_value.const1 = $2;
 			$$ = makeSibling(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), CONST);
                 }
             	| ID MK_LPAREN relop_expr_list MK_RPAREN 
                 {
+			printf("todo6\n");
 			/*TODO*/
                 }
             	/*TODO: | -<function call> e.g. -f(4) */
             	| OP_NOT ID MK_LPAREN relop_expr_list MK_RPAREN
                 {
+			printf("todo7\n");
 			/*TODO*/
                 }
             	| var_ref 
@@ -671,6 +689,7 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
 		/*TODO: | -<var_ref> e.g. -var */
 		| OP_NOT var_ref 
                 {
+			printf("todo8\n");
 			/*TODO*/
                 };
 
@@ -680,15 +699,18 @@ var_ref		: ID
                 }
 		| ID dim_list 
                 {
+			printf("todo9\n");
                     /*TODO*/
                 };
 
 dim_list	: dim_list MK_LB expr MK_RB 
                 {
+			printf("todo10\n");
                     /*TODO*/
                 }
             	| MK_LB expr MK_RB
                 {
+			printf("todo11\n");
                     /*TODO*/
                 };
 %%
