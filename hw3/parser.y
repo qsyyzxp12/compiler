@@ -252,19 +252,14 @@ dim_fn		: MK_LB expr_null MK_RB
                 {
 			$$ = makeSibling($1, $3);
                 }
-		| MK_LB expr MK_RB
-		{
-			$$ = $2;
-		};
 
 expr_null	:expr 
                 {
-			printf("todo1\n");
-                    /*TODO*/
+			$$ = $1;
                 }
             	|
                 {
-                    $$ = Allocate(NUL_NODE); 
+			$$ = Allocate(NUL_NODE); 
                 };
 
 block           : decl_list stmt_list 
@@ -274,7 +269,7 @@ block           : decl_list stmt_list
 			AST_NODE* stmt_list = makeChild(Allocate(STMT_LIST_NODE), $2);
 			makeFamily($$, 2, decl_list, stmt_list);
 		}
-                | stmt_list  
+                | stmt_list
 		{
 			$$ = Allocate(BLOCK_NODE);
 			makeChild($$, makeChild(Allocate(STMT_LIST_NODE), $1));
@@ -351,8 +346,10 @@ id_list		: ID
                 }
 		| id_list MK_COMMA ID dim_decl
                 {
-			printf("todo2\n");
-                    /*TODO*/
+			AST_NODE* array = makeIDNode($3, ARRAY_ID);
+			makeChild(array, $4);
+			$$ = $1;
+			makeSibling($$, array);
                 }
 		| ID dim_decl
                 {
@@ -466,8 +463,8 @@ stmt		: MK_LBRACE block MK_RBRACE
                 }
             	| var_ref OP_ASSIGN relop_expr MK_SEMICOLON
                 {
-			printf("todo3\n");
-                    /*TODO*/
+			$$ = makeStmtNode(ASSIGN_STMT);
+			makeFamily($$, 2, $1, $3);
                 }
 		| IF MK_LPAREN relop_factor MK_RPAREN stmt else_if_list
 		{
@@ -633,21 +630,21 @@ add_op		: OP_PLUS
 
 term		: term mul_op factor
                 {
-			printf("todo5\n");
-                    /*TODO*/
+			$$ = $2;
+			makeFamily($$, 2, $1, $3);
                 }
 		| factor
                 {
-                    $$ = $1;
+			$$ = $1;
                 };
 
 mul_op		: OP_TIMES
                 {
-                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_MUL);
+			$$ = makeExprNode(BINARY_OPERATION, BINARY_OP_MUL);
                 }
 		| OP_DIVIDE 
                 {
-                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_DIV);
+			$$ = makeExprNode(BINARY_OPERATION, BINARY_OP_DIV);
                 };
 
 factor		: MK_LPAREN relop_expr MK_RPAREN
@@ -669,18 +666,21 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
                 {
                         AST_NODE* CONST = Allocate(CONST_VALUE_NODE);
 			CONST->semantic_value.const1 = $2;
-			$$ = makeSibling(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), CONST);
+			$$ = makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION);
+			makeSibling($$, CONST);
                 }
             	| ID MK_LPAREN relop_expr_list MK_RPAREN 
                 {
-			printf("todo6\n");
-			/*TODO*/
+			$$ = makeStmtNode(FUNCTION_CALL_STMT);
+			makeFamily($$, 2, makeIDNode($1, NORMAL_ID), $3);
                 }
             	/*TODO: | -<function call> e.g. -f(4) */
             	| OP_NOT ID MK_LPAREN relop_expr_list MK_RPAREN
                 {
-			printf("todo7\n");
-			/*TODO*/
+			AST_NODE* func = makeStmtNode(FUNCTION_CALL_STMT);
+			makeFamily(func, 2, makeIDNode($2, NORMAL_ID), $4);
+			$$ = makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION);
+			makeSibling($$, func);
                 }
             	| var_ref 
                 {
@@ -689,8 +689,8 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
 		/*TODO: | -<var_ref> e.g. -var */
 		| OP_NOT var_ref 
                 {
-			printf("todo8\n");
-			/*TODO*/
+			$$ = makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION);
+			makeSibling($$, $2);
                 };
 
 var_ref		: ID 
@@ -699,19 +699,18 @@ var_ref		: ID
                 }
 		| ID dim_list 
                 {
-			printf("todo9\n");
-                    /*TODO*/
+			$$ = makeIDNode($1, ARRAY_ID);
+			makeChild($$, $2);
                 };
 
 dim_list	: dim_list MK_LB expr MK_RB 
                 {
-			printf("todo10\n");
-                    /*TODO*/
+			$$ = $1;
+			makeSibling($$, $3);
                 }
             	| MK_LB expr MK_RB
                 {
-			printf("todo11\n");
-                    /*TODO*/
+			$$ = $2;
                 };
 %%
 
