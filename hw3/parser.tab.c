@@ -1541,7 +1541,7 @@ yyreduce:
   case 6:
 #line 190 "parser.y" /* yacc.c:1646  */
     {
-                    (yyval.node) = makeSibling(makeChild(Allocate(VARIABLE_DECL_LIST_NODE), (yyvsp[-1].node)), (yyvsp[0].node));
+			(yyval.node) = makeSibling(makeChild(Allocate(VARIABLE_DECL_LIST_NODE), (yyvsp[-1].node)), (yyvsp[0].node));
                 }
 #line 1547 "parser.tab.c" /* yacc.c:1646  */
     break;
@@ -1549,7 +1549,7 @@ yyreduce:
   case 7:
 #line 194 "parser.y" /* yacc.c:1646  */
     {
-                    (yyval.node) = (yyvsp[0].node);
+                    	(yyval.node) = (yyvsp[0].node);
                 }
 #line 1555 "parser.tab.c" /* yacc.c:1646  */
     break;
@@ -1697,14 +1697,14 @@ yyreduce:
 #line 281 "parser.y" /* yacc.c:1646  */
     {
                         (yyval.node) = (yyvsp[-1].node);	/*?*/
-			makeSibling((yyval.node), (yyvsp[-1].node));
+			makeSibling((yyval.node), (yyvsp[0].node));
                 }
 #line 1703 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 25:
 #line 286 "parser.y" /* yacc.c:1646  */
-    {			/*?*/
+    {
                         (yyval.node) = (yyvsp[0].node);
                 }
 #line 1711 "parser.tab.c" /* yacc.c:1646  */
@@ -1747,8 +1747,8 @@ yyreduce:
   case 30:
 #line 311 "parser.y" /* yacc.c:1646  */
     {
-			(yyval.node) = (yyvsp[-2].node);
-			makeSibling((yyval.node), (yyvsp[-1].node));
+			(yyval.node) = makeDeclNode(VARIABLE_DECL);
+			makeFamily((yyval.node), 2, (yyvsp[-2].node), (yyvsp[-1].node));
 
                 }
 #line 1755 "parser.tab.c" /* yacc.c:1646  */

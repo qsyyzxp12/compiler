@@ -188,11 +188,11 @@ global_decl_list	: global_decl_list global_decl
 
 global_decl	: decl_list function_decl
                 {
-                    $$ = makeSibling(makeChild(Allocate(VARIABLE_DECL_LIST_NODE), $1), $2);
+			$$ = makeSibling(makeChild(Allocate(VARIABLE_DECL_LIST_NODE), $1), $2);
                 }
 	        | function_decl 
                 {
-                    $$ = $1;
+                    	$$ = $1;
                 };
 
 function_decl	: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE     
@@ -280,10 +280,10 @@ block           : decl_list stmt_list
 decl_list	: decl_list decl 
                 {
                         $$ = $1;	/*?*/
-			makeSibling($$, $1);
+			makeSibling($$, $2);
                 }
             	| decl 
-                {			/*?*/
+                {
                         $$ = $1;
                 };
 
@@ -309,8 +309,8 @@ type_decl 	: TYPEDEF type id_list MK_SEMICOLON
 
 var_decl	: type init_id_list MK_SEMICOLON 
                 {
-			$$ = $1;
-			makeSibling($$, $2);
+			$$ = makeDeclNode(VARIABLE_DECL);
+			makeFamily($$, 2, $1, $2);
 
                 }
             	| ID id_list MK_SEMICOLON
