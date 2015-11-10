@@ -169,53 +169,53 @@ static inline AST_NODE* makeExprNode(EXPR_KIND exprKind, int operationEnumValue)
 program		: global_decl_list 
 	 	{ 	
 	 		$$=Allocate(PROGRAM_NODE);  
-	 		makeChild($$,$1); prog=$$;
+	 		makeChild($$,$1); 
+			prog=$$;
 		}
 		| 
 		{ 
 			$$=Allocate(PROGRAM_NODE); prog=$$;
 		};
 
-global_decl_list: global_decl_list global_decl 
-                    {
-                        $$ = makeSibling($1, $2);
-                    }	
-                | global_decl
-                    {
-                        $$ = $1;
-                    }; 
+global_decl_list	: global_decl_list global_decl 
+                  	{
+				$$ = makeSibling($1, $2);
+                    	}	
+			| global_decl
+                    	{
+                        	$$ = $1;
+                    	}; 
 
 global_decl	: decl_list function_decl
                 {
                     $$ = makeSibling(makeChild(Allocate(VARIABLE_DECL_LIST_NODE), $1), $2);
                 }
-            | function_decl 
+	        | function_decl 
                 {
                     $$ = $1;
                 };
 
 function_decl	: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE     
-                    {
-                        $$ = makeDeclNode(FUNCTION_DECL);
+		{
+			$$ = makeDeclNode(FUNCTION_DECL);
                         AST_NODE* parameterList = Allocate(PARAM_LIST_NODE);
                         makeChild(parameterList, $4);
                         makeFamily($$, 4, $1, makeIDNode($2, NORMAL_ID), parameterList, $7);
-                    }
+		}
                 | VOID ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE      
-                    {
+		{
                         /*TODO*/
-                    }
+		}
                 | type ID MK_LPAREN  MK_RPAREN MK_LBRACE block MK_RBRACE 
-                    {
+		{
                         $$ = makeDeclNode(FUNCTION_DECL);
                         AST_NODE* emptyParameterList = Allocate(PARAM_LIST_NODE);
                         makeFamily($$, 4, $1, makeIDNode($2, NORMAL_ID), emptyParameterList, $6);
-                    }
+		}
                 | VOID ID MK_LPAREN  MK_RPAREN MK_LBRACE block MK_RBRACE 
-                    {
+		{
                         /*TODO*/
-                    } 
-                ;
+		};
 
 param_list	: param_list MK_COMMA  param 
                 {
@@ -298,16 +298,20 @@ decl		: type_decl
 
 type_decl 	: TYPEDEF type id_list MK_SEMICOLON  
                 {
-                    /*TODO*/
+			$$ = makeDeclNode(TYPE_DECL);
+			makeFamily($$, 2, $2, $3);
                 }
             	| TYPEDEF VOID id_list MK_SEMICOLON 
                 {
-                    /*TODO*/
+			$$ = makeDeclNode(TYPE_DECL);
+			makeFamily($$, 2, makeIDNode("void", NORMAL_ID), $3);
                 };
 
 var_decl	: type init_id_list MK_SEMICOLON 
                 {
-                    /*TODO*/
+			$$ = $1;
+			makeSibling($$, $2);
+
                 }
             	| ID id_list MK_SEMICOLON
                 {
@@ -339,66 +343,73 @@ id_list		: ID
                 }
 		| ID dim_decl
                 {
-                    /*TODO*/
+			$$ = makeIDNode($1, ARRAY_ID);
+			makeChild($$, $2);
                 };
 
 dim_decl	: MK_LB cexpr MK_RB 
                 {
-                    /*TODO*/
+			$$ = $2;
                 } 
-            	/*TODO: Try if you can define a recursive production rule
-            	| .......
-            	*/
-		;
+		| MK_LB cexpr MK_RB dim_decl
+		{
+			$$ = $2;
+			makeSibling($$, $4);
+		};
 
 cexpr		: cexpr OP_PLUS mcexpr 
                 {
-                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_ADD);
-                    makeFamily($$, 2, $1, $3);
+			$$ = makeExprNode(BINARY_OPERATION, BINARY_OP_ADD);
+			makeFamily($$, 2, $1, $3);
                 } /* This is for array declarations */ 
             	| cexpr OP_MINUS mcexpr
                 {
-                    /*TODO*/
+			$$ = makeExprNode(BINARY_OPERATION, BINARY_OP_SUB);
+			makeFamily($$, 2, $1, $3);
                 } 
             	| mcexpr 
                 {
-                    /*TODO*/
+			$$ = $1;
                 };
 
 mcexpr		: mcexpr OP_TIMES cfactor 
                 {
-                    /*TODO*/
+			$$ = makeExprNode(BINARY_OPERATION, BINARY_OP_MUL);
+			makeFamily($$, 2, $1, $3);
                 }
             	| mcexpr OP_DIVIDE cfactor 
                 {
-                    /*TODO*/
+			$$ = makeExprNode(BINARY_OPERATION, BINARY_OP_DIV);
+			makeFamily($$, 2, $1, $3);
                 }
             	| cfactor 
                 {
-                    /*TODO*/
+			$$ = $1;
                 };
         
 cfactor:	CONST 
                 {
-                    /*TODO*/
+			$$ = Allocate(CONST_VALUE_NODE);
+			$$->semantic_value.const1 = $1;
                 }
             	| MK_LPAREN cexpr MK_RPAREN 
                 {
-                    /*TODO*/
+			$$ = $2;
                 };
 
 init_id_list	: init_id 
 		{
-			/*TODO*/
+			$$ = $1;
 		}
                 | init_id_list MK_COMMA init_id 
                 {
-			/*TODO*/
+			$$ = $1;
+			makeSibling($$, $3);
 		};
 
 init_id		: ID 
                 {
-                    $$ = makeIDNode($1, NORMAL_ID);
+			$$ = makeIDNode($1, NORMAL_ID);
                 }
 		| ID dim_decl 
                 {
@@ -406,7 +417,8 @@ init_id		: ID
                 }
 		| ID OP_ASSIGN relop_expr 
                 {
-                    /*TODO*/
+			$$ = makeIDNode($1, NORMAL_ID);
+			makeChild($$, $3);
                 };
 
 stmt_list	: stmt_list stmt 
@@ -477,7 +489,7 @@ else_if_list		: ELSE IF MK_LPAREN relop_factor MK_RPAREN stmt else_if_list
 			|
 			{
 				$$ = Allocate(NUL_NODE);
-			}
+			};
 
 assign_expr_list	: nonempty_assign_expr_list 
                      	{
@@ -690,6 +702,7 @@ int argc;
 char *argv[];
 {
 	yyin = fopen(argv[1],"r");
+	printf("Start parsing\n");
 	yyparse();
 	printf("%s\n", "Parsing completed. No errors found.");
 	printGV(prog, NULL);
