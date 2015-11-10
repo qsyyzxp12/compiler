@@ -156,7 +156,7 @@ static inline AST_NODE* makeExprNode(EXPR_KIND exprKind, int operationEnumValue)
 
 %type <node> program global_decl_list global_decl function_decl block stmt_list decl_list decl var_decl type init_id_list init_id  stmt relop_expr relop_term relop_factor expr term factor var_ref
 %type <node> param_list param dim_fn expr_null id_list dim_decl cexpr mcexpr cfactor assign_expr_list test assign_expr rel_op relop_expr_list nonempty_relop_expr_list
-%type <node> add_op mul_op dim_list type_decl nonempty_assign_expr_list
+%type <node> add_op mul_op dim_list type_decl nonempty_assign_expr_list else_if_list
 
 
 %start program
@@ -423,7 +423,16 @@ stmt		: MK_LBRACE block MK_RBRACE
                 {
                 	$$ = $2;
                 }
-            	/*TODO: | While Statement */
+            	| WHILE MK_LPAREN expr MK_RPAREN stmt
+		{
+			$$ = makeStmtNode(WHILE_STMT);
+			makeFamily($$, 2, $3, $5);
+		}
+            	| WHILE MK_LPAREN relop_expr_list MK_RPAREN stmt
+		{
+			$$ = makeStmtNode(WHILE_STMT);
+			makeFamily($$, 2, $3, $5);
+		}
             	| FOR MK_LPAREN assign_expr_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt
                 {
                 	$$ = makeStmtNode(FOR_STMT);
@@ -433,12 +442,14 @@ stmt		: MK_LBRACE block MK_RBRACE
                 {
                     /*TODO*/
                 }
-		/*TODO: | If Statement */
-		/*TODO: | If then else */
+		| IF MK_LPAREN relop_factor MK_RPAREN stmt else_if_list
+		{
+			$$ = makeStmtNode(IF_STMT);
+			makeFamily($$, 3, $3, $5, $6);
+		}
             	| ID MK_LPAREN relop_expr_list MK_RPAREN MK_SEMICOLON
 		{
 			$$ = makeStmtNode(FUNCTION_CALL_STMT);
-			AST_NODE* params = Allocate();
 			makeFamily($$, 2, makeIDNode($1, NORMAL_ID), $3);
 		}
             	| MK_SEMICOLON 
@@ -453,6 +464,20 @@ stmt		: MK_LBRACE block MK_RBRACE
                 {
                     /*TODO*/
                 };
+
+else_if_list		: ELSE IF MK_LPAREN relop_factor MK_RPAREN stmt else_if_list
+	      		{
+				$$ = makeStmtNode(IF_STMT);
+				makeFamily($$, 3, $4, $6, $7);
+			}
+			| ELSE stmt
+			{
+				$$ = $2;
+			}
+			|
+			{
+				$$ = Allocate(NUL_NODE);
+			}
 
 assign_expr_list	: nonempty_assign_expr_list 
                      	{
