@@ -8,7 +8,7 @@ LIBS = -lfl
 
 parser: parser.tab.o alloc.o functions.o
 	$(CC) -o $(TARGET) parser.tab.o alloc.o functions.o $(LIBS)
-	rm -f *.o
+	rm -f $(OBJECT)
 
 test:
 	./parser test.c
@@ -30,5 +30,4 @@ functions.o: functions.c
 	$(CC) -c functions.c
 
 clean:
-	rm -f $(TARGET) $(OBJECT)
-
+	rm -f $(TARGET) test.c result.png
