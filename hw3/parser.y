@@ -456,6 +456,7 @@ stmt		: MK_LBRACE block MK_RBRACE
                 }
 		| IF MK_LPAREN relop_factor MK_RPAREN stmt else_if_list
 		{
+			printf("1\n");
 			$$ = makeStmtNode(IF_STMT);
 			makeFamily($$, 3, $3, $5, $6);
 		}
@@ -477,12 +478,7 @@ stmt		: MK_LBRACE block MK_RBRACE
                     /*TODO*/
                 };
 
-else_if_list		: ELSE IF MK_LPAREN relop_factor MK_RPAREN stmt else_if_list
-	      		{
-				$$ = makeStmtNode(IF_STMT);
-				makeFamily($$, 3, $4, $6, $7);
-			}
-			| ELSE stmt
+else_if_list		: ELSE stmt
 			{
 				$$ = $2;
 			}
@@ -542,7 +538,7 @@ relop_term	: relop_factor
                 }
             	| relop_term OP_AND relop_factor
                 {
-                	$$ = makeExprNode(BINARY_OPERATION, BINARY_OP_ADD);
+                	$$ = makeExprNode(BINARY_OPERATION, BINARY_OP_AND);
 			makeFamily($$, 2, $1, $3);
                 };
 
@@ -602,7 +598,8 @@ nonempty_relop_expr_list	: nonempty_relop_expr_list MK_COMMA relop_expr
 
 expr		: expr add_op term 
                 {
-                    /*TODO*/
+			$$ = $2;
+			makeFamily($$, 2, $1, $3);
                 }
             	| term 
                 {
