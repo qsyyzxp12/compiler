@@ -8,9 +8,9 @@ LIBS = -lfl
 
 parser: parser.tab.o alloc.o functions.o
 	$(CC) -o $(TARGET) parser.tab.o alloc.o functions.o $(LIBS)
+	rm -f *.o
 
 test:
-	rm -f *~
 	./parser test.c
 	dot AST_Graph.gv -T png -o result.png
 

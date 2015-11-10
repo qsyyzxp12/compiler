@@ -451,11 +451,6 @@ stmt		: MK_LBRACE block MK_RBRACE
 			$$ = makeStmtNode(WHILE_STMT);
 			makeFamily($$, 2, $3, $5);
 		}
-            	| WHILE MK_LPAREN relop_expr_list MK_RPAREN stmt
-		{
-			$$ = makeStmtNode(WHILE_STMT);
-			makeFamily($$, 2, $3, $5);
-		}
             	| FOR MK_LPAREN assign_expr_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt
                 {
                 	$$ = makeStmtNode(FOR_STMT);
@@ -651,7 +646,10 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
                 {
 			$$ = $2;
                 }
-            	/*TODO: | -(<relop_expr>) e.g. -(4) */
+		| OP_MINUS MK_LPAREN relop_expr MK_RPAREN
+		{
+			$$ = makeSibling(makeExprNode(UNARY_OPERATION, UNARY_OP_NEGATIVE), $3);
+		}
             	| OP_NOT MK_LPAREN relop_expr MK_RPAREN
                 {
 			$$ = makeSibling(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), $3);
@@ -661,7 +659,13 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
 			$$ = Allocate(CONST_VALUE_NODE);
 			$$->semantic_value.const1 = $1;
                 }
-            	/*TODO: | -<constant> e.g. -4 */
+		| OP_MINUS CONST
+		{
+			$$ = makeExprNode(UNARY_OPERATION, UNARY_OP_NEGATIVE);
+			AST_NODE* CONST = Allocate(CONST_VALUE_NODE);
+			CONST->semantic_value.const1 = $2;
+			makeSibling($$, CONST);
+		}
             	| OP_NOT CONST
                 {
                         AST_NODE* CONST = Allocate(CONST_VALUE_NODE);
@@ -674,7 +678,13 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
 			$$ = makeStmtNode(FUNCTION_CALL_STMT);
 			makeFamily($$, 2, makeIDNode($1, NORMAL_ID), $3);
                 }
-            	/*TODO: | -<function call> e.g. -f(4) */
+		| OP_MINUS ID MK_LPAREN relop_expr_list MK_RPAREN
+		{
+			AST_NODE* func = makeStmtNode(FUNCTION_CALL_STMT);
+			makeFamily(func, 2, makeIDNode($2, NORMAL_ID), $4);
+			$$ = makeExprNode(UNARY_OPERATION, UNARY_OP_NEGATIVE);
+			makeSibling($$, func);
+		}
             	| OP_NOT ID MK_LPAREN relop_expr_list MK_RPAREN
                 {
 			AST_NODE* func = makeStmtNode(FUNCTION_CALL_STMT);
@@ -686,7 +696,11 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
                 {
 			$$ = $1;
                 }
-		/*TODO: | -<var_ref> e.g. -var */
+		| OP_MINUS var_ref
+		{
+			$$ = makeExprNode(UNARY_OPERATION, UNARY_OP_NEGATIVE);
+			makeSibling($$, $2);
+		}
 		| OP_NOT var_ref 
                 {
 			$$ = makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION);
@@ -720,7 +734,6 @@ int argc;
 char *argv[];
 {
 	yyin = fopen(argv[1],"r");
-	printf("Start parsing\n");
 	yyparse();
 	printf("%s\n", "Parsing completed. No errors found.");
 	printGV(prog, NULL);
