@@ -1,0 +1,58 @@
+* find all violations of type rules in a given test program
+should not stop at the first violation found
+the function header always appear before any call to the function.
+* output format
+** correct
+"Parsing completed. No errors found."
+** violation
+"Error found in line# "
+<Additional error message>
+* Type Conversion
+will be enforced in the code generation phase, no need to do.
+** a. Assignment Conversions
+*** the types of the expressions on the left and right sides should be the same
+*** If they are not, try to convert right type to left type
+*** you can simply assume such conversion will be enforced in code generation(???)
+** b. Binary Conversions
+*** integer value must be converted to the float type first
+** c. Function Arguments Conversions
+*** When function call's type different to function declaration, value should be converted before pass to function
+* Error Format
+** 1. Variable declarations
+*** Every variable must be declared explicitly
+message: "ID <name> undeclared."
+*** A name (a variable, a function or a type) cannot be declared more than once in the same scope (global or local)
+message: "ID <name> redeclared."
+** 2. Functions and function calls
+*** A call to a function must use the correct number of parameters.
+message: “Too few arguments to function <name>.”    “Too many arguments to function <name>.”
+*** A function must return a value of the defined type
+message: “Incompatible return type.” 
+Should be a warning message rather than an error message since C supports type coercion for function returns
+** 3. Array references
+*** Array references, except for actual parameters in function calls, must match their declared dimensions.
+message: "Incompatible array dimensions."
+*** There is no need to check for array bounds. However, the array index expression must be integer.
+message: "Array subscript is not an integer” 
+*** An array name cannot be passed to a scalar formal parameter, and a scalar variable cannot be passed to an array formal parameter.
+message: "Array <name> passed to scalar parameter <name>." or "Scalar <name> passed to array parameter <name>."
+
+int funct1(int a[][10]) { …}
+int funct2(int a) { …}
+
+int i,j,k,a[10][10][10], x[10];
+
+i = funct1(x[j][5]);
+/* Array reference x[j][5] is invalid */
+
+j = funct1(a[0][1][1]);
+/* passing an array element (i.e. a scalar) to funct1(). Since funct1() is expecting an array parameter,
+this is a type mismatch and an ERROR */
+** Any additional type errors that you catch and reported will be counted as extra credits
+you must specify what additional type checkings you have done, and attach test cases for that
+
+* misc
+** identifier names -- not exceed 64 characters
+** distinct identifiers -- unlimited
+
+
