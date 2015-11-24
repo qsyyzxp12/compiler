@@ -1,14 +1,15 @@
-* find all violations of type rules in a given test program
+* find semenatic errors
 should not stop at the first violation found
-the function header always appear before any call to the function.
+the function header always appear before calling
 * output format
-** correct
+** correct(ok)
 "Parsing completed. No errors found."
-** violation
+** violation(ok)
 "Error found in line# "
 <Additional error message>
 * Type Conversion
-will be enforced in the code generation phase, no need to do.
+will be enforced in the code generation phase
+no need to do in this homework.
 ** a. Assignment Conversions
 *** the types of the expressions on the left and right sides should be the same
 *** If they are not, try to convert right type to left type
@@ -18,18 +19,18 @@ will be enforced in the code generation phase, no need to do.
 ** c. Function Arguments Conversions
 *** When function call's type different to function declaration, value should be converted before pass to function
 * Error Format
-** 1. Variable declarations
+** 1. Variable declarations(ok, test)
 *** Every variable must be declared explicitly
 message: "ID <name> undeclared."
 *** A name (a variable, a function or a type) cannot be declared more than once in the same scope (global or local)
 message: "ID <name> redeclared."
-** 2. Functions and function calls
-*** A call to a function must use the correct number of parameters.
+** 2. Functions and function calls(ok, test)
+*** correct number of function parameters
 message: “Too few arguments to function <name>.”    “Too many arguments to function <name>.”
-*** A function must return a value of the defined type
+*** return a value of the defined type
 message: “Incompatible return type.” 
 Should be a warning message rather than an error message since C supports type coercion for function returns
-** 3. Array references
+** 3. Array references(ok, test)
 *** Array references, except for actual parameters in function calls, must match their declared dimensions.
 message: "Incompatible array dimensions."
 *** There is no need to check for array bounds. However, the array index expression must be integer.
@@ -48,9 +49,8 @@ i = funct1(x[j][5]);
 j = funct1(a[0][1][1]);
 /* passing an array element (i.e. a scalar) to funct1(). Since funct1() is expecting an array parameter,
 this is a type mismatch and an ERROR */
-** Any additional type errors that you catch and reported will be counted as extra credits
-you must specify what additional type checkings you have done, and attach test cases for that
-
+** Bonus: Any additional type errors 
+you must specify and attach test cases
 * misc
 ** identifier names -- not exceed 64 characters
 ** distinct identifiers -- unlimited
