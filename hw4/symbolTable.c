@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-// This file is for reference only, you are not required to follow the implementation. //
 
 int HASH(char * str) {
 	int idx=0;
@@ -22,35 +21,33 @@ SymbolTableEntry* newSymbolTableEntry(int nestingLevel)
     symbolTableEntry->nextInHashChain = NULL;
     symbolTableEntry->prevInHashChain = NULL;
     symbolTableEntry->nextInSameLevel = NULL;
-    symbolTableEntry->sameNameInOuterLevel = NULL;
+    //symbolTableEntry->sameNameInOuterLevel = NULL;
     symbolTableEntry->attribute = NULL;
     symbolTableEntry->name = NULL;
     symbolTableEntry->nestingLevel = nestingLevel;
     return symbolTableEntry;
 }
 
-void removeFromHashTrain(int hashIndex, SymbolTableEntry* entry)
-{
+void removeFromHashTrain(int hashIndex, SymbolTableEntry* entry){
+  
 }
 
-void enterIntoHashTrain(int hashIndex, SymbolTableEntry* entry)
-{
+void enterIntoHashTrain(int hashIndex, SymbolTableEntry* entry){
+  
 }
 
-void initializeSymbolTable()
-{
+void initializeSymbolTable(){//clear all
+  
 }
 
-void symbolTableEnd()
-{
+void symbolTableEnd(){
 }
 
-SymbolTableEntry* retrieveSymbol(char* symbolName)
-{
+SymbolTableEntry* retrieveSymbol(char* symbolName){
+  
 }
 
-SymbolTableEntry* enterSymbol(char* symbolName, SymbolAttribute* attribute)
-{
+SymbolTableEntry* enterSymbol(char* symbolName, SymbolAttribute* attribute){
 }
 
 //remove the symbol from the current scope
