@@ -51,7 +51,7 @@ typedef struct Parameter
     char* parameterName;
 } Parameter;
 
-typedef struct FunctionSignature
+typedef struct FunctionSignature//???
 {
     int parametersCount;
     Parameter* parameterList;
@@ -74,7 +74,7 @@ typedef struct SymbolTableEntry // a link list
     struct SymbolTableEntry* nextInHashChain;
     struct SymbolTableEntry* prevInHashChain;
     struct SymbolTableEntry* nextInSameLevel;
-    struct SymbolTableEntry* sameNameInOuterLevel;
+  //struct SymbolTableEntry* sameNameInOuterLevel;
 
     char* name;
     SymbolAttribute* attribute;

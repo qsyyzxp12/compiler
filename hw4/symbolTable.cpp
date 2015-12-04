@@ -23,7 +23,7 @@ SymbolTable symbolTable;
 
 SymbolTableEntry* newSymbolTableEntry(int currentLevel)
 {
-    SymbolTableEntry* symbolTableEntry = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry));
+    SymbolTableEntry* symbolTableEntry = new SymbolTableEntry;
     symbolTableEntry->nextInHashChain = NULL;
     symbolTableEntry->prevInHashChain = NULL;
     symbolTableEntry->nextInSameLevel = NULL;
@@ -60,15 +60,35 @@ void enterIntoHashTrain(int hashIndex, SymbolTableEntry* entry){//???
   }
 }
 
+void initReservedID();
 #define INITIAL_SCOPE_NUM 5
 void initializeSymbolTable(){
-  symbolTable.currentLevel = 0;
+  symbolTable.currentLevel = 0;//set global = 0
   for(int i = 0; i < HASH_TABLE_SIZE; i++)//256
     symbolTable.hashTable[i] = NULL;
   symbolTable.scopeDisplay.resize(INITIAL_SCOPE_NUM);
   for(int i = 0; i < INITIAL_SCOPE_NUM; i++)
     symbolTable.scopeDisplay[i] = NULL;
+
+  initReservedID();
 }
+void makeEntry(char* name, DATA_TYPE type){
+  SymbolTableEntry* entry = newSymbolTableEntry(0);//TODO: needs to be the global level
+  entry->name = name;
+  entry->attribute = new SymbolAttribute;
+  entry->attribute->attributeKind = TYPE_ATTRIBUTE;
+  TypeDescriptor* td = new TypeDescriptor;
+  td->kind = SCALAR_TYPE_DESCRIPTOR;//i think it's non-array...
+  td->properties.dataType = type;
+  entry->attribute->attr.typeDescriptor = td;
+  enterIntoHashTrain(HASH(entry->name), entry);
+}
+void initReservedID(){//if no this, void, int, double... is undeclared
+  //void int float 
+  makeEntry("int", INT_TYPE);
+  makeEntry("void", VOID_TYPE);
+  makeEntry("float", FLOAT_TYPE);
+  }
 
 void symbolTableEnd(){
   symbolTable.scopeDisplay.clear();
@@ -78,7 +98,7 @@ void symbolTableEnd(){
       while(hashentry != NULL){
 	SymbolTableEntry* todelete = hashentry;
 	hashentry = hashentry->nextInHashChain;
-	free(todelete);
+	delete todelete;
       }
     }
   }
