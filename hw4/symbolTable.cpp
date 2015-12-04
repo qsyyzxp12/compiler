@@ -91,7 +91,8 @@ SymbolTableEntry* retrieveSymbol(char* symbolName){
       return hashentry;
     hashentry = hashentry->nextInHashChain;
   }
-  return NULL;//undeclared error
+  fprintf(stderr, "redeclare error\n");//ERROR:
+  return NULL;
 }
 
 SymbolTableEntry* enterSymbol(char* symbolName, SymbolAttribute* attribute){
@@ -100,8 +101,9 @@ SymbolTableEntry* enterSymbol(char* symbolName, SymbolAttribute* attribute){
   
   while(hashentry != NULL){
     if(strcmp(hashentry->name, symbolName) == 0)
-      if(symbolTable.currentLevel == hashentry->currentLevel){
-	//TODO: redeclare error
+      if(symbolTable.currentLevel == hashentry->currentLevel){	// ERROR: redeclare error
+	fprintf(stderr, "redeclare error\n");
+	return NULL;
       }
     hashentry = hashentry->nextInHashChain;
   }
@@ -128,7 +130,7 @@ void removeSymbol(char* symbolName){
     }
     hashentry = hashentry->nextInHashChain;
   }
-  //TODO: not found error?
+  fprintf(stderr, "remove symbol not found error\n");//ERROR:
 }
 
 int declaredLocally(char* symbolName){//is declared in current scope or not
@@ -142,10 +144,14 @@ int declaredLocally(char* symbolName){//is declared in current scope or not
 
 void openScope(){
   symbolTable.currentLevel++;
-  if(symbolTable.currentLevel >= symbolTable.scopeDisplay.size()){
-    symbolTable.scopeDisplay.resize(symbolTable.currentLevel+1);//TODO: is newly resize entry = NULL?
-  }
-  symbolTable.scopeDisplay[symbolTable.currentLevel] = NULL;//new scope instead
+  int originalLevelNum = symbolTable.scopeDisplay.size();
+  if(symbolTable.currentLevel >= originalLevelNum){
+    symbolTable.scopeDisplay.resize(symbolTable.currentLevel+1);
+    for(int i = originalLevelNum+1; i < symbolTable.currentLevel+1; i++){
+      symbolTable.scopeDisplay[i] = NULL;
+    }
+  } else 
+    symbolTable.scopeDisplay[symbolTable.currentLevel] = NULL;//new scope instead//TODO: null??
 }
 
 void closeScope(){//revert to previous scope
