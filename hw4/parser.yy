@@ -7,6 +7,11 @@
 #include <stdarg.h>
 #include "header.h"
 #include "symbolTable.h"
+extern "C" int yylex();
+extern "C" int yyparse();
+extern "C" FILE *yyin;
+int yyerror(char *s);
+
 int linenumber = 1;
 AST_NODE *prog;
 
@@ -96,9 +101,9 @@ static inline AST_NODE* makeExprNode(EXPR_KIND exprKind, int operationEnumValue)
     exprNode->semantic_value.exprSemanticValue.isConstEval = 0;
     exprNode->semantic_value.exprSemanticValue.kind = exprKind;
     if (exprKind == BINARY_OPERATION) {
-        exprNode->semantic_value.exprSemanticValue.op.binaryOp = operationEnumValue;
+      exprNode->semantic_value.exprSemanticValue.op.binaryOp = (BINARY_OPERATOR)(operationEnumValue);
     } else if (exprKind == UNARY_OPERATION) {
-        exprNode->semantic_value.exprSemanticValue.op.unaryOp = operationEnumValue;
+      exprNode->semantic_value.exprSemanticValue.op.unaryOp = (UNARY_OPERATOR)(operationEnumValue);
     } else {
         printf("Error in static inline AST_NODE* makeExprNode(EXPR_KIND exprKind, int operationEnumValue)\n");
     }
@@ -763,9 +768,10 @@ dim_list	: dim_list MK_LB expr MK_RB
 %%
 
 #include "lex.yy.c"
-main (argc, argv)
-int argc;
-char *argv[];
+
+main (int argc, char* argv[])
+//int argc;
+//char *argv[];
   {
      yyin = fopen(argv[1],"r");
      yyparse();
@@ -782,8 +788,8 @@ char *argv[];
   } /* main */
 
 
-int yyerror (mesg)
-char *mesg;
+int yyerror (char* mesg)
+//char *mesg;
   {
   printf("%s\t%d\t%s\t%s\n", "Error found in Line ", linenumber, "next token: ", yytext );
   exit(1);

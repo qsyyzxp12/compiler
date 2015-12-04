@@ -2,8 +2,7 @@
 #define __SYMBOL_TABLE_H__
 
 #include "header.h"
-// This file is for reference only, you are not required to follow the implementation. //
-
+#include <vector>
 
 //SYMBOL_TABLE_PREINSERT_NAME
 #define SYMBOL_TABLE_INT_NAME "int"
@@ -12,7 +11,6 @@
 #define SYMBOL_TABLE_SYS_LIB_READ "read"
 #define SYMBOL_TABLE_SYS_LIB_FREAD "fread"
 #define HASH_TABLE_SIZE 256
-
 
 typedef enum SymbolAttributeKind
 {
@@ -71,7 +69,7 @@ typedef struct SymbolAttribute
     } attr;
 } SymbolAttribute;
 
-typedef struct SymbolTableEntry
+typedef struct SymbolTableEntry // a link list
 {
     struct SymbolTableEntry* nextInHashChain;
     struct SymbolTableEntry* prevInHashChain;
@@ -80,18 +78,18 @@ typedef struct SymbolTableEntry
 
     char* name;
     SymbolAttribute* attribute;
-    int nestingLevel;
+    int currentLevel;
 
 } SymbolTableEntry;
 
 typedef struct SymbolTable
 {
     SymbolTableEntry* hashTable[HASH_TABLE_SIZE];
-    SymbolTableEntry** scopeDisplay;
+  std::vector<SymbolTableEntry*> scopeDisplay;
+  //SymbolTableEntry** scopeDisplay;
     int currentLevel;
-    int scopeDisplayElementCount;
+  //    int scopeDisplayElementCount;
 } SymbolTable;
-
 
 void initializeSymbolTable();
 void symbolTableEnd();
