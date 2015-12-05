@@ -114,10 +114,18 @@ static inline AST_NODE* makeExprNode(EXPR_KIND exprKind, int operationEnumValue)
 
 
 
+//how about float?
+/*
+	List *list;
+	ArrayInfo *arr_info;
+	VarRef *var_ref;
+*/
 %union{
 	char *lexeme;
 	CON_Type  *const1;
 	AST_NODE  *node;
+	int num;
+
 };
 
 %token <lexeme>ID

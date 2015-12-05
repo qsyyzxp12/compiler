@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+
 /*
   12/4:
   1. doesn't implement sameNameInOuterLevel
@@ -35,7 +37,7 @@ SymbolTableEntry* newSymbolTableEntry(int currentLevel)
 
 #define isHead(a) (a->prevInHashChain == NULL)
 #define isEnd(a) (a->nextInHashChain == NULL)
-void removeFromHashTrain(int hashIndex, SymbolTableEntry* entry){
+void removeFromHashTrain(int hashIndex, SymbolTableEntry* entry){//do not delete
   if(isHead(entry) && isEnd(entry)){
     symbolTable.hashTable[hashIndex] = NULL;
   } else if(isHead(entry)){
@@ -51,16 +53,17 @@ void removeFromHashTrain(int hashIndex, SymbolTableEntry* entry){
   return;
 }
 
-void enterIntoHashTrain(int hashIndex, SymbolTableEntry* entry){//???
+void enterIntoHashTrain(int hashIndex, SymbolTableEntry* entry){
   SymbolTableEntry* hashentry = symbolTable.hashTable[hashIndex];
-  symbolTable.hashTable[hashIndex] = entry;
   if(hashentry != NULL){
-    hashentry->prevInHashChain = entry;
-    entry->nextInHashChain = hashentry;
-  }
+     hashentry->prevInHashChain = entry;
+     entry->nextInHashChain = hashentry;
+  }     
+  symbolTable.hashTable[hashIndex] = entry;
 }
 
 void initReservedID();
+void enterEntry(char* name, DATA_TYPE type, int level);
 #define INITIAL_SCOPE_NUM 5
 void initializeSymbolTable(){
   symbolTable.currentLevel = 0;//set global = 0
@@ -72,57 +75,62 @@ void initializeSymbolTable(){
 
   initReservedID();
 }
-void makeEntry(char* name, DATA_TYPE type){
-  SymbolTableEntry* entry = newSymbolTableEntry(0);//TODO: needs to be the global level
+#define GLOBAL_SCOPE_LEVEL 0
+void initReservedID(){//if no this, void, int, double... is undeclared
+  //void int float //TODO: if else return while for main 
+  enterEntry("int", INT_TYPE, GLOBAL_SCOPE_LEVEL);
+  enterEntry("void", VOID_TYPE, GLOBAL_SCOPE_LEVEL);
+  enterEntry("float", FLOAT_TYPE, GLOBAL_SCOPE_LEVEL);
+}
+void enterEntry(char* name, DATA_TYPE type, int level){
+  SymbolTableEntry* entry = newSymbolTableEntry(level);
   entry->name = name;
   entry->attribute = new SymbolAttribute;
   entry->attribute->attributeKind = TYPE_ATTRIBUTE;
+
   TypeDescriptor* td = new TypeDescriptor;
-  td->kind = SCALAR_TYPE_DESCRIPTOR;//i think it's non-array...
+  td->kind = SCALAR_TYPE_DESCRIPTOR;//non-array...
   td->properties.dataType = type;
   entry->attribute->attr.typeDescriptor = td;
-  enterIntoHashTrain(HASH(entry->name), entry);
+  
+  enterSymbol(entry->name, entry->attribute);
 }
-void initReservedID(){//if no this, void, int, double... is undeclared
-  //void int float 
-  makeEntry("int", INT_TYPE);
-  makeEntry("void", VOID_TYPE);
-  makeEntry("float", FLOAT_TYPE);
-  }
 
 void symbolTableEnd(){
   symbolTable.scopeDisplay.clear();
   for(int i = 0; i < HASH_TABLE_SIZE; i++){
-    if(symbolTable.hashTable[i] != NULL){
-      SymbolTableEntry* hashentry = symbolTable.hashTable[i];
-      while(hashentry != NULL){
-	SymbolTableEntry* todelete = hashentry;
-	hashentry = hashentry->nextInHashChain;
-	delete todelete;
-      }
+    SymbolTableEntry* hashentry = symbolTable.hashTable[i];
+    while(hashentry != NULL){
+      SymbolTableEntry* todelete = hashentry;
+      hashentry = hashentry->nextInHashChain;
+      delete todelete;
     }
   }
 }
 
 SymbolTableEntry* retrieveSymbol(char* symbolName){
-  SymbolTableEntry* hashentry = symbolTable.hashTable[HASH(symbolName)];
-  while(hashentry != NULL){
-    if(strcmp(symbolName, hashentry->name) == 0)
-      return hashentry;
-    hashentry = hashentry->nextInHashChain;
+  fprintf(stderr, "try to retrieve %s\n", symbolName);
+  for(int i = symbolTable.currentLevel; i >= 0; i--){//from the most closest scope, search the name
+    SymbolTableEntry* hashentry = symbolTable.scopeDisplay[i];
+    while(hashentry != NULL){
+      if(strcmp(symbolName, hashentry->name) == 0)//don't check level because it can use previous level variable
+	return hashentry;
+      hashentry = hashentry->nextInSameLevel;
+    }
   }
-  fprintf(stderr, "redeclare error\n");//ERROR:
+  //TODO:undeclared
   return NULL;
 }
 
 SymbolTableEntry* enterSymbol(char* symbolName, SymbolAttribute* attribute){
+  fprintf(stderr, "enter symbol %s in level %d\n", symbolName, symbolTable.currentLevel);
   int hashValue = HASH(symbolName);
   SymbolTableEntry* hashentry = symbolTable.hashTable[hashValue];
-  
+
   while(hashentry != NULL){
     if(strcmp(hashentry->name, symbolName) == 0)
-      if(symbolTable.currentLevel == hashentry->currentLevel){	// ERROR: redeclare error
-	fprintf(stderr, "redeclare error\n");
+      if(symbolTable.currentLevel == hashentry->currentLevel){
+	fprintf(stderr, "ERROR:redeclare error\n");
 	return NULL;
       }
     hashentry = hashentry->nextInHashChain;
@@ -140,46 +148,77 @@ SymbolTableEntry* enterSymbol(char* symbolName, SymbolAttribute* attribute){
 }
 
 //TODO: use c++ class to rewrite
-void removeSymbol(char* symbolName){
+void removeSymbol(char* symbolName){//only works in currentLevel
   int hashValue = HASH(symbolName);
   SymbolTableEntry* hashentry = symbolTable.hashTable[hashValue];
+  bool isFound = false;
+
+  //remove in hashtable
   while(hashentry != NULL){
     if((strcmp(symbolName, hashentry->name) == 0) && symbolTable.currentLevel == hashentry->currentLevel){
       removeFromHashTrain(hashValue, hashentry);
-      return;
+      isFound = true;
+      break;
     }
     hashentry = hashentry->nextInHashChain;
   }
-  fprintf(stderr, "remove symbol not found error\n");//ERROR:
+  if(!isFound)
+    fprintf(stderr, "ERROR: try to remove inexist symbol\n");
+
+  //remove in scope
+  SymbolTableEntry* scopeEntry = symbolTable.scopeDisplay[symbolTable.currentLevel];
+  isFound = false;
+  SymbolTableEntry* prevScopeEntry = NULL;
+  SymbolTableEntry* toRemove = NULL;
+  while(scopeEntry != NULL){
+    if(strcmp(symbolName, scopeEntry->name) == 0){
+      if(prevScopeEntry == NULL){//head
+	symbolTable.scopeDisplay[symbolTable.currentLevel] = scopeEntry->nextInSameLevel;
+      } else {
+	prevScopeEntry->nextInSameLevel = scopeEntry->nextInSameLevel;
+      }
+      toRemove = scopeEntry;
+      isFound = true;
+      break;
+    }
+    prevScopeEntry = scopeEntry;
+    scopeEntry = scopeEntry->nextInSameLevel;
+  }
+  if(!isFound)
+    fprintf(stderr, "ERROR: try to remove inexist symbol\n");
+
+  delete toRemove;//TODO: need to remove pointer in substructure?
 }
 
-int declaredLocally(char* symbolName){//is declared in current scope or not
+bool declaredLocally(char* symbolName){//is declared in current scope or not
   int hashValue = HASH(symbolName);
   SymbolTableEntry* hashentry = symbolTable.hashTable[hashValue];
-  while(hashentry != NULL)
+  while(hashentry != NULL){
     if((strcmp(hashentry->name, symbolName) == 0) && hashentry->currentLevel == symbolTable.currentLevel)
-      return 1;
-  return 0;
+      return true;
+    hashentry = hashentry->nextInHashChain;
+  }
+  return false;
 }
 
 void openScope(){
   symbolTable.currentLevel++;
   int originalLevelNum = symbolTable.scopeDisplay.size();
-  if(symbolTable.currentLevel >= originalLevelNum){
+  if(symbolTable.currentLevel > originalLevelNum){
     symbolTable.scopeDisplay.resize(symbolTable.currentLevel+1);
-    for(int i = originalLevelNum+1; i < symbolTable.currentLevel+1; i++){
+    for(int i = originalLevelNum; i < symbolTable.currentLevel+1; i++)
       symbolTable.scopeDisplay[i] = NULL;
-    }
-  } else 
-    symbolTable.scopeDisplay[symbolTable.currentLevel] = NULL;//new scope instead//TODO: null??
+  } else {
+    symbolTable.scopeDisplay[symbolTable.currentLevel] = NULL;//new empty scope instead
+  }
 }
 
 void closeScope(){//revert to previous scope
   SymbolTableEntry* hashentry = symbolTable.scopeDisplay[symbolTable.currentLevel];
   symbolTable.scopeDisplay[symbolTable.currentLevel] = NULL;
   while(hashentry != NULL){
-    removeFromHashTrain(HASH(hashentry->name), hashentry);
-    hashentry = hashentry->nextInSameLevel;//!!
+    removeFromHashTrain(HASH(hashentry->name), hashentry);//remove from current symboltable
+    hashentry = hashentry->nextInSameLevel;
   }
   symbolTable.currentLevel--;
 }

@@ -28,8 +28,7 @@ typedef enum TypeDescriptorKind
 typedef struct ArrayProperties
 {
     int dimension;
-    int sizeInEachDimension[MAX_ARRAY_DIMENSION];
-    //point to a TypeDescriptor in the symbol table;
+  int sizeInEachDimension[MAX_ARRAY_DIMENSION];//TODO: use pointer to unlimited dimension of array
     DATA_TYPE elementType;
 } ArrayProperties;
 
@@ -69,7 +68,7 @@ typedef struct SymbolAttribute
     } attr;
 } SymbolAttribute;
 
-typedef struct SymbolTableEntry // a link list
+typedef struct SymbolTableEntry
 {
     struct SymbolTableEntry* nextInHashChain;
     struct SymbolTableEntry* prevInHashChain;
@@ -79,7 +78,6 @@ typedef struct SymbolTableEntry // a link list
     char* name;
     SymbolAttribute* attribute;
     int currentLevel;
-
 } SymbolTableEntry;
 
 typedef struct SymbolTable
@@ -96,7 +94,7 @@ void symbolTableEnd();
 SymbolTableEntry* retrieveSymbol(char* symbolName);
 SymbolTableEntry* enterSymbol(char* symbolName, SymbolAttribute* attribute);
 void removeSymbol(char* symbolName);
-int declaredLocally(char* symbolName);
+bool declaredLocally(char* symbolName);
 void openScope();
 void closeScope();
 

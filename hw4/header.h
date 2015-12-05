@@ -109,7 +109,7 @@ typedef struct EXPRSemanticValue
     {
         int iValue;
         float fValue;
-    } constEvalValue;
+    } constEvalValue;//no string??????
 
     union
     {
@@ -147,24 +147,74 @@ typedef struct CON_Type{
 		const_u;
 } CON_Type;
 
+//Forward declaration
+struct FunctionSignature;
+struct Parameter;
+struct TypeDescriptor;
+struct IdentifierSemanticValue;
+struct SymbolAttribute;
+
+
 
 struct AST_NODE {
-	struct AST_NODE *child;
-	struct AST_NODE *parent;
-	struct AST_NODE *rightSibling;
-	struct AST_NODE *leftmostSibling;
-	AST_TYPE nodeType;
-    DATA_TYPE dataType;
-	int linenumber;
-	union {
-        IdentifierSemanticValue identifierSemanticValue;
-        STMTSemanticValue stmtSemanticValue;
-        DECLSemanticValue declSemanticValue;
-        EXPRSemanticValue exprSemanticValue;
-		CON_Type *const1;
-	} semantic_value;
+  struct AST_NODE *child;
+  struct AST_NODE *parent;
+  struct AST_NODE *rightSibling;
+  struct AST_NODE *leftmostSibling;
+  AST_TYPE nodeType;
+  DATA_TYPE dataType;
+  int linenumber;
+  union {
+    IdentifierSemanticValue identifierSemanticValue;
+    STMTSemanticValue stmtSemanticValue;
+    DECLSemanticValue declSemanticValue;
+    EXPRSemanticValue exprSemanticValue;
+    CON_Type *const1;
+  } semantic_value;
+
+  void processDeclarationNodes();
+  void processDeclarationNode();
+  void declareIdList(int isVariableOrTypeAttribute, bool ignoreArrayFirstDimSize);//enum cannot be forward declared...
+  void declareId(int isVariableOrTypeAttribute, bool ignoreArrayFirstDimSize, TypeDescriptor* typeTypeDescriptor);
+  
+  //TODO: change to bool to reduce recheck (datatype == null)
+
+  void processExprRelatedNode();//main
+  void processExprNode();//1
+  void evaluateExprValue();
+  void evaluateBinaryExprValue();
+  void evaluateUnaryExprValue();
+  void checkFunctionCall();//2
+  void processParameterList();
+  bool checkParameters(FunctionSignature*);
+  bool checkParameter(Parameter*);
+  void processIDExpr();//3
+  void processConstExpr();//4
+
+  void declareFunction();
+  void checkAssignOrExpr();
+  
+  bool isArray();
+  bool isConst();
+
+  void processDeclDimList(TypeDescriptor* typeDescriptor, int ignoreFirstDimSize);
+  void processTypeNode();
+
+  void processGeneralNode();
+  void processStmtNode();
+
+  //void processVariableLValue();
+  void checkAssignmentStmt();
+  void checkReturnStmt();
+  void processBlockNode();
+  void getExprOrConstValue(int*, float*);
+  void processVariableLValue();
+
+  void printNodeType(const char*);
+  
 };
 typedef struct AST_NODE AST_NODE;
+typedef struct AST_NODE node;
 
 AST_NODE *Allocate(AST_TYPE type);
 void semanticAnalysis(AST_NODE *root);
