@@ -158,7 +158,7 @@ struct AST_NODE {
 	int linenumber;
 	union 
 	{
-        	IdentifierSemanticValue identifierSemanticValue;
+       	IdentifierSemanticValue identifierSemanticValue;
 		STMTSemanticValue stmtSemanticValue;
 		DECLSemanticValue declSemanticValue;
 		EXPRSemanticValue exprSemanticValue;

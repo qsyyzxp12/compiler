@@ -33,7 +33,6 @@ void processVariableRValue(AST_NODE* idNode);
 void processConstValueNode(AST_NODE* constValueNode);
 void getExprOrConstValue(AST_NODE* exprOrConstNode, int* iValue, float* fValue);
 void evaluateExprValue(AST_NODE* exprNode);
-DATA_TYPE getDataType(char* typeName);
 
 
 typedef enum ErrorMsgKind
@@ -95,22 +94,22 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
 
 void semanticAnalysis(AST_NODE *root)
 {
-	processProgramNode(root);
+    processProgramNode(root);
 }
 
 
 DATA_TYPE getBiggerType(DATA_TYPE dataType1, DATA_TYPE dataType2)
 {
-	if(dataType1 == FLOAT_TYPE || dataType2 == FLOAT_TYPE)
+    if(dataType1 == FLOAT_TYPE || dataType2 == FLOAT_TYPE) {
         return FLOAT_TYPE;
-	else
-		return INT_TYPE;
+    } else {
+        return INT_TYPE;
+    }
 }
 
 
 void processProgramNode(AST_NODE *programNode)
 {
-	declareFunction(programNode->child);
 }
 
 void processDeclarationNode(AST_NODE* declarationNode)
@@ -221,99 +220,4 @@ void processDeclDimList(AST_NODE* idNode, TypeDescriptor* typeDescriptor, int ig
 
 void declareFunction(AST_NODE* declarationNode)
 {
-	AST_NODE* returnType = declarationNode->child;
-	AST_NODE* funcID = returnType->rightSibling;
-	AST_NODE* param = funcID->rightSibling;
-	AST_NODE* block = param->rightSibling;
-
-	char* returnTypeName = returnType->semantic_value.identifierSemanticValue.identifierName;
-	if(!declaredLocally(returnTypeName))
-		printf("ID %s undeclared\n", returnTypeName);
-	
-	SymbolTableEntry* entry;
-	char* funcName = funcID->semantic_value.identifierSemanticValue.identifierName;
-	if(entry = retrieveSymbol(funcName))
-		if(entry->attribute->attributeKind == FUNCTION_SIGNATURE)
-		{
-			printf("ID %s redeclared\n", funcName);
-			return;
-		}
-
-
-	SymbolAttribute* attr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
-	attr->attributeKind = FUNCTION_SIGNATURE;
-
-	attr->attr.functionSignature = (FunctionSignature*)malloc(sizeof(FunctionSignature));
-	attr->attr.functionSignature->returnType = getDataType(returnTypeName);
-	attr->attr.functionSignature->parameterList = NULL;
-	attr->attr.functionSignature->parametersCount = 0;
-
-	AST_NODE* param_decl_node = param->child;
-	while(param_decl_node)
-	{
-		attr->attr.functionSignature->parametersCount++;
-
-		Parameter* param = (Parameter*)malloc(sizeof(Parameter));
-		param->type = (TypeDescriptor*)malloc(sizeof(TypeDescriptor));
-		param->parameterName = param_decl_node->child->rightSibling->semantic_value.identifierSemanticValue.identifierName;
-		AST_NODE* type_node = param_decl_node->child;
-		AST_NODE* ID_node = type_node->rightSibling;
-
-		IDENTIFIER_KIND kind = ID_node->semantic_value.identifierSemanticValue.kind;
-		if(kind == ARRAY_ID)
-		{
-			param->type->kind = ARRAY_TYPE_DESCRIPTOR;
-			AST_NODE* dimension_node = ID_node->child;
-			int dimension = 0;
-			while(dimension_node)
-			{
-				if(dimension_node->nodeType == NUL_NODE)
-					param->type->properties.arrayProperties.sizeInEachDimension[dimension] = 0;
-				else
-					param->type->properties.arrayProperties.sizeInEachDimension[dimension] = dimension_node->semantic_value.const1->const_u.intval;
-				dimension++;
-				dimension_node = dimension_node->rightSibling;
-			}
-			param->type->properties.arrayProperties.dimension = dimension;
-			param->type->properties.arrayProperties.elementType = getDataType(type_node->semantic_value.identifierSemanticValue.identifierName);
-		}
-		else if(kind == NORMAL_ID)
-		{
-			param->type->kind = SCALAR_TYPE_DESCRIPTOR;
-			param->type->properties.dataType = type_node->dataType;
-		}
-		else
-			printf("Unknown ID type in ID_Node\n");
-		
-		param->next = attr->attr.functionSignature->parameterList;
-		attr->attr.functionSignature->parameterList = param;
-
-		param_decl_node = param_decl_node->rightSibling;
-	}
-/*
-	printf("attribute Kind No. = %d\n", attr->attributeKind);
-	printf("paramenterCount = %d\n", attr->attr.functionSignature->parametersCount);
-	printf("return type = %d\n", attr->attr.functionSignature->returnType);
-	printf("parameter name = %s\n", attr->attr.functionSignature->parameterList->parameterName);
-	printf("parameter type No. = %d\n", attr->attr.functionSignature->parameterList->type->properties.arrayProperties.elementType);
-	printf("parameter is array? = %d\n", attr->attr.functionSignature->parameterList->type->kind);
-	printf("dimension = %d\n", attr->attr.functionSignature->parameterList->type->properties.arrayProperties.dimension);
-	printf("size = %d\n", attr->attr.functionSignature->parameterList->type->properties.arrayProperties.sizeInEachDimension[0]);
-*/	enterSymbol(funcName, attr);
-}
-
-DATA_TYPE getDataType(char* typeName)
-{
-	if(!strcmp(typeName, "int"))
-		return INT_TYPE;
-	else if(!strcmp(typeName, "float"))
-		return FLOAT_TYPE;
-	else if(!strcmp(typeName, "void"))
-		return VOID_TYPE;
-	else if(!strcmp(typeName, "int*") || !strcmp(typeName, "int *"))
-		return INT_PTR_TYPE;
-	else if(!strcmp(typeName, "float*") || !strcmp(typeName, "float *"))
-		return FLOAT_PTR_TYPE;
-	else
-		return ERROR_TYPE;
 }

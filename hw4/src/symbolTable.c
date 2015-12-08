@@ -14,8 +14,6 @@ int HASH(char * str) {
 	return (idx & (HASH_TABLE_SIZE-1));
 }
 
-SymbolTable symbolTable;
-
 SymbolTableEntry* newSymbolTableEntry(int nestingLevel)
 {
     SymbolTableEntry* symbolTableEntry = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry));
@@ -63,6 +61,9 @@ void initReserveWord(char* name, DATA_TYPE type)
 {
 	SymbolTableEntry* entry = newSymbolTableEntry(0);
 	entry->name = name;
+	entry->attribute = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
+	entry->attribute->attr.typeDescriptor = (TypeDescriptor*)malloc(sizeof(TypeDescriptor));
+	
 	entry->attribute->attributeKind = TYPE_ATTRIBUTE;
 	entry->attribute->attr.typeDescriptor->kind = SCALAR_TYPE_DESCRIPTOR;
 	entry->attribute->attr.typeDescriptor->properties.dataType = type;
@@ -82,9 +83,11 @@ void initializeSymbolTable()
 	symbolTable.scopeDisplay = (SymbolTableEntry**)malloc(sizeof(SymbolTableEntry*)*symbolTable.scopeDisplayElementCount);
 	for(i=0; i<symbolTable.scopeDisplayElementCount; i++)
 		symbolTable.scopeDisplay[i] = NULL;
+
 	initReserveWord("void", VOID_TYPE);
 	initReserveWord("int", INT_TYPE);
 	initReserveWord("float", FLOAT_TYPE);
+
 }
 
 void symbolTableEnd()
@@ -106,21 +109,20 @@ void symbolTableEnd()
 
 SymbolTableEntry* retrieveSymbol(char* symbolName)
 {
-	int hashIndex = HASH(symbolName);
-	SymbolTableEntry* entry = symbolTable.hashTable[hashIndex];
+	int curr_lv = symbolTable.currentLevel;
+	SymbolTableEntry* entry = symbolTable.scopeDisplay[curr_lv];
 	while(entry)
 	{
 		if(!strcmp(entry->name, symbolName))
 			return entry;
-		entry = entry->nextInHashChain;
+		entry = entry->nextInSameLevel;
 	}
 	return NULL;
 }
 
 SymbolTableEntry* enterSymbol(char* symbolName, SymbolAttribute* attribute)
 {
-	int hashIndex = HASH(symbolName);
-	SymbolTableEntry* entry = symbolTable.hashTable[hashIndex];
+/*	SymbolTableEntry* entry = symbolTable.hashTable[hashIndex];
 	while(entry)
 	{
 		if(!strcmp(entry->name, symbolName) && entry->nestingLevel == symbolTable.currentLevel)
@@ -129,9 +131,10 @@ SymbolTableEntry* enterSymbol(char* symbolName, SymbolAttribute* attribute)
 			return NULL;
 		}
 		entry = entry->nextInHashChain;
-	}
+	}*/
+	int hashIndex = HASH(symbolName);
 	//construct the entry
-	entry = newSymbolTableEntry(symbolTable.currentLevel);
+	SymbolTableEntry *entry = newSymbolTableEntry(symbolTable.currentLevel);
 	entry->name = symbolName;
 	entry->attribute = attribute;
 	entry->nestingLevel = symbolTable.currentLevel;
@@ -143,6 +146,18 @@ SymbolTableEntry* enterSymbol(char* symbolName, SymbolAttribute* attribute)
 	entry->nextInSameLevel = symbolTable.scopeDisplay[symbolTable.currentLevel];
 	symbolTable.scopeDisplay[symbolTable.currentLevel] = entry;
 
+/*	SymbolAttribute* attr = symbolTable.scopeDisplay[0]->attribute;
+	printf("attribute Kind No. = %d\n", attr->attributeKind);
+	printf("paramenterCount = %d\n", attr->attr.functionSignature->parametersCount);
+	printf("return type = %d\n", attr->attr.functionSignature->returnType);
+	printf("parameter name = %s\n", attr->attr.functionSignature->parameterList->parameterName);
+	printf("parameter type No. = %d\n", attr->attr.functionSignature->parameterList->type->properties.arrayProperties.elementType);
+	printf("parameter is array? = %d\n", attr->attr.functionSignature->parameterList->type->kind);
+	printf("dimension = %d\n", attr->attr.functionSignature->parameterList->type->properties.arrayProperties.dimension);
+	printf("size = %d\n", attr->attr.functionSignature->parameterList->type->properties.arrayProperties.sizeInEachDimension[0]);
+	return NULL;
+*/
+	showScope();
 	return entry;
 }
 
@@ -212,3 +227,75 @@ void closeScope()
 	symbolTable.scopeDisplay[curr_lv] = NULL;
 	symbolTable.currentLevel--;
 }
+
+void showScope()
+{
+	int lv = 0;
+	SymbolTableEntry* entryListHead = symbolTable.scopeDisplay[lv];
+/*	SymbolAttribute* attr = entryListHead->attribute;
+	printf("attribute Kind No. = %d\n", attr->attributeKind);
+
+	printf("paramenterCount = %d\n", attr->attr.functionSignature->parametersCount);
+	printf("return type = %d\n", attr->attr.functionSignature->returnType);
+	printf("parameter name = %s\n", attr->attr.functionSignature->parameterList->parameterName);
+	printf("parameter type No. = %d\n", attr->attr.functionSignature->parameterList->type->properties.arrayProperties.elementType);
+	printf("parameter is array? = %d\n", attr->attr.functionSignature->parameterList->type->kind);
+	printf("dimension = %d\n", attr->attr.functionSignature->parameterList->type->properties.arrayProperties.dimension);
+	printf("size = %d\n", attr->attr.functionSignature->parameterList->type->properties.arrayProperties.sizeInEachDimension[0]);
+	return;
+*/
+	while(entryListHead)
+	{
+		printf("lv = %d\n", lv);
+		SymbolTableEntry* entry = entryListHead;
+		while(entry)
+		{
+			printf("------ name = %s -----\n", entry->name);
+			printf("nesting level = %d\n", entry->nestingLevel);
+			SymbolAttribute* attr = entry->attribute;
+			if(attr->attributeKind == VARIABLE_ATTRIBUTE)
+				printf("it's a var.\n");
+			else if(attr->attributeKind == TYPE_ATTRIBUTE)
+			{
+				if(attr->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR)
+					printf("it's a type.\nData Type NO. = %d\n", attr->attr.typeDescriptor->properties.dataType);
+				else if(attr->attr.typeDescriptor->kind == ARRAY_TYPE_DESCRIPTOR)
+				{
+					printf("it's a array type.\n");
+					printf("dimension = %d\n", attr->attr.typeDescriptor->properties.arrayProperties.dimension);
+					int i;
+					for(i=0; i<attr->attr.typeDescriptor->properties.arrayProperties.dimension; i++)
+						printf("[%d]", attr->attr.typeDescriptor->properties.arrayProperties.sizeInEachDimension[i]);
+					printf("\nData Type No. = %d\n",  attr->attr.typeDescriptor->properties.arrayProperties.elementType);
+				}
+			}
+			else if(attr->attributeKind == FUNCTION_SIGNATURE)
+			{
+				printf("it's a function signature\n");
+				printf("return type data type No. = %d\n", attr->attr.functionSignature->returnType);
+				printf("parameter count = %d\n", attr->attr.functionSignature->parametersCount);
+				Parameter* param = attr->attr.functionSignature->parameterList;
+				while(param)
+				{
+					printf("parameter name = %s\n", param->parameterName);
+					if(param->type->kind == SCALAR_TYPE_DESCRIPTOR)
+						printf("it's a type.\nData Type NO. = %d\n", param->type->properties.dataType);
+					else if(param->type->kind == ARRAY_TYPE_DESCRIPTOR)
+					{
+						printf("it's a array type.\n");
+						printf("dimension = %d\n", param->type->properties.arrayProperties.dimension);
+						int i;
+						for(i=0; i<param->type->properties.arrayProperties.dimension; i++)
+							printf("[%d]", param->type->properties.arrayProperties.sizeInEachDimension[i]);
+						printf("\nData Type No. = %d\n",  param->type->properties.arrayProperties.elementType);
+					}
+					param = param->next;
+				}
+			}
+			entry = entry->nextInSameLevel;
+		}
+		lv++;
+		entryListHead = symbolTable.scopeDisplay[lv];
+	}
+}
+

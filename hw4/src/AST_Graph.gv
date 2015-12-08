@@ -1,0 +1,23 @@
+Digraph AST
+{
+label = "AST_Graph.gv"
+node0 [label ="PROGRAM_NODE"]
+node1 [label ="DECLARATION_NODE FUNCTION_DECL"]
+node2 [label ="IDENTIFIER_NODE int NORMAL_ID"]
+node3 [label ="IDENTIFIER_NODE main NORMAL_ID"]
+node4 [label ="PARAM_LIST_NODE"]
+node5 [label ="DECLARATION_NODE FUNCTION_PARAMETER_DECL"]
+node6 [label ="IDENTIFIER_NODE int NORMAL_ID"]
+node7 [label ="IDENTIFIER_NODE a ARRAY_ID"]
+node8 [label ="CONST_VALUE_NODE 5"]
+node7 -> node8 [style = bold]
+node6 -> node7 [style = dashed]
+node5 -> node6 [style = bold]
+node4 -> node5 [style = bold]
+node9 [label ="BLOCK_NODE"]
+node4 -> node9 [style = dashed]
+node3 -> node4 [style = dashed]
+node2 -> node3 [style = dashed]
+node1 -> node2 [style = bold]
+node0 -> node1 [style = bold]
+}

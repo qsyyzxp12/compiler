@@ -163,32 +163,29 @@ static inline AST_NODE* makeExprNode(EXPR_KIND exprKind, int operationEnumValue)
 /* ==== Grammar Section ==== */
 
 /* Productions */               /* Semantic actions */
-program		: global_decl_list 
-			{ 
-				$$=Allocate(PROGRAM_NODE);  makeChild($$,$1); prog=$$;
-			}
-			| 
-			{ 
-				$$=Allocate(PROGRAM_NODE); prog=$$;
-			};
+program		: global_decl_list { $$=Allocate(PROGRAM_NODE);  makeChild($$,$1); prog=$$;}
+		| { $$=Allocate(PROGRAM_NODE); prog=$$;}
+		;
 
 global_decl_list: global_decl_list global_decl 
-				{
-					$$ = makeSibling($1, $2);
-				}	
+                    {
+                        $$ = makeSibling($1, $2);
+                    }	
                 | global_decl
-				{
-					$$ = $1;
-				}; 
+                    {
+                        $$ = $1;
+                    }
+                ; 
 
 global_decl	: decl_list function_decl
-			{
-				$$ = makeSibling(makeChild(Allocate(VARIABLE_DECL_LIST_NODE), $1), $2);
-			}
+                {
+                    $$ = makeSibling(makeChild(Allocate(VARIABLE_DECL_LIST_NODE), $1), $2);
+                }
             | function_decl 
-			{
-				$$ = $1;
-			};
+                {
+                    $$ = $1;
+                }
+            ;
 
 function_decl	: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE     
                     {
@@ -769,25 +766,25 @@ dim_list	: dim_list MK_LB expr MK_RB
 main (argc, argv)
 int argc;
 char *argv[];
-{
-	yyin = fopen(argv[1],"r");
-	yyparse();
-	printGV(prog, NULL);
-
-	initializeSymbolTable();
-
-	semanticAnalysis(prog);
-printf("2\n");
-	symbolTableEnd();
-	if (!g_anyErrorOccur)
+  {
+     yyin = fopen(argv[1],"r");
+     yyparse();
+     // printGV(prog, NULL);
+     
+     initializeSymbolTable();
+     
+     semanticAnalysis(prog);
+     
+     symbolTableEnd();
+     if (!g_anyErrorOccur) {
         printf("Parsing completed. No errors found.\n");
-
-} /* main */
+     }
+  } /* main */
 
 
 int yyerror (mesg)
 char *mesg;
-{
-	printf("%s\t%d\t%s\t%s\n", "Error found in Line ", linenumber, "next token: ", yytext );
-	exit(1);
-}
+  {
+  printf("%s\t%d\t%s\t%s\n", "Error found in Line ", linenumber, "next token: ", yytext );
+  exit(1);
+  }

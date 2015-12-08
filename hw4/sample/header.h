@@ -138,15 +138,13 @@ typedef struct TypeSpecSemanticValue
 } TypeSpecSemanticValue;
 
 //don't modify or lexer may break
-typedef struct CON_Type
-{
-	C_type  const_type;
-	union
-	{
+typedef struct CON_Type{
+        C_type  const_type;
+	union {
 		int     intval;
 		double  fval;
-		char    *sc; 
-	}const_u;
+		char    *sc; }
+		const_u;
 } CON_Type;
 
 
