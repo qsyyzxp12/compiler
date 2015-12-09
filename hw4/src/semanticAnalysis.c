@@ -34,6 +34,7 @@ void processConstValueNode(AST_NODE* constValueNode);
 void getExprOrConstValue(AST_NODE* exprOrConstNode, int* iValue, float* fValue);
 void evaluateExprValue(AST_NODE* exprNode);
 DATA_TYPE getDataType(char* typeName);
+void checkOneSideOfAssignOrExpr(AST_NODE* OHS);
 
 
 typedef enum ErrorMsgKind
@@ -214,40 +215,29 @@ void checkAssignOrExpr(AST_NODE* assignOrExprRelatedNode)
 	AST_NODE* LHS = assignOrExprRelatedNode->child;
 	AST_NODE* RHS = LHS->rightSibling;
 
-	if(LHS->nodeType == EXPR_NODE)
-		checkAssignOrExpr(LHS);
-	else if(LHS->nodeType == IDENTIFIER_NODE)
+	checkOneSideOfAssignOrExpr(LHS);
+	checkOneSideOfAssignOrExpr(RHS);		
+}
+
+void checkOneSideOfAssignOrExpr(AST_NODE* OHS)
+{
+	if(OHS->nodeType == EXPR_NODE)
+		checkAssignOrExpr(OHS);
+	else if(OHS->nodeType == IDENTIFIER_NODE)
 	{	
-		SymbolTableEntry* LHSentry = retrieveSymbol(LHS->semantic_value.identifierSemanticValue.identifierName);
-		if(!LHSentry)
-			printErrorMsg(LHS, SYMBOL_UNDECLARED);
-		else if(LHSentry->attribute->attributeKind == TYPE_ATTRIBUTE)
-			printErrorMsg(LHS, NOT_ASSIGNABLE);
-		
+		SymbolTableEntry* entry = retrieveSymbol(OHS->semantic_value.identifierSemanticValue.identifierName);
+		if(!entry)
+			printErrorMsg(OHS, SYMBOL_UNDECLARED);
+		else if(entry->attribute->attributeKind != VARIABLE_ATTRIBUTE)
+			printErrorMsg(OHS, NOT_ASSIGNABLE);
 	}
-	else if(LHS->nodeType == CONST_VALUE_NODE)
+	else if(OHS->nodeType == CONST_VALUE_NODE)
 	{
-		if(LHS->semantic_value.const1->const_type == STRINGC)
-			printErrorMsg(LHS, STRING_OPERATION);
+		if(OHS->semantic_value.const1->const_type == STRINGC)
+			printErrorMsg(OHS, STRING_OPERATION);
 	}
-
-
-	if(RHS->nodeType == EXPR_NODE)
-		checkAssignOrExpr(RHS);
-	else if(RHS->nodeType == IDENTIFIER_NODE)
-	{
-		SymbolTableEntry* RHSentry = retrieveSymbol(RHS->semantic_value.identifierSemanticValue.identifierName);
-		if(!RHSentry)
-			printErrorMsg(RHS, SYMBOL_UNDECLARED);
-		else if(RHSentry->attribute->attributeKind == TYPE_ATTRIBUTE)
-			printErrorMsg(RHS, NOT_ASSIGNABLE);
-	}
-	else if(RHS->nodeType == CONST_VALUE_NODE)
-	{
-		if(RHS->semantic_value.const1->const_type == STRINGC)
-			printErrorMsg(RHS, STRING_OPERATION);
-	}
-		
+	else if(OHS->nodeType == STMT_NODE && OHS->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT)
+		checkFunctionCall(OHS);
 }
 
 void checkWhileStmt(AST_NODE* whileNode)
@@ -275,6 +265,7 @@ void checkWriteFunction(AST_NODE* functionCallNode)
 
 void checkFunctionCall(AST_NODE* functionCallNode)
 {
+	printf("checkFunctionCall\n");
 }
 
 void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter)
