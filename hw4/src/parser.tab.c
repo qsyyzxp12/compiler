@@ -2736,7 +2736,7 @@ char *argv[];
 
 	semanticAnalysis(prog);
 
-	//showScope();
+	showScope();
 
 	symbolTableEnd();
 	if (!g_anyErrorOccur)

@@ -92,6 +92,9 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
 		case SYMBOL_UNDECLARED:
 			printf("ID `%s` undeclared.\n", node->semantic_value.identifierSemanticValue.identifierName);
 			break;
+		case NOT_ASSIGNABLE:
+			printf("ID `%s` is not assignable.\n", node->semantic_value.identifierSemanticValue.identifierName);
+			break;
 		case STRING_OPERATION:
 			printf("invalid operand %s\n", node->semantic_value.const1->const_u.sc);
 			break;
@@ -120,7 +123,12 @@ DATA_TYPE getBiggerType(DATA_TYPE dataType1, DATA_TYPE dataType2)
 
 void processProgramNode(AST_NODE *programNode)
 {
-	declareFunction(programNode->child);
+	AST_NODE* func_decl_node = programNode->child;
+	while(func_decl_node)
+	{
+		declareFunction(func_decl_node);
+		func_decl_node = func_decl_node->rightSibling;
+	}
 }
 
 void processDeclarationNode(AST_NODE* declarationNode)
@@ -202,39 +210,16 @@ void checkAssignOrExpr(AST_NODE* assignOrExprRelatedNode)
 	AST_NODE* LHS = assignOrExprRelatedNode->child;
 	AST_NODE* RHS = LHS->rightSibling;
 
-/*	if(assignOrExprRelatedNode->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT)
-	{
-		if(LHS->nodeType != IDENTIFIER_NODE)
-		{
-			printErrorMsg(LHS, NOT_ASSIGNABLE);
-			return;
-		}
-		SymbolTableEntry* LHSentry = retrieveSymbol(LHS->semantic_value.identifierSemanticValue.identifierName);
-		if(!LHSentry)
-		{
-			printErrorMsg(LHS, SYMBOL_UNDECLARED);
-			return;
-		}
-
-		if(LHSentry->attribute->attributeKind != VARIABLE_ATTRIBUTE)
-		{
-			printErrorMsg(LHS, NOT_ASSIGNABLE);
-			return;
-		}
-		if(LHSentry->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR && 
-		   LHSentry->attribute->attr.typeDescriptor->properties.dataType == CONST_STRING_TYPE)
-		{
-			if(RHS->nodeType != CONST_VALUE_NODE || RHS->semantic_value.const1->const_type != STRINGC)
-				
-		}
-	}*/
-
 	if(LHS->nodeType == EXPR_NODE)
 		checkAssignOrExpr(LHS);
 	else if(LHS->nodeType == IDENTIFIER_NODE)
 	{	
-		if(!declaredLocally(LHS->semantic_value.identifierSemanticValue.identifierName))
+		SymbolTableEntry* LHSentry = retrieveSymbol(LHS->semantic_value.identifierSemanticValue.identifierName);
+		if(!LHSentry)
 			printErrorMsg(LHS, SYMBOL_UNDECLARED);
+		else if(LHSentry->attribute->attributeKind == TYPE_ATTRIBUTE)
+			printErrorMsg(LHS, NOT_ASSIGNABLE);
+		
 	}
 	else if(LHS->nodeType == CONST_VALUE_NODE)
 	{
@@ -247,8 +232,11 @@ void checkAssignOrExpr(AST_NODE* assignOrExprRelatedNode)
 		checkAssignOrExpr(RHS);
 	else if(RHS->nodeType == IDENTIFIER_NODE)
 	{
-		if(!declaredLocally(RHS->semantic_value.identifierSemanticValue.identifierName))
+		SymbolTableEntry* RHSentry = retrieveSymbol(RHS->semantic_value.identifierSemanticValue.identifierName);
+		if(!RHSentry)
 			printErrorMsg(RHS, SYMBOL_UNDECLARED);
+		else if(RHSentry->attribute->attributeKind == TYPE_ATTRIBUTE)
+			printErrorMsg(RHS, NOT_ASSIGNABLE);
 	}
 	else if(RHS->nodeType == CONST_VALUE_NODE)
 	{

@@ -1,5 +1,7 @@
-int main(int a, float b[1][2])
+int foo(int x){}
+
+int main()
 {
-	typedef int char;
-	char c;
+	int a, b;
+	b = foo(a);
 }
