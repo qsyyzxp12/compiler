@@ -68,14 +68,14 @@ void printErrorMsgSpecial(AST_NODE* node1, char* name2, ErrorMsgKind errorMsgKin
 {
     g_anyErrorOccur = 1;
     printf("Error found in line %d\n", node1->linenumber);
-    /*
+    
     switch(errorMsgKind)
     {
-    default:
-        printf("Unhandled case in void printErrorMsg(AST_NODE* node, ERROR_MSG_KIND* errorMsgKind)\n");
-        break;
+    	default:
+        	printf("Unhandled case in void printErrorMsg(AST_NODE* node, ERROR_MSG_KIND* errorMsgKind)\n");
+        	break;
     }
-    */
+    
 }
 
 
@@ -83,13 +83,23 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
 {
     g_anyErrorOccur = 1;
     printf("Error found in line %d\n", node->linenumber);
-    /*
+    
     switch(errorMsgKind)
     {
-        printf("Unhandled case in void printErrorMsg(AST_NODE* node, ERROR_MSG_KIND* errorMsgKind)\n");
-        break;
+   		case SYMBOL_REDECLARE:
+			printf("ID `%s` redeclared.\n", node->semantic_value.identifierSemanticValue.identifierName);
+			break;
+		case SYMBOL_UNDECLARED:
+			printf("ID `%s` undeclared.\n", node->semantic_value.identifierSemanticValue.identifierName);
+			break;
+		case STRING_OPERATION:
+			printf("invalid operand %s\n", node->semantic_value.const1->const_u.sc);
+			break;
+		default:
+			printf("Unhandled case in void printErrorMsg(AST_NODE* node, ERROR_MSG_KIND* errorMsgKind)\n");
+			break;
     }
-    */
+  
 }
 
 
@@ -120,13 +130,21 @@ void processDeclarationNode(AST_NODE* declarationNode)
 	char* typeName = type_node->semantic_value.identifierSemanticValue.identifierName;
 	char* varName = ID_node->semantic_value.identifierSemanticValue.identifierName;
 
+	DATA_TYPE typeNo = getDataType(typeName);
+	if(typeNo == ERROR_TYPE)
+	{
+		printErrorMsg(type_node, SYMBOL_UNDECLARED);
+		return;
+	}
+
 	SymbolAttribute* attr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
 	attr->attributeKind = VARIABLE_ATTRIBUTE;
 	attr->attr.typeDescriptor = (TypeDescriptor*)malloc(sizeof(TypeDescriptor));
 	if(ID_node->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
 	{
 		attr->attr.typeDescriptor->kind = ARRAY_TYPE_DESCRIPTOR;
-		attr->attr.typeDescriptor->properties.arrayProperties.elementType = getDataType(typeName);
+		attr->attr.typeDescriptor->properties.arrayProperties.elementType = typeNo;
+		
 		AST_NODE* dimension_node = ID_node->child;
 		int dimension = 0;
 		while(dimension_node)
@@ -146,13 +164,11 @@ void processDeclarationNode(AST_NODE* declarationNode)
 	else
 	{
 		attr->attr.typeDescriptor->kind = SCALAR_TYPE_DESCRIPTOR;
-		attr->attr.typeDescriptor->properties.dataType = getDataType(typeName);
+		attr->attr.typeDescriptor->properties.dataType = typeNo;
 	}
 
 	enterSymbol(varName, attr);
 }
-
-
 
 void processTypeNode(AST_NODE* idNodeAsType)
 {
@@ -165,11 +181,17 @@ void processTypeNode(AST_NODE* idNodeAsType)
 	attr->attributeKind = TYPE_ATTRIBUTE;
 	attr->attr.typeDescriptor = (TypeDescriptor*)malloc(sizeof(TypeDescriptor));
 	attr->attr.typeDescriptor->kind = SCALAR_TYPE_DESCRIPTOR;
-	attr->attr.typeDescriptor->properties.dataType = getDataType(oriTypeName);
+	DATA_TYPE typeNo = getDataType(oriTypeName);
+	if(typeNo != ERROR_TYPE)
+		attr->attr.typeDescriptor->properties.dataType = typeNo;
+	else
+	{
+		printErrorMsg(oriTypeNode, SYMBOL_UNDECLARED);
+		return;
+	}
 
 	enterSymbol(newTypeName, attr);
 }
-
 
 void declareIdList(AST_NODE* declarationNode, SymbolAttributeKind isVariableOrTypeAttribute, int ignoreArrayFirstDimSize)
 {
@@ -177,6 +199,63 @@ void declareIdList(AST_NODE* declarationNode, SymbolAttributeKind isVariableOrTy
 
 void checkAssignOrExpr(AST_NODE* assignOrExprRelatedNode)
 {
+	AST_NODE* LHS = assignOrExprRelatedNode->child;
+	AST_NODE* RHS = LHS->rightSibling;
+
+/*	if(assignOrExprRelatedNode->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT)
+	{
+		if(LHS->nodeType != IDENTIFIER_NODE)
+		{
+			printErrorMsg(LHS, NOT_ASSIGNABLE);
+			return;
+		}
+		SymbolTableEntry* LHSentry = retrieveSymbol(LHS->semantic_value.identifierSemanticValue.identifierName);
+		if(!LHSentry)
+		{
+			printErrorMsg(LHS, SYMBOL_UNDECLARED);
+			return;
+		}
+
+		if(LHSentry->attribute->attributeKind != VARIABLE_ATTRIBUTE)
+		{
+			printErrorMsg(LHS, NOT_ASSIGNABLE);
+			return;
+		}
+		if(LHSentry->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR && 
+		   LHSentry->attribute->attr.typeDescriptor->properties.dataType == CONST_STRING_TYPE)
+		{
+			if(RHS->nodeType != CONST_VALUE_NODE || RHS->semantic_value.const1->const_type != STRINGC)
+				
+		}
+	}*/
+
+	if(LHS->nodeType == EXPR_NODE)
+		checkAssignOrExpr(LHS);
+	else if(LHS->nodeType == IDENTIFIER_NODE)
+	{	
+		if(!declaredLocally(LHS->semantic_value.identifierSemanticValue.identifierName))
+			printErrorMsg(LHS, SYMBOL_UNDECLARED);
+	}
+	else if(LHS->nodeType == CONST_VALUE_NODE)
+	{
+		if(LHS->semantic_value.const1->const_type == STRINGC)
+			printErrorMsg(LHS, STRING_OPERATION);
+	}
+
+
+	if(RHS->nodeType == EXPR_NODE)
+		checkAssignOrExpr(RHS);
+	else if(RHS->nodeType == IDENTIFIER_NODE)
+	{
+		if(!declaredLocally(RHS->semantic_value.identifierSemanticValue.identifierName))
+			printErrorMsg(RHS, SYMBOL_UNDECLARED);
+	}
+	else if(RHS->nodeType == CONST_VALUE_NODE)
+	{
+		if(RHS->semantic_value.const1->const_type == STRINGC)
+			printErrorMsg(RHS, STRING_OPERATION);
+	}
+		
 }
 
 void checkWhileStmt(AST_NODE* whileNode)
@@ -281,6 +360,25 @@ void processBlockNode(AST_NODE* blockNode)
 
 void processStmtNode(AST_NODE* stmtNode)
 {
+	STMT_KIND stmt_kind = stmtNode->semantic_value.stmtSemanticValue.kind;
+	switch(stmt_kind)
+	{
+		case WHILE_STMT:
+			break;
+		case FOR_STMT:
+			break;
+		case ASSIGN_STMT:
+			checkAssignOrExpr(stmtNode);
+			break;
+		case IF_STMT:
+			break;
+		case FUNCTION_CALL_STMT:
+			break;
+		case RETURN_STMT:
+			break;
+		default:
+			break;
+	}
 }
 
 
@@ -301,15 +399,19 @@ void declareFunction(AST_NODE* declarationNode)
 	AST_NODE* block = param->rightSibling;
 
 	char* returnTypeName = returnType->semantic_value.identifierSemanticValue.identifierName;
-	if(!declaredLocally(returnTypeName))
-		printf("ID %s undeclared\n", returnTypeName);
+	DATA_TYPE typeNo = getDataType(returnTypeName);
+	if(typeNo == ERROR_TYPE)
+	{
+		printErrorMsg(returnType, SYMBOL_UNDECLARED);
+		return;
+	}
 	
 	SymbolTableEntry* entry;
 	char* funcName = funcID->semantic_value.identifierSemanticValue.identifierName;
 	if(entry = retrieveSymbol(funcName))
 		if(entry->attribute->attributeKind == FUNCTION_SIGNATURE)
 		{
-			printf("ID %s redeclared\n", funcName);
+			printErrorMsg(returnType, SYMBOL_REDECLARE);
 			return;
 		}
 
@@ -318,7 +420,8 @@ void declareFunction(AST_NODE* declarationNode)
 	attr->attributeKind = FUNCTION_SIGNATURE;
 
 	attr->attr.functionSignature = (FunctionSignature*)malloc(sizeof(FunctionSignature));
-	attr->attr.functionSignature->returnType = getDataType(returnTypeName);
+	attr->attr.functionSignature->returnType = typeNo;
+	
 	attr->attr.functionSignature->parameterList = NULL;
 	attr->attr.functionSignature->parametersCount = 0;
 
@@ -337,6 +440,15 @@ void declareFunction(AST_NODE* declarationNode)
 		AST_NODE* type_node = param_decl_node->child;
 		AST_NODE* ID_node = type_node->rightSibling;
 
+
+		char* typeName = type_node->semantic_value.identifierSemanticValue.identifierName;
+		DATA_TYPE typeNo = getDataType(typeName);
+		if(typeNo == ERROR_TYPE)
+		{
+			printErrorMsg(type_node, SYMBOL_UNDECLARED);
+			return;
+		}
+
 		IDENTIFIER_KIND kind = ID_node->semantic_value.identifierSemanticValue.kind;
 		if(kind == ARRAY_ID)
 		{
@@ -353,12 +465,12 @@ void declareFunction(AST_NODE* declarationNode)
 				dimension_node = dimension_node->rightSibling;
 			}
 			param->type->properties.arrayProperties.dimension = dimension;
-			param->type->properties.arrayProperties.elementType = getDataType(type_node->semantic_value.identifierSemanticValue.identifierName);
+			param->type->properties.arrayProperties.elementType = typeNo;
 		}
 		else if(kind == NORMAL_ID)
 		{
 			param->type->kind = SCALAR_TYPE_DESCRIPTOR;
-			param->type->properties.dataType = getDataType(type_node->semantic_value.identifierSemanticValue.identifierName);
+			param->type->properties.dataType = typeNo;
 		}
 		else
 			printf("Unknown ID type in ID_Node\n");
@@ -390,6 +502,15 @@ DATA_TYPE getDataType(char* typeName)
 		return INT_PTR_TYPE;
 	else if(!strcmp(typeName, "float*") || !strcmp(typeName, "float *"))
 		return FLOAT_PTR_TYPE;
-	else
-		return ERROR_TYPE;
+	
+	//typeName is a typedef type or error
+	SymbolTableEntry* typeEntry = retrieveSymbol(typeName);
+	if(typeEntry && 
+	   typeEntry->attribute->attributeKind == TYPE_ATTRIBUTE && 
+	   typeEntry->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR)
+	{
+		return typeEntry->attribute->attr.typeDescriptor->properties.dataType;
+	}
+	return ERROR_TYPE;
+		
 }
