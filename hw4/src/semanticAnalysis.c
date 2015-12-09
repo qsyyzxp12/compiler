@@ -5,6 +5,11 @@
 #include "symbolTable.h"
 // This file is for reference only, you are not required to follow the implementation. //
 // You only need to check for errors stated in the hw4 assignment document. //
+
+#define isVarAttr(a) (a->attribute->attributeKind == VARIABLE_ATTRIBUTE) 
+#define isTypeAttr(a) (a->attribute->attributeKind == TYPE_ATTRIBUTE) 
+#define isFuncAttr(a) (a->attribute->attributeKind == FUNCTION_ATTRIBUTE) 
+
 int g_anyErrorOccur = 0;
 
 DATA_TYPE getBiggerType(DATA_TYPE dataType1, DATA_TYPE dataType2);
@@ -265,7 +270,17 @@ void checkWriteFunction(AST_NODE* functionCallNode)
 
 void checkFunctionCall(AST_NODE* functionCallNode)
 {
-	printf("checkFunctionCall\n");
+	AST_NODE* funcNameNode = functionCallNode->child;
+	AST_NODE* paramNode = funcNameNode->rightSibling;
+
+	SymbolTableEntry* funcEntry = retrieveSymbol(funcNameNode->semantic_value.identifierSemanticValue.identifierName);
+	if(!funcEntry)
+	{
+		printErrorMsg(funcNameNode, SYMBOL_UNDECLARED);
+		return;
+	}
+	SymbolAttribute* attr = funcEntry->attribute;
+//	if(attr->attributeKind)
 }
 
 void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter)
@@ -338,6 +353,7 @@ void processBlockNode(AST_NODE* blockNode)
 			stmt_node = stmt_node->rightSibling;
 		}
 	}
+	closeScope();
 }
 
 
@@ -468,7 +484,7 @@ void declareFunction(AST_NODE* declarationNode)
 	enterSymbol(funcName, attr);
 	if(block->child)
 	{
-		symbolTable.currentLevel++;
+		openScope();
 		processBlockNode(block);
 	}
 }
