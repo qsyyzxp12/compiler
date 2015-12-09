@@ -1,7 +1,7 @@
-int foo(int x){}
-
+int foo(int a[]){}
 int main()
 {
-	int a, b[1];
+	typedef int INT;
+	int a[1], b;
 	b = foo(a);
 }

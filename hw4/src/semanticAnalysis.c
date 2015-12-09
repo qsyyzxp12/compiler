@@ -6,10 +6,15 @@
 // This file is for reference only, you are not required to follow the implementation. //
 // You only need to check for errors stated in the hw4 assignment document. //
 
-#define isVarAttr(a) (a->attribute->attributeKind == VARIABLE_ATTRIBUTE) 
-#define isTypeAttr(a) (a->attribute->attributeKind == TYPE_ATTRIBUTE) 
-#define isFuncAttr(a) (a->attribute->attributeKind == FUNCTION_ATTRIBUTE) 
+#define isVarAttr(a) 	(a->attribute->attributeKind == VARIABLE_ATTRIBUTE) 
+#define isTypeAttr(a) 	(a->attribute->attributeKind == TYPE_ATTRIBUTE) 
+#define isFuncAttr(a) 	(a->attribute->attributeKind == FUNCTION_SIGNATURE) 
+#define isScalarVar(a) 	(a->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR)
+#define isArrayVar(a) 	(a->attribute->attr.typeDescriptor->kind == ARRAY_TYPE_DESCRIPTOR)
 
+#define IDNodeName(a) 	(a->semantic_value.identifierSemanticValue.identifierName)
+#define ArrayElemType(a)(a->attribute->attr.typeDescriptor->properties.arrayProperties.elementType)
+#define ArrayDimen(a)	(a->attribute->attr.typeDescriptor->properties.arrayProperties.dimension)
 int g_anyErrorOccur = 0;
 
 DATA_TYPE getBiggerType(DATA_TYPE dataType1, DATA_TYPE dataType2);
@@ -72,7 +77,7 @@ typedef enum ErrorMsgKind
 
 void printErrorMsgSpecial(AST_NODE* node1, char* name2, ErrorMsgKind errorMsgKind)
 {
-    g_anyErrorOccur = 1;
+    g_anyErrorOccur++;
     printf("Error found in line %d\n", node1->linenumber);
     
     switch(errorMsgKind)
@@ -87,22 +92,68 @@ void printErrorMsgSpecial(AST_NODE* node1, char* name2, ErrorMsgKind errorMsgKin
 
 void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
 {
-    g_anyErrorOccur = 1;
+    g_anyErrorOccur++;
     printf("Error found in line %d\n", node->linenumber);
     
+	char* ID = node->semantic_value.identifierSemanticValue.identifierName;
     switch(errorMsgKind)
     {
+		case SYMBOL_IS_NOT_TYPE:
+			break;
    		case SYMBOL_REDECLARE:
-			printf("ID `%s` redeclared.\n", node->semantic_value.identifierSemanticValue.identifierName);
+			printf("ID `%s` redeclared.\n", ID);
 			break;
 		case SYMBOL_UNDECLARED:
-			printf("ID `%s` undeclared.\n", node->semantic_value.identifierSemanticValue.identifierName);
+			printf("ID `%s` undeclared.\n", ID);
+			break;
+		case NOT_FUNCTION_NAME:
+			printf("ID `%s` is not a functino name.\n", ID);
+			break;
+    	case TRY_TO_INIT_ARRAY:
+			break;
+		case EXCESSIVE_ARRAY_DIM_DECLARATION:
+			break;
+    	case RETURN_ARRAY:
+			break;
+    	case VOID_VARIABLE:
+			break;
+    	case TYPEDEF_VOID_ARRAY:
+			break;
+    	case PARAMETER_TYPE_UNMATCH:
+			printf("argument `%s` type wrong.\n", ID);
+			break;
+    	case TOO_FEW_ARGUMENTS:
+			printf("too few arguments to function `%s`.\n", ID);
+			break;
+    	case TOO_MANY_ARGUMENTS:
+			printf("too many arguments to function `%s`.\n", ID);
+			break;
+    	case RETURN_TYPE_UNMATCH:
+			break;
+    	case INCOMPATIBLE_ARRAY_DIMENSION:
+			printf("argument `%s` dimension wrong.\n", ID);
 			break;
 		case NOT_ASSIGNABLE:
-			printf("ID `%s` is not assignable.\n", node->semantic_value.identifierSemanticValue.identifierName);
+			printf("ID `%s` is not assignable.\n", ID);
+			break;
+    	case NOT_ARRAY:
+			break;
+		case IS_TYPE_NOT_VARIABLE:
+			printf("ID `%s` is a type not a variable\n", ID);
+			break;
+    	case IS_FUNCTION_NOT_VARIABLE:
+			printf("ID `%s` is a function not a variable\n", ID);
 			break;
 		case STRING_OPERATION:
-			printf("invalid operand %s\n", node->semantic_value.const1->const_u.sc);
+			printf("invalid operand %s\n", ID);
+			break;
+		case ARRAY_SIZE_NOT_INT:
+			break;
+    	case ARRAY_SIZE_NEGATIVE:
+			break;
+    	case ARRAY_SUBSCRIPT_NOT_INT:
+			break;
+    	case PASS_ARRAY_TO_SCALAR:
 			break;
 		default:
 			printf("Unhandled case in void printErrorMsg(AST_NODE* node, ERROR_MSG_KIND* errorMsgKind)\n");
@@ -233,7 +284,7 @@ void checkOneSideOfAssignOrExpr(AST_NODE* OHS)
 		SymbolTableEntry* entry = retrieveSymbol(OHS->semantic_value.identifierSemanticValue.identifierName);
 		if(!entry)
 			printErrorMsg(OHS, SYMBOL_UNDECLARED);
-		else if(entry->attribute->attributeKind != VARIABLE_ATTRIBUTE)
+		else if(!isVarAttr(entry))
 			printErrorMsg(OHS, NOT_ASSIGNABLE);
 	}
 	else if(OHS->nodeType == CONST_VALUE_NODE)
@@ -279,8 +330,85 @@ void checkFunctionCall(AST_NODE* functionCallNode)
 		printErrorMsg(funcNameNode, SYMBOL_UNDECLARED);
 		return;
 	}
-	SymbolAttribute* attr = funcEntry->attribute;
-//	if(attr->attributeKind)
+
+	if(!isFuncAttr(funcEntry))
+	{
+		printErrorMsg(funcNameNode, NOT_FUNCTION_NAME);
+		return;
+	}
+	int paramCount = funcEntry->attribute->attr.functionSignature->parametersCount;
+	Parameter* param = funcEntry->attribute->attr.functionSignature->parameterList;
+	DATA_TYPE returnTypeNo = funcEntry->attribute->attr.functionSignature->returnType;
+	
+	if(paramCount == 0)
+	{
+		if(paramNode->nodeType != NUL_NODE)
+		    printErrorMsg(funcNameNode, TOO_MANY_ARGUMENTS);
+		return;	
+	}
+	paramNode = paramNode->child;
+	while(paramNode)
+	{
+		if(paramNode->nodeType == IDENTIFIER_NODE)
+		{
+			SymbolTableEntry* paramEntry = retrieveSymbol(IDNodeName(paramNode));
+			if(isTypeAttr(paramEntry))
+			{
+				printErrorMsg(paramNode, IS_TYPE_NOT_VARIABLE);
+				return;
+			}
+			else if(isFuncAttr(paramEntry))
+			{
+				printErrorMsg(paramNode, IS_FUNCTION_NOT_VARIABLE);
+				return;
+			}
+			if(isScalarVar(paramEntry))
+			{
+				if(param->type->kind == ARRAY_TYPE_DESCRIPTOR)
+				{
+					printErrorMsg(paramNode, PASS_SCALAR_TO_ARRAY);
+					return;
+				}
+				DATA_TYPE paramType = paramEntry->attribute->attr.typeDescriptor->properties.dataType;
+				DATA_TYPE typeShouldBe = param->type->properties.dataType;
+				if(paramType != typeShouldBe)
+				{
+					printErrorMsg(paramNode, PARAMETER_TYPE_UNMATCH);
+					return;
+				}
+			}
+			else
+			{
+				if(param->type->kind == SCALAR_TYPE_DESCRIPTOR)
+				{
+					printErrorMsg(paramNode, PASS_ARRAY_TO_SCALAR);
+					return;
+				}
+				DATA_TYPE paramType = paramEntry->attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
+				DATA_TYPE typeShouldBe = param->type->properties.arrayProperties.elementType;
+				if(paramType != typeShouldBe)
+				{
+					printErrorMsg(paramNode, PARAMETER_TYPE_UNMATCH);
+					return;
+				}
+				int dimenShouldBe = param->type->properties.arrayProperties.dimension;
+				if(ArrayDimen(paramEntry) != dimenShouldBe)
+				{
+					printErrorMsg(paramNode, INCOMPATIBLE_ARRAY_DIMENSION);
+					return;
+				}
+			}
+		}
+		param = param->next;
+		paramNode = paramNode->rightSibling;
+		if(!param && paramNode)
+		{
+			printErrorMsg(funcNameNode, TOO_MANY_ARGUMENTS);
+			return;
+		}
+	}
+	if(param)
+		printErrorMsg(funcNameNode, TOO_FEW_ARGUMENTS);
 }
 
 void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter)
@@ -353,7 +481,7 @@ void processBlockNode(AST_NODE* blockNode)
 			stmt_node = stmt_node->rightSibling;
 		}
 	}
-	closeScope();
+//	closeScope();
 }
 
 
@@ -425,6 +553,7 @@ void declareFunction(AST_NODE* declarationNode)
 	attr->attr.functionSignature->parametersCount = 0;
 
 	AST_NODE* param_decl_node = param->child;
+	Parameter* paramListTail = NULL;
 	if(block->child)
 		symbolTable.currentLevel++;
 	while(param_decl_node)
@@ -474,8 +603,14 @@ void declareFunction(AST_NODE* declarationNode)
 		else
 			printf("Unknown ID type in ID_Node\n");
 		
-		param->next = attr->attr.functionSignature->parameterList;
-		attr->attr.functionSignature->parameterList = param;
+		param->next = NULL;
+		if(!attr->attr.functionSignature->parameterList)
+		{
+			attr->attr.functionSignature->parameterList = param;
+			paramListTail = param;
+		}
+		else
+			paramListTail->next = param;
 
 		param_decl_node = param_decl_node->rightSibling;
 	}
@@ -504,8 +639,7 @@ DATA_TYPE getDataType(char* typeName)
 	
 	//typeName is a typedef type or error
 	SymbolTableEntry* typeEntry = retrieveSymbol(typeName);
-	if(typeEntry && 
-	   typeEntry->attribute->attributeKind == TYPE_ATTRIBUTE && 
+	if(typeEntry && isTypeAttr(typeEntry) && 
 	   typeEntry->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR)
 	{
 		return typeEntry->attribute->attr.typeDescriptor->properties.dataType;

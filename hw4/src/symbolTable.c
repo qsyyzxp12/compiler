@@ -110,12 +110,16 @@ void symbolTableEnd()
 SymbolTableEntry* retrieveSymbol(char* symbolName)
 {
 	int curr_lv = symbolTable.currentLevel;
-	SymbolTableEntry* entry = symbolTable.scopeDisplay[curr_lv];
-	while(entry)
+	int i;
+	for(i=curr_lv; i>=0; i--)
 	{
-		if(!strcmp(entry->name, symbolName))
-			return entry;
-		entry = entry->nextInSameLevel;
+		SymbolTableEntry* entry = symbolTable.scopeDisplay[i];
+		while(entry)
+		{
+			if(!strcmp(entry->name, symbolName))
+				return entry;
+			entry = entry->nextInSameLevel;
+		}
 	}
 	return NULL;
 }
