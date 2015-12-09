@@ -777,7 +777,9 @@ char *argv[];
 	initializeSymbolTable();
 
 	semanticAnalysis(prog);
-printf("2\n");
+
+	showScope();
+
 	symbolTableEnd();
 	if (!g_anyErrorOccur)
         printf("Parsing completed. No errors found.\n");

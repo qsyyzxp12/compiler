@@ -1,1 +1,5 @@
-int main(int a[5]){}
+int main(int a, float b[1][2])
+{
+	typedef int INT;
+	int c;
+}

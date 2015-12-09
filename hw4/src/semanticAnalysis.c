@@ -115,11 +115,59 @@ void processProgramNode(AST_NODE *programNode)
 
 void processDeclarationNode(AST_NODE* declarationNode)
 {
+	AST_NODE* type_node = declarationNode->child;
+	AST_NODE* ID_node = type_node->rightSibling;
+	char* typeName = type_node->semantic_value.identifierSemanticValue.identifierName;
+	char* varName = ID_node->semantic_value.identifierSemanticValue.identifierName;
+
+	SymbolAttribute* attr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
+	attr->attributeKind = VARIABLE_ATTRIBUTE;
+	attr->attr.typeDescriptor = (TypeDescriptor*)malloc(sizeof(TypeDescriptor));
+	if(ID_node->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
+	{
+		attr->attr.typeDescriptor->kind = ARRAY_TYPE_DESCRIPTOR;
+		attr->attr.typeDescriptor->properties.arrayProperties.elementType = getDataType(typeName);
+		AST_NODE* dimension_node = ID_node->child;
+		int dimension = 0;
+		while(dimension_node)
+		{
+			if(dimension_node->nodeType == NUL_NODE)
+				attr->attr.typeDescriptor->properties.arrayProperties.sizeInEachDimension[dimension] = 0;
+			else
+			{
+				int value = dimension_node->semantic_value.const1->const_u.intval; 
+				attr->attr.typeDescriptor->properties.arrayProperties.sizeInEachDimension[dimension] = value;
+			}
+			dimension++;
+			dimension_node = dimension_node->rightSibling;
+		}
+		attr->attr.typeDescriptor->properties.arrayProperties.dimension = dimension;
+	}
+	else
+	{
+		attr->attr.typeDescriptor->kind = SCALAR_TYPE_DESCRIPTOR;
+		attr->attr.typeDescriptor->properties.dataType = getDataType(typeName);
+	}
+
+	enterSymbol(varName, attr);
 }
+
 
 
 void processTypeNode(AST_NODE* idNodeAsType)
 {
+	AST_NODE* oriTypeNode = idNodeAsType->child;
+	AST_NODE* newTypeNode = oriTypeNode->rightSibling;
+	char* oriTypeName = oriTypeNode->semantic_value.identifierSemanticValue.identifierName;
+	char* newTypeName = newTypeNode->semantic_value.identifierSemanticValue.identifierName;
+	
+	SymbolAttribute* attr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
+	attr->attributeKind = TYPE_ATTRIBUTE;
+	attr->attr.typeDescriptor = (TypeDescriptor*)malloc(sizeof(TypeDescriptor));
+	attr->attr.typeDescriptor->kind = SCALAR_TYPE_DESCRIPTOR;
+	attr->attr.typeDescriptor->properties.dataType = getDataType(oriTypeName);
+
+	enterSymbol(newTypeName, attr);
 }
 
 
@@ -202,6 +250,32 @@ void checkReturnStmt(AST_NODE* returnNode)
 
 void processBlockNode(AST_NODE* blockNode)
 {
+	AST_NODE* childNode = blockNode->child;
+	if(childNode->nodeType == VARIABLE_DECL_LIST_NODE)
+	{
+		AST_NODE* decl_node = childNode->child;
+		while(decl_node)
+		{
+			if(decl_node->semantic_value.declSemanticValue.kind == VARIABLE_DECL)
+				processDeclarationNode(decl_node);
+			else if(decl_node->semantic_value.declSemanticValue.kind == TYPE_DECL)
+				processTypeNode(decl_node);
+			else
+				printf("syntax result error\n");
+			decl_node = decl_node->rightSibling;
+		}
+		childNode = childNode->rightSibling;
+	}
+
+	if(childNode)
+	{
+		AST_NODE* stmt_node = childNode->child;
+		while(stmt_node)
+		{
+			processStmtNode(stmt_node);
+			stmt_node = stmt_node->rightSibling;
+		}
+	}
 }
 
 
@@ -249,8 +323,12 @@ void declareFunction(AST_NODE* declarationNode)
 	attr->attr.functionSignature->parametersCount = 0;
 
 	AST_NODE* param_decl_node = param->child;
+	if(block->child)
+		symbolTable.currentLevel++;
 	while(param_decl_node)
 	{
+		if(block->child)
+			processDeclarationNode(param_decl_node);
 		attr->attr.functionSignature->parametersCount++;
 
 		Parameter* param = (Parameter*)malloc(sizeof(Parameter));
@@ -280,7 +358,7 @@ void declareFunction(AST_NODE* declarationNode)
 		else if(kind == NORMAL_ID)
 		{
 			param->type->kind = SCALAR_TYPE_DESCRIPTOR;
-			param->type->properties.dataType = type_node->dataType;
+			param->type->properties.dataType = getDataType(type_node->semantic_value.identifierSemanticValue.identifierName);
 		}
 		else
 			printf("Unknown ID type in ID_Node\n");
@@ -290,16 +368,14 @@ void declareFunction(AST_NODE* declarationNode)
 
 		param_decl_node = param_decl_node->rightSibling;
 	}
-/*
-	printf("attribute Kind No. = %d\n", attr->attributeKind);
-	printf("paramenterCount = %d\n", attr->attr.functionSignature->parametersCount);
-	printf("return type = %d\n", attr->attr.functionSignature->returnType);
-	printf("parameter name = %s\n", attr->attr.functionSignature->parameterList->parameterName);
-	printf("parameter type No. = %d\n", attr->attr.functionSignature->parameterList->type->properties.arrayProperties.elementType);
-	printf("parameter is array? = %d\n", attr->attr.functionSignature->parameterList->type->kind);
-	printf("dimension = %d\n", attr->attr.functionSignature->parameterList->type->properties.arrayProperties.dimension);
-	printf("size = %d\n", attr->attr.functionSignature->parameterList->type->properties.arrayProperties.sizeInEachDimension[0]);
-*/	enterSymbol(funcName, attr);
+	if(block->child)
+		symbolTable.currentLevel--;
+	enterSymbol(funcName, attr);
+	if(block->child)
+	{
+		symbolTable.currentLevel++;
+		processBlockNode(block);
+	}
 }
 
 DATA_TYPE getDataType(char* typeName)
