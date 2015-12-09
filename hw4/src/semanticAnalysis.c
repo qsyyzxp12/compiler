@@ -134,10 +134,8 @@ void processProgramNode(AST_NODE *programNode)
 void processDeclarationNode(AST_NODE* declarationNode)
 {
 	AST_NODE* type_node = declarationNode->child;
-	AST_NODE* ID_node = type_node->rightSibling;
 	char* typeName = type_node->semantic_value.identifierSemanticValue.identifierName;
-	char* varName = ID_node->semantic_value.identifierSemanticValue.identifierName;
-
+	
 	DATA_TYPE typeNo = getDataType(typeName);
 	if(typeNo == ERROR_TYPE)
 	{
@@ -145,37 +143,43 @@ void processDeclarationNode(AST_NODE* declarationNode)
 		return;
 	}
 
-	SymbolAttribute* attr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
-	attr->attributeKind = VARIABLE_ATTRIBUTE;
-	attr->attr.typeDescriptor = (TypeDescriptor*)malloc(sizeof(TypeDescriptor));
-	if(ID_node->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
+	AST_NODE* ID_node = type_node->rightSibling;
+	while(ID_node)
 	{
-		attr->attr.typeDescriptor->kind = ARRAY_TYPE_DESCRIPTOR;
-		attr->attr.typeDescriptor->properties.arrayProperties.elementType = typeNo;
-		
-		AST_NODE* dimension_node = ID_node->child;
-		int dimension = 0;
-		while(dimension_node)
+		char* varName = ID_node->semantic_value.identifierSemanticValue.identifierName;
+		SymbolAttribute* attr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
+		attr->attributeKind = VARIABLE_ATTRIBUTE;
+		attr->attr.typeDescriptor = (TypeDescriptor*)malloc(sizeof(TypeDescriptor));
+		if(ID_node->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
 		{
-			if(dimension_node->nodeType == NUL_NODE)
-				attr->attr.typeDescriptor->properties.arrayProperties.sizeInEachDimension[dimension] = 0;
-			else
+			attr->attr.typeDescriptor->kind = ARRAY_TYPE_DESCRIPTOR;
+			attr->attr.typeDescriptor->properties.arrayProperties.elementType = typeNo;
+			
+			AST_NODE* dimension_node = ID_node->child;
+			int dimension = 0;
+			while(dimension_node)
 			{
-				int value = dimension_node->semantic_value.const1->const_u.intval; 
-				attr->attr.typeDescriptor->properties.arrayProperties.sizeInEachDimension[dimension] = value;
+				if(dimension_node->nodeType == NUL_NODE)
+					attr->attr.typeDescriptor->properties.arrayProperties.sizeInEachDimension[dimension] = 0;
+				else
+				{
+					int value = dimension_node->semantic_value.const1->const_u.intval; 
+					attr->attr.typeDescriptor->properties.arrayProperties.sizeInEachDimension[dimension] = value;
+				}
+				dimension++;
+				dimension_node = dimension_node->rightSibling;
 			}
-			dimension++;
-			dimension_node = dimension_node->rightSibling;
+			attr->attr.typeDescriptor->properties.arrayProperties.dimension = dimension;
 		}
-		attr->attr.typeDescriptor->properties.arrayProperties.dimension = dimension;
-	}
-	else
-	{
-		attr->attr.typeDescriptor->kind = SCALAR_TYPE_DESCRIPTOR;
-		attr->attr.typeDescriptor->properties.dataType = typeNo;
-	}
+		else
+		{
+			attr->attr.typeDescriptor->kind = SCALAR_TYPE_DESCRIPTOR;
+			attr->attr.typeDescriptor->properties.dataType = typeNo;
+		}
 
-	enterSymbol(varName, attr);
+		enterSymbol(varName, attr);
+		ID_node = ID_node->rightSibling;
+	}
 }
 
 void processTypeNode(AST_NODE* idNodeAsType)
