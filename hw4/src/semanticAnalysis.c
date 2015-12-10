@@ -394,7 +394,6 @@ void checkFunctionCall(AST_NODE* functionCallNode)
 	paramNode = paramNode->child;
 	
 	checkParameterPassing(param, paramNode, funcNameNode);
-
 }
 
 void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter, AST_NODE* funcNameNode)
@@ -404,6 +403,11 @@ void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter
 		if(isIDNode(actualParameter))
 		{
 			SymbolTableEntry* paramEntry = retrieveSymbol(IDNodeName(actualParameter));
+			if(!paramEntry)
+			{
+				printErrorMsg(actualParameter, SYMBOL_UNDECLARED);
+				return;
+			}
 			if(isTypeAttr(paramEntry))
 			{
 				printErrorMsg(actualParameter, IS_TYPE_NOT_VARIABLE);
@@ -414,7 +418,7 @@ void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter
 				printErrorMsg(actualParameter, IS_FUNCTION_NOT_VARIABLE);
 				return;
 			}
-	
+			printf("hello\n");
 			//isVarAttr
 			if(isScalarVar(paramEntry))
 			{
