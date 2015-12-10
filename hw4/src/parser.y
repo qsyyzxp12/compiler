@@ -378,7 +378,7 @@ id_list		: ID
                     $$ = makeChild(makeIDNode($1, ARRAY_ID), $2);
                 }
 		;
-dim_decl	: MK_LB cexpr MK_RB 
+dim_decl	: MK_LB expr MK_RB 
                 {
                     $$ = $2;
                 } 

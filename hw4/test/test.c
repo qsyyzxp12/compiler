@@ -1,8 +1,7 @@
-int foo(int a){}
-int foo(){}
+int foo(float a){}
 int main()
 {
+	int b;
 	int a[5];
-	int a;
-	foo(a[1]);
+	a[1.5*2+b] = 1;
 }

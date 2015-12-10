@@ -7,11 +7,11 @@
 // This file is for reference only, you are not required to follow the implementation. //
 // You only need to check for errors stated in the hw4 assignment document. //
 
-#define isVarAttr(a) 	(a->attribute->attributeKind == VARIABLE_ATTRIBUTE) 
-#define isTypeAttr(a) 	(a->attribute->attributeKind == TYPE_ATTRIBUTE) 
-#define isFuncAttr(a) 	(a->attribute->attributeKind == FUNCTION_SIGNATURE) 
-#define isScalarVar(a) 	(a->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR)
-#define isArrayVar(a) 	(a->attribute->attr.typeDescriptor->kind == ARRAY_TYPE_DESCRIPTOR)
+#define isVarAttr(a) 		(a->attribute->attributeKind == VARIABLE_ATTRIBUTE) 
+#define isTypeAttr(a) 		(a->attribute->attributeKind == TYPE_ATTRIBUTE) 
+#define isFuncAttr(a) 		(a->attribute->attributeKind == FUNCTION_SIGNATURE) 
+#define isScalarVar(a) 		(a->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR)
+#define isArrayVar(a) 		(a->attribute->attr.typeDescriptor->kind == ARRAY_TYPE_DESCRIPTOR)
 #define ArrayElemType(a)	(a->attribute->attr.typeDescriptor->properties.arrayProperties.elementType)
 #define ArrayDimen(a)		(a->attribute->attr.typeDescriptor->properties.arrayProperties.dimension)
 
@@ -44,7 +44,7 @@ void checkIfStmt(AST_NODE* ifNode);
 void checkWriteFunction(AST_NODE* functionCallNode);
 void checkFunctionCall(AST_NODE* functionCallNode);
 void processExprRelatedNode(AST_NODE* exprRelatedNode);
-void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter);
+void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter, AST_NODE* funcNameNode);
 void checkReturnStmt(AST_NODE* returnNode);
 void processExprNode(AST_NODE* exprNode);
 void processVariableLValue(AST_NODE* idNode);
@@ -54,6 +54,7 @@ void getExprOrConstValue(AST_NODE* exprOrConstNode, int* iValue, float* fValue);
 ExprValue* evaluateExprValue(AST_NODE* exprNode);
 DATA_TYPE getDataType(char* typeName);
 void checkOneSideOfAssignOrExpr(AST_NODE* OHS);
+int cmpArraySubscript(AST_NODE* arrayIDNode, int dimenShouldBe);
 
 
 typedef enum ErrorMsgKind
@@ -121,6 +122,7 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
     	case TRY_TO_INIT_ARRAY:
 			break;
 		case EXCESSIVE_ARRAY_DIM_DECLARATION:
+			printf("array `%s` excessive array dimension declaration\n", ID);
 			break;
     	case RETURN_ARRAY:
 			break;
@@ -129,13 +131,13 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
     	case TYPEDEF_VOID_ARRAY:
 			break;
     	case PARAMETER_TYPE_UNMATCH:
-			printf("argument `%s` type wrong.\n", ID);
+			printf("Arguments of function `%s` have wrong type.\n", ID);
 			break;
     	case TOO_FEW_ARGUMENTS:
-			printf("too few arguments to function `%s`.\n", ID);
+			printf("Too few arguments to function `%s`.\n", ID);
 			break;
     	case TOO_MANY_ARGUMENTS:
-			printf("too many arguments to function `%s`.\n", ID);
+			printf("Too many arguments to function `%s`.\n", ID);
 			break;
     	case RETURN_TYPE_UNMATCH:
 			break;
@@ -163,8 +165,13 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
 			printf("size of array `%s` is negative\n", ID);
 			break;
     	case ARRAY_SUBSCRIPT_NOT_INT:
+			printf("array `%s` subscriptor is not an integer\n", ID);
 			break;
     	case PASS_ARRAY_TO_SCALAR:
+			printf("try to pass array `%s` to scalar.\n", ID);
+			break;
+    	case PASS_SCALAR_TO_ARRAY:
+			printf("try to pass scalar `%s` to array.\n", ID);
 			break;
 		default:
 			printf("Unhandled case in void printErrorMsg(AST_NODE* node, ERROR_MSG_KIND* errorMsgKind)\n");
@@ -238,7 +245,7 @@ void processDeclarationNode(AST_NODE* declarationNode)
 				else
 				{
 					ExprValue* value = evaluateExprValue(dimension_node);
-					if(!value->onlyInt)
+					if(!value->hasFloat && !value->hasID)
 					{
 						if(value->val >= 0)
 							attr->attr.typeDescriptor->properties.arrayProperties.sizeInEachDimension[dimension] = value->val;
@@ -308,19 +315,26 @@ void checkAssignOrExpr(AST_NODE* assignOrExprRelatedNode)
 
 void checkOneSideOfAssignOrExpr(AST_NODE* OHS)
 {
-	if(OHS->nodeType == EXPR_NODE)
+	if(isExprNode(OHS))
 		checkAssignOrExpr(OHS);
-	else if(OHS->nodeType == IDENTIFIER_NODE)
+	else if(isIDNode(OHS))
 	{	
 		SymbolTableEntry* entry = retrieveSymbol(IDNodeName(OHS));
 		if(!entry)
 			printErrorMsg(OHS, SYMBOL_UNDECLARED);
 		else if(!isVarAttr(entry))
 			printErrorMsg(OHS, NOT_ASSIGNABLE);
+		else if(isArrayVar(entry))
+		{
+			int ret = cmpArraySubscript(OHS, ArrayDimen(entry));
+			if(ret)
+				printErrorMsg(OHS, INCOMPATIBLE_ARRAY_DIMENSION);
+		}
+			
 	}
-	else if(OHS->nodeType == CONST_VALUE_NODE)
+	else if(isConstNode(OHS))
 	{
-		if(OHS->semantic_value.const1->const_type == STRINGC)
+		if(isStringConstNode(OHS))
 			printErrorMsg(OHS, STRING_OPERATION);
 	}
 	else if(OHS->nodeType == STMT_NODE && OHS->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT)
@@ -378,77 +392,125 @@ void checkFunctionCall(AST_NODE* functionCallNode)
 		return;	
 	}
 	paramNode = paramNode->child;
-	while(paramNode)
+	
+	checkParameterPassing(param, paramNode, funcNameNode);
+
+}
+
+void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter, AST_NODE* funcNameNode)
+{
+	while(actualParameter)
 	{
-		if(isIDNode(paramNode))
+		if(isIDNode(actualParameter))
 		{
-			SymbolTableEntry* paramEntry = retrieveSymbol(IDNodeName(paramNode));
+			SymbolTableEntry* paramEntry = retrieveSymbol(IDNodeName(actualParameter));
 			if(isTypeAttr(paramEntry))
 			{
-				printErrorMsg(paramNode, IS_TYPE_NOT_VARIABLE);
+				printErrorMsg(actualParameter, IS_TYPE_NOT_VARIABLE);
 				return;
 			}
 			else if(isFuncAttr(paramEntry))
 			{
-				printErrorMsg(paramNode, IS_FUNCTION_NOT_VARIABLE);
+				printErrorMsg(actualParameter, IS_FUNCTION_NOT_VARIABLE);
 				return;
 			}
-
+	
 			//isVarAttr
-
 			if(isScalarVar(paramEntry))
 			{
-				if(param->type->kind == ARRAY_TYPE_DESCRIPTOR)
+				if(formalParameter->type->kind == ARRAY_TYPE_DESCRIPTOR)
 				{
-					printErrorMsg(paramNode, PASS_SCALAR_TO_ARRAY);
+					printErrorMsg(actualParameter, PASS_SCALAR_TO_ARRAY);
 					return;
 				}
 				DATA_TYPE paramType = paramEntry->attribute->attr.typeDescriptor->properties.dataType;
-				DATA_TYPE typeShouldBe = param->type->properties.dataType;
+				DATA_TYPE typeShouldBe = formalParameter->type->properties.dataType;
 				if(paramType != typeShouldBe)
 				{
-					printErrorMsg(paramNode, PARAMETER_TYPE_UNMATCH);
+					printErrorMsg(funcNameNode, PARAMETER_TYPE_UNMATCH);
 					return;
 				}
 			}
-			else
+			else //if(isArrayVar(paramEntry))
 			{
-				if(param->type->kind == SCALAR_TYPE_DESCRIPTOR)
+				if(formalParameter->type->kind == SCALAR_TYPE_DESCRIPTOR)
 				{
-					printErrorMsg(paramNode, PASS_ARRAY_TO_SCALAR);
-					return;
+					int typeShoudBe = formalParameter->type->properties.dataType;
+					int ret = cmpArraySubscript(actualParameter, ArrayDimen(paramEntry));
+					if(ret == -1)
+					{
+						printErrorMsg(actualParameter, PASS_ARRAY_TO_SCALAR);
+						return;
+					}
+					else if(ret == 1)
+					{
+						printErrorMsg(actualParameter, EXCESSIVE_ARRAY_DIM_DECLARATION);
+						return;
+					}
 				}
-				DATA_TYPE paramType = paramEntry->attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
-				DATA_TYPE typeShouldBe = param->type->properties.arrayProperties.elementType;
-				if(paramType != typeShouldBe)
+				else //if(param->type->kind == ARRAY_TYPE_DESCRIPTOR)
 				{
-					printErrorMsg(paramNode, PARAMETER_TYPE_UNMATCH);
-					return;
-				}
-				int dimenShouldBe = param->type->properties.arrayProperties.dimension;
-				if(ArrayDimen(paramEntry) != dimenShouldBe)
-				{
-					printErrorMsg(paramNode, INCOMPATIBLE_ARRAY_DIMENSION);
-					return;
+					DATA_TYPE paramType = paramEntry->attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
+					DATA_TYPE typeShouldBe = formalParameter->type->properties.arrayProperties.elementType;
+					if(paramType != typeShouldBe)
+					{
+						printErrorMsg(funcNameNode, PARAMETER_TYPE_UNMATCH);
+						return;
+					}
+					int dimenShouldBe = formalParameter->type->properties.arrayProperties.dimension;
+					if(ArrayDimen(paramEntry) != dimenShouldBe)
+					{
+						printErrorMsg(actualParameter, INCOMPATIBLE_ARRAY_DIMENSION);
+						return;
+					}
 				}
 			}
 		}
-		param = param->next;
-		paramNode = paramNode->rightSibling;
-		if(!param && paramNode)
+		else if(isConstNode(actualParameter))
+		{
+			if(formalParameter->type->kind == ARRAY_TYPE_DESCRIPTOR || isStringConstNode(actualParameter))
+			{
+				printErrorMsg(funcNameNode, PARAMETER_TYPE_UNMATCH);
+				return;
+			}
+			else if(formalParameter->type->properties.dataType != actualParameter->semantic_value.const1->const_type)
+			{
+				printErrorMsg(funcNameNode, PARAMETER_TYPE_UNMATCH);
+				return;
+			}
+		}	
+		
+		formalParameter = formalParameter->next;
+		actualParameter = actualParameter->rightSibling;
+		if(!formalParameter && actualParameter)
 		{
 			printErrorMsg(funcNameNode, TOO_MANY_ARGUMENTS);
 			return;
 		}
 	}
-	if(param)
+	if(formalParameter)
 		printErrorMsg(funcNameNode, TOO_FEW_ARGUMENTS);
 }
 
-void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter)
+int cmpArraySubscript(AST_NODE* arrayIDNode, int dimenShouldBe)
 {
+	int dimenCount = 0;
+	AST_NODE* dimension = arrayIDNode->child;
+	while(dimension)
+	{
+		ExprValue* ret = evaluateExprValue(dimension);
+		if(ret->hasFloat)
+			printErrorMsg(arrayIDNode, ARRAY_SUBSCRIPT_NOT_INT);
+		dimension = dimension -> rightSibling;
+		dimenCount++;
+	}
+	if(dimenCount > dimenShouldBe)
+		return 1;
+	if(dimenCount < dimenShouldBe)
+		return -1;
+	else
+		return 0;
 }
-
 
 void processExprRelatedNode(AST_NODE* exprRelatedNode)
 {
@@ -472,15 +534,18 @@ ExprValue* evaluateExprValue(AST_NODE* exprNode)
 		}
 		else if(isFloatConstNode(exprNode))
 		{
-			ret->onlyInt = 1;
+			ret->hasFloat = 1;
 			return ret;
 		}
 	}
 	else if(isIDNode(exprNode))
 	{
+		SymbolTableEntry* entry = retrieveSymbol(IDNodeName(exprNode));
+		if(!entry)
+			printErrorMsg(exprNode, SYMBOL_UNDECLARED);
 		ret = (ExprValue*)malloc(sizeof(ExprValue));
 		memset(ret, 0, sizeof(ExprValue));
-		ret->onlyInt = 1;
+		ret->hasID = 1;
 		return ret;
 	}
 		
@@ -494,7 +559,7 @@ ExprValue* evaluateExprValue(AST_NODE* exprNode)
 			unary = -1;
 
 		ret = evaluateExprValue(childNode);
-		if(!ret->onlyInt)
+		if(!ret->hasFloat && !ret->hasID)
 			ret->val = unary * ret->val;
 		return ret;
 	}
@@ -504,9 +569,13 @@ ExprValue* evaluateExprValue(AST_NODE* exprNode)
 		AST_NODE* RHSNode = LHSNode->rightSibling;
 		ExprValue* LHSValue = evaluateExprValue(LHSNode);
 		ExprValue* RHSValue = evaluateExprValue(RHSNode);
-		if(LHSValue->onlyInt)
+		if(LHSValue->hasFloat)
 			return LHSValue;
-		if(RHSValue->onlyInt)
+		if(RHSValue->hasFloat)
+			return RHSValue;
+		if(LHSValue->hasID)
+			return LHSValue;
+		if(RHSValue->hasID)
 			return RHSValue;
 		switch(exprNode->semantic_value.exprSemanticValue.op.binaryOp)
 		{
@@ -531,7 +600,6 @@ ExprValue* evaluateExprValue(AST_NODE* exprNode)
 
 void processExprNode(AST_NODE* exprNode)
 {
-
 }
 
 
@@ -601,6 +669,7 @@ void processStmtNode(AST_NODE* stmtNode)
 		case IF_STMT:
 			break;
 		case FUNCTION_CALL_STMT:
+			checkFunctionCall(stmtNode);	
 			break;
 		case RETURN_STMT:
 			break;
@@ -688,7 +757,7 @@ void declareFunction(AST_NODE* declarationNode)
 				if(dimension_node->nodeType == NUL_NODE)
 					param->type->properties.arrayProperties.sizeInEachDimension[dimension] = 0;
 				else
-					param->type->properties.arrayProperties.sizeInEachDimension[dimension] = dimension_node->semantic_value.const1->const_u.intval;
+					param->type->properties.arrayProperties.sizeInEachDimension[dimension] = ConstNodeInt(dimension_node);
 				dimension++;
 				dimension_node = dimension_node->rightSibling;
 			}

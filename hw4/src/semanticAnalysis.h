@@ -1,5 +1,6 @@
 typedef struct ExprValue
 {
-	int onlyInt;
+	int hasFloat;
+	int hasID;
 	int val;
 }ExprValue;
