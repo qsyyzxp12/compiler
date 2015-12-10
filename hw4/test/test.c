@@ -1,7 +1,8 @@
-int foo(int a[]){}
+int foo(int a){}
+int foo(){}
 int main()
 {
-	typedef int INT;
-	int a[1], b;
-	b = foo(a);
+	int a[5];
+	int a;
+	foo(a[1]);
 }

@@ -152,7 +152,7 @@ static inline AST_NODE* makeExprNode(EXPR_KIND exprKind, int operationEnumValue)
 %token RETURN
 
 %type <node> program global_decl_list global_decl function_decl block stmt_list decl_list decl var_decl type init_id_list init_id  stmt relop_expr relop_term relop_factor expr term factor var_ref
-%type <node> param_list param dim_fn expr_null id_list dim_decl cexpr mcexpr cfactor assign_expr_list test assign_expr rel_op relop_expr_list nonempty_relop_expr_list
+%type <node> param_list param dim_fn expr_null id_list dim_decl unary_const cexpr mcexpr cfactor assign_expr_list test assign_expr rel_op relop_expr_list nonempty_relop_expr_list
 %type <node> add_op mul_op dim_list type_decl nonempty_assign_expr_list
 
 
@@ -387,6 +387,21 @@ dim_decl	: MK_LB cexpr MK_RB
                     $$ = makeSibling($1, $3);
                 } 
             ;
+unary_const	: OP_PLUS CONST
+				{
+                    $$ = makeExprNode(UNARY_OPERATION, UNARY_OP_POSITIVE);
+                    AST_NODE *constNode = Allocate(CONST_VALUE_NODE);
+                    constNode->semantic_value.const1 = $2;
+                    makeChild($$, constNode);
+				}
+			| OP_MINUS CONST
+				{
+                    $$ = makeExprNode(UNARY_OPERATION, UNARY_OP_NEGATIVE);
+                    AST_NODE *constNode = Allocate(CONST_VALUE_NODE);
+                    constNode->semantic_value.const1 = $2;
+                    makeChild($$, constNode);
+				};
+
 cexpr		: cexpr OP_PLUS mcexpr 
                 {
                     $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_ADD);
@@ -401,7 +416,11 @@ cexpr		: cexpr OP_PLUS mcexpr
                 {
                     $$ = $1;
                 }
-            ;  
+			| unary_const
+				{
+					$$ = $1;
+				};
+
 mcexpr		: mcexpr OP_TIMES cfactor 
                 {
                     $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_MUL);
@@ -417,7 +436,7 @@ mcexpr		: mcexpr OP_TIMES cfactor
                     $$ = $1;
                 }
             ;
-        
+
 cfactor:	CONST 
                 {
                     $$ = Allocate(CONST_VALUE_NODE);
@@ -775,9 +794,9 @@ char *argv[];
 	printGV(prog, NULL);
 
 	initializeSymbolTable();
-
+//printf("1\n");
 	semanticAnalysis(prog);
-
+//printf("2\n");
 	showScope();
 
 	symbolTableEnd();
