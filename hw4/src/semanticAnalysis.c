@@ -62,7 +62,7 @@ void processConstValueNode(AST_NODE* constValueNode);
 void getExprOrConstValue(AST_NODE* exprOrConstNode, int* iValue, float* fValue);
 ExprValue* evaluateExprValue(AST_NODE* exprNode);
 DATA_TYPE getDataType(char* typeName);
-void checkOneSideOfAssignOrExpr(AST_NODE* OHS);
+void checkOneSideOfAssignmentStmt(AST_NODE* OHS);
 int cmpArraySubscript(AST_NODE* arrayIDNode, int dimenShouldBe);
 
 
@@ -129,6 +129,7 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
     switch(errorMsgKind)
     {
 		case SYMBOL_IS_NOT_TYPE:
+			printf("ID `%s` is not a type.\n", ID);
 			break;
    		case SYMBOL_REDECLARE:
 			printf("ID `%s` redeclared.\n", ID);
@@ -164,7 +165,7 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
 			printf("Return value `%s` type unmatch\n", ID);
 			break;
     	case INCOMPATIBLE_ARRAY_DIMENSION:
-			printf("argument `%s` dimension wrong.\n", ID);
+			printf("array `%s` has too many dimension.\n", ID);
 			break;
 		case NOT_ASSIGNABLE:
 			printf("ID `%s` is not assignable.\n", ID);
@@ -236,7 +237,7 @@ void processDeclarationNode(AST_NODE* declarationNode)
 	DATA_TYPE typeNo = getDataType(typeName);
 	if(typeNo == ERROR_TYPE)
 	{
-		printErrorMsg(type_node, SYMBOL_UNDECLARED);
+		printErrorMsg(type_node, SYMBOL_IS_NOT_TYPE);
 		return;
 	}
 
@@ -328,17 +329,57 @@ void declareIdList(AST_NODE* declarationNode, SymbolAttributeKind isVariableOrTy
 
 void checkAssignOrExpr(AST_NODE* assignOrExprRelatedNode)
 {
-	AST_NODE* LHS = assignOrExprRelatedNode->child;
-	AST_NODE* RHS = LHS->rightSibling;
-
-	checkOneSideOfAssignOrExpr(LHS);
-	checkOneSideOfAssignOrExpr(RHS);		
+	while(assignOrExprRelatedNode)
+	{
+		checkAssignmentStmt(assignOrExprRelatedNode);
+		assignOrExprRelatedNode = assignOrExprRelatedNode->rightSibling;
+	}
 }
 
-void checkOneSideOfAssignOrExpr(AST_NODE* OHS)
+void checkWhileStmt(AST_NODE* whileNode)
+{
+}
+
+
+void checkForStmt(AST_NODE* forNode)
+{
+	AST_NODE* LNode = forNode->child;
+	AST_NODE* MNode = LNode->rightSibling;
+	AST_NODE* RNode = MNode->rightSibling;
+	AST_NODE* blockNode = RNode->rightSibling;
+
+	if(LNode->nodeType == NONEMPTY_ASSIGN_EXPR_LIST_NODE)
+		checkAssignOrExpr(LNode->child);
+
+	if(MNode->nodeType == NONEMPTY_RELOP_EXPR_LIST_NODE)
+	{
+	;	
+	}
+
+	if(RNode->nodeType == NONEMPTY_ASSIGN_EXPR_LIST_NODE)
+		checkAssignOrExpr(RNode->child);
+	
+	if(blockNode->nodeType != NUL_NODE)
+	{
+		openScope();
+		processBlockNode(blockNode);
+	}
+}
+
+
+void checkAssignmentStmt(AST_NODE* assignmentNode)
+{
+	AST_NODE* LHS = assignmentNode->child;
+	AST_NODE* RHS = LHS->rightSibling;
+
+	checkOneSideOfAssignmentStmt(LHS);
+	checkOneSideOfAssignmentStmt(RHS);		
+}
+
+void checkOneSideOfAssignmentStmt(AST_NODE* OHS)
 {
 	if(isExprNode(OHS))
-		checkAssignOrExpr(OHS);
+		checkAssignmentStmt(OHS);
 	else if(isIDNode(OHS))
 	{	
 		SymbolTableEntry* entry = retrieveSymbol(IDNodeName(OHS));
@@ -362,21 +403,6 @@ void checkOneSideOfAssignOrExpr(AST_NODE* OHS)
 	else if(isStmtNode(OHS) && isFuncCallNode(OHS))
 		checkFunctionCall(OHS);
 }
-
-void checkWhileStmt(AST_NODE* whileNode)
-{
-}
-
-
-void checkForStmt(AST_NODE* forNode)
-{
-}
-
-
-void checkAssignmentStmt(AST_NODE* assignmentNode)
-{
-}
-
 
 void checkIfStmt(AST_NODE* ifNode)
 {
@@ -440,7 +466,6 @@ void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter
 				printErrorMsg(actualParameter, IS_FUNCTION_NOT_VARIABLE);
 				return;
 			}
-			printf("hello\n");
 			//isVarAttr
 			if(isScalarVar(paramEntry))
 			{
@@ -470,7 +495,7 @@ void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter
 					}
 					else if(ret == 1)
 					{
-						printErrorMsg(actualParameter, EXCESSIVE_ARRAY_DIM_DECLARATION);
+						printErrorMsg(actualParameter, INCOMPATIBLE_ARRAY_DIMENSION);
 						return;
 					}
 				}
@@ -522,16 +547,23 @@ int cmpArraySubscript(AST_NODE* arrayIDNode, int dimenShouldBe)
 {
 	int dimenCount = 0;
 	AST_NODE* dimension = arrayIDNode->child;
+	SymbolTableEntry* arrayEntry = retrieveSymbol(IDNodeName(arrayIDNode));
 	while(dimension)
 	{
+		if(dimenCount == dimenShouldBe)
+			return 1;
+		
 		ExprValue* ret = evaluateExprValue(dimension);
 		if(ret->hasFloat)
 			printErrorMsg(arrayIDNode, ARRAY_SUBSCRIPT_NOT_INT);
+		else if(!ret->hasID)
+		{
+			if(ret->val >= arrayEntry->attribute->attr.typeDescriptor->properties.arrayProperties.sizeInEachDimension[dimenCount]);
+				printErrorMsg(arrayIDNode, EXCESSIVE_ARRAY_DIM_DECLARATION);
+		}
 		dimension = dimension -> rightSibling;
 		dimenCount++;
 	}
-	if(dimenCount > dimenShouldBe)
-		return 1;
 	if(dimenCount < dimenShouldBe)
 		return -1;
 	else
@@ -678,7 +710,7 @@ void checkReturnStmt(AST_NODE* returnNode)
 				if(ret == -1)
 					printErrorMsg(returnNode, RETURN_ARRAY);
 				else if(ret == 1)
-					printErrorMsg(returnNode, EXCESSIVE_ARRAY_DIM_DECLARATION);
+					printErrorMsg(returnNode, INCOMPATIBLE_ARRAY_DIMENSION);
 				else
 				{
 					if(ArrayElemType(retIDEntry) != returnTypeNo)
@@ -698,7 +730,7 @@ void checkReturnStmt(AST_NODE* returnNode)
 	}
 	else if(isExprNode(returnNode))
 	{
-		checkAssignOrExpr(returnNode);
+		checkAssignmentStmt(returnNode);
 	}
 	else if(isStmtNode(returnNode))
 	{
@@ -751,7 +783,7 @@ void processBlockNode(AST_NODE* blockNode)
 			stmt_node = stmt_node->rightSibling;
 		}
 	}
-//	closeScope();
+	closeScope();
 }
 
 
@@ -763,9 +795,10 @@ void processStmtNode(AST_NODE* stmtNode)
 		case WHILE_STMT:
 			break;
 		case FOR_STMT:
+			checkForStmt(stmtNode);
 			break;
 		case ASSIGN_STMT:
-			checkAssignOrExpr(stmtNode);
+			checkAssignmentStmt(stmtNode);
 			break;
 		case IF_STMT:
 			break;

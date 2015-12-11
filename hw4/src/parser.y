@@ -569,8 +569,7 @@ assign_expr     : ID OP_ASSIGN relop_expr
                 | relop_expr
                     {
                         $$ = $1;
-                    }
-		;
+                    };
 
 relop_expr	: relop_term 
                 {
