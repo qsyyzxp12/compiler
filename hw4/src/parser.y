@@ -797,7 +797,7 @@ char *argv[];
 //printf("1\n");
 	semanticAnalysis(prog);
 //printf("2\n");
-	showScope();
+//	showScope();
 
 	symbolTableEnd();
 	if (!g_anyErrorOccur)

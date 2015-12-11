@@ -12,18 +12,27 @@
 #define isFuncAttr(a) 		(a->attribute->attributeKind == FUNCTION_SIGNATURE) 
 #define isScalarVar(a) 		(a->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR)
 #define isArrayVar(a) 		(a->attribute->attr.typeDescriptor->kind == ARRAY_TYPE_DESCRIPTOR)
+#define ScalarVarType(a)	(a->attribute->attr.typeDescriptor->properties.dataType)
 #define ArrayElemType(a)	(a->attribute->attr.typeDescriptor->properties.arrayProperties.elementType)
 #define ArrayDimen(a)		(a->attribute->attr.typeDescriptor->properties.arrayProperties.dimension)
+#define funcEntryRetType(a)	(a->attribute->attr.functionSignature->returnType)
 
 #define IDNodeName(a) 		(a->semantic_value.identifierSemanticValue.identifierName)
 #define isIDNode(a)			(a->nodeType == IDENTIFIER_NODE)
 #define isExprNode(a)		(a->nodeType == EXPR_NODE)
+#define isStmtNode(a)		(a->nodeType == STMT_NODE)
 #define isConstNode(a)		(a->nodeType == CONST_VALUE_NODE)
+#define isDeclNode(a)		(a->nodeType == DECLARATION_NODE)
+#define isFuncCallNode(a)	(a->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT)
+#define ConstNodeType(a)	(a->semantic_value.const1->const_type)
 #define isIntConstNode(a)	(a->semantic_value.const1->const_type == INTEGERC)
 #define isFloatConstNode(a) (a->semantic_value.const1->const_type == FLOATC)
 #define isStringConstNode(a)(a->semantic_value.const1->const_type == STRINGC)
 #define ConstNodeInt(a)		(a->semantic_value.const1->const_u.intval)
 #define ConstNodeFloat(a)	(a->semantic_value.const1->const_u.fval)
+#define ConstNodeString(a)	(a->semantic_value.const1->const_u.sc)
+#define isFuncDeclNode(a)	(a->semantic_value.declSemanticValue.kind == FUNCTION_DECL)
+#define EntryOfNode(a)		(a->semantic_value.identifierSemanticValue.symbolTableEntry)
 int g_anyErrorOccur = 0;
 
 DATA_TYPE getBiggerType(DATA_TYPE dataType1, DATA_TYPE dataType2);
@@ -105,7 +114,18 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
     g_anyErrorOccur++;
     printf("Error found in line %d\n", node->linenumber);
     
-	char* ID = IDNodeName(node);
+	char* ID;
+	if(isIDNode(node))
+		ID = IDNodeName(node);
+	else if(isConstNode(node))
+	{
+		if(isIntConstNode(node))
+			sprintf(ID, "%d", ConstNodeInt(node));
+		else if(isFloatConstNode(node))
+			sprintf(ID, "%f", ConstNodeFloat(node));
+		else if(isStringConstNode(node))
+			ID = ConstNodeString(node);
+	}
     switch(errorMsgKind)
     {
 		case SYMBOL_IS_NOT_TYPE:
@@ -125,6 +145,7 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
 			printf("array `%s` excessive array dimension declaration\n", ID);
 			break;
     	case RETURN_ARRAY:
+			printf("Return array `%s`.\n", ID);
 			break;
     	case VOID_VARIABLE:
 			break;
@@ -140,6 +161,7 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
 			printf("Too many arguments to function `%s`.\n", ID);
 			break;
     	case RETURN_TYPE_UNMATCH:
+			printf("Return value `%s` type unmatch\n", ID);
 			break;
     	case INCOMPATIBLE_ARRAY_DIMENSION:
 			printf("argument `%s` dimension wrong.\n", ID);
@@ -156,7 +178,7 @@ void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
 			printf("ID `%s` is a function not a variable\n", ID);
 			break;
 		case STRING_OPERATION:
-			printf("invalid operand %s\n", ID);
+			printf("Do the string operand %s\n", ID);
 			break;
 		case ARRAY_SIZE_NOT_INT:
 			printf("size of array `%s` has non-integer type\n", ID);
@@ -272,7 +294,7 @@ void processDeclarationNode(AST_NODE* declarationNode)
 			attr->attr.typeDescriptor->properties.dataType = typeNo;
 		}
 
-		enterSymbol(varName, attr);
+		EntryOfNode(ID_node) = enterSymbol(varName, attr);
 		ID_node = ID_node->rightSibling;
 	}
 }
@@ -297,7 +319,7 @@ void processTypeNode(AST_NODE* idNodeAsType)
 		return;
 	}
 
-	enterSymbol(newTypeName, attr);
+	EntryOfNode(newTypeNode) = enterSymbol(newTypeName, attr);
 }
 
 void declareIdList(AST_NODE* declarationNode, SymbolAttributeKind isVariableOrTypeAttribute, int ignoreArrayFirstDimSize)
@@ -337,7 +359,7 @@ void checkOneSideOfAssignOrExpr(AST_NODE* OHS)
 		if(isStringConstNode(OHS))
 			printErrorMsg(OHS, STRING_OPERATION);
 	}
-	else if(OHS->nodeType == STMT_NODE && OHS->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT)
+	else if(isStmtNode(OHS) && isFuncCallNode(OHS))
 		checkFunctionCall(OHS);
 }
 
@@ -623,6 +645,81 @@ void processConstValueNode(AST_NODE* constValueNode)
 
 void checkReturnStmt(AST_NODE* returnNode)
 {
+	AST_NODE* funcNode = returnNode;
+	while(!isDeclNode(funcNode) && !isFuncDeclNode(funcNode))
+		funcNode = funcNode->parent;
+	SymbolTableEntry* funcEntry = EntryOfNode(funcNode->child->rightSibling);
+	DATA_TYPE returnTypeNo = funcEntryRetType(funcEntry);
+
+	returnNode = returnNode->child;
+	if(isConstNode(returnNode))
+	{
+		if(ConstNodeType(returnNode) != returnTypeNo)
+			printErrorMsg(returnNode, RETURN_TYPE_UNMATCH);
+	}
+	else if(isIDNode(returnNode))
+	{
+		SymbolTableEntry* retIDEntry = retrieveSymbol(IDNodeName(returnNode));
+		if(!retIDEntry)
+		{
+			printErrorMsg(returnNode, SYMBOL_UNDECLARED);
+			return;
+		}
+		if(isTypeAttr(retIDEntry))
+		{
+			printErrorMsg(returnNode, IS_TYPE_NOT_VARIABLE);
+			return;
+		}
+		else if(isVarAttr(retIDEntry))
+		{
+			if(isArrayVar(retIDEntry))
+			{
+				int ret = cmpArraySubscript(returnNode, ArrayDimen(retIDEntry));
+				if(ret == -1)
+					printErrorMsg(returnNode, RETURN_ARRAY);
+				else if(ret == 1)
+					printErrorMsg(returnNode, EXCESSIVE_ARRAY_DIM_DECLARATION);
+				else
+				{
+					if(ArrayElemType(retIDEntry) != returnTypeNo)
+						printErrorMsg(returnNode, RETURN_TYPE_UNMATCH);
+				}
+			}
+			else //if(isScalarVar(retIDEntry))
+			{
+				if(ScalarVarType(retIDEntry) != returnTypeNo)
+					printErrorMsg(returnNode, RETURN_TYPE_UNMATCH);
+			}
+		}
+		else if(isFuncAttr(retIDEntry))
+			printErrorMsg(returnNode, IS_FUNCTION_NOT_VARIABLE);
+		else
+			printf("BUG!\n");
+	}
+	else if(isExprNode(returnNode))
+	{
+		checkAssignOrExpr(returnNode);
+	}
+	else if(isStmtNode(returnNode))
+	{
+		if(isFuncCallNode(returnNode))
+		{
+			int errorCount = g_anyErrorOccur;
+			checkFunctionCall(returnNode);
+			if(errorCount == g_anyErrorOccur)
+			{
+//				printf("%s\n", IDNodeName(returnNode->child));
+				SymbolTableEntry* funcCallEntry = retrieveSymbol(IDNodeName(returnNode->child));
+				if(funcEntryRetType(funcCallEntry) != returnTypeNo)
+					printErrorMsg(returnNode->child, RETURN_TYPE_UNMATCH);
+			}
+		}
+		else
+			printf("BUG!!!\n");
+	}
+	else
+		printf("BUG!! returnNode->nodeType = %d\n", returnNode->nodeType);
+
 }
 
 
@@ -676,6 +773,7 @@ void processStmtNode(AST_NODE* stmtNode)
 			checkFunctionCall(stmtNode);	
 			break;
 		case RETURN_STMT:
+			checkReturnStmt(stmtNode);
 			break;
 		default:
 			break;
@@ -789,7 +887,7 @@ void declareFunction(AST_NODE* declarationNode)
 	}
 	if(block->child)
 		symbolTable.currentLevel--;
-	enterSymbol(funcName, attr);
+	EntryOfNode(funcID) = enterSymbol(funcName, attr);
 	if(block->child)
 	{
 		openScope();
