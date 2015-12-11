@@ -658,10 +658,19 @@ void AST_NODE::checkAssignmentStmt(){
   leftOp->processVariableLValue();
   rightOp->processNodeWithValue();
 
-  if(leftOp->dataType != ERROR_TYPE && rightOp->dataType != ERROR_TYPE)
+  if((leftOp->dataType != ERROR_TYPE) && (rightOp->dataType != ERROR_TYPE))
     dataType = getBiggerType(leftOp->dataType, rightOp->dataType);
-  if(rightOp->dataType == INT_PTR_TYPE || rightOp->dataType == FLOAT_PTR_TYPE){
+  if((rightOp->dataType == INT_PTR_TYPE) || (rightOp->dataType == FLOAT_PTR_TYPE)){
     rightOp->printErrorMsg(INCOMPATIBLE_ARRAY_DIMENSION);
+    setError();
+  } else if((leftOp->dataType == INT_TYPE) && (rightOp->dataType == FLOAT_TYPE)){
+    leftOp->printErrorMsg(ASSIGN_FLOAT_TO_INT);
+    setError();
+  } else if(rightOp->dataType == CONST_STRING_TYPE){
+    leftOp->printErrorMsg(STRING_OPERATION);
+    setError();
+  } else if(rightOp->dataType == VOID_TYPE){
+    leftOp->printErrorMsg(VOID_ASSIGNMENT);
     setError();
   }
 }
@@ -684,7 +693,7 @@ void AST_NODE::checkFunctionCall(){
 
   AST_NODE* firstInput = paraList->child;
   FunctionSignature* functionDefinition = symbolTableEntry->attribute->attr.functionSignature;
-  if(firstInput == NULL && functionDefinition->parametersCount != 0){
+  if((firstInput == NULL) && (functionDefinition->parametersCount != 0)){
     child->printErrorMsg(TOO_FEW_ARGUMENTS);
     setError();
   } else if(!firstInput->checkParameters(functionDefinition)){
@@ -729,11 +738,11 @@ bool AST_NODE::checkParameter(Parameter* nowParameter){//ERROR TYPE 3
   }
   TypeDescriptorKind defineTD = nowParameter->type->kind;
   char* paraName = nowParameter->parameterName;
-  if(defineTD == SCALAR_TYPE_DESCRIPTOR && isArray()){
+  if((defineTD == SCALAR_TYPE_DESCRIPTOR) && isArray()){
     printErrorMsg(PASS_ARRAY_TO_SCALAR, paraName);
     setError();
     return false;
-  } else if(defineTD == ARRAY_TYPE_DESCRIPTOR && !isArray()){
+  } else if((defineTD == ARRAY_TYPE_DESCRIPTOR) && !isArray()){
     printErrorMsg(PASS_SCALAR_TO_ARRAY, paraName);
     setError();
     return false;
@@ -874,7 +883,7 @@ DATA_TYPE toPointer(DATA_TYPE dt){
   }
 }
 DATA_TYPE getBiggerType(DATA_TYPE dataType1, DATA_TYPE dataType2){
-  if(dataType1 == FLOAT_TYPE || dataType2 == FLOAT_TYPE) {
+  if((dataType1 == FLOAT_TYPE) || (dataType2 == FLOAT_TYPE)) {
     return FLOAT_TYPE;
   } else {
     return INT_TYPE;

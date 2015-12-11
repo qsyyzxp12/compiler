@@ -1,6 +1,6 @@
 * find semenatic errors
-should not stop at the first violation found
-the function header always appear before calling
+1. should not stop at the first violation found
+2. the function header always appear before calling
 * output format
 ** correct(ok)
 "Parsing completed. No errors found."
@@ -54,5 +54,34 @@ you must specify and attach test cases
 * misc
 ** identifier names -- not exceed 64 characters
 ** distinct identifiers -- unlimited
+* files to write
+** parser.y
+evaluation, action(scope++)
+p.31
+** symboltable.c
+implementation of symboltable
+** semenaticAnalysis.c
+check semantic errors
 
 
+
+
+* para.c
+** DONE write undeclared
+CLOSED: [2015-12-08 二 18:16]
+** DONE a[2.2] array_size_not_int 
+CLOSED: [2015-12-08 二 18:16]
+** DONE fun(b[3]) incompatable type
+CLOSED: [2015-12-09 三 00:49]
+** DONE return 0
+CLOSED: [2015-12-08 二 18:16]
+* fun.c
+** DONE f(), f(1, 2)
+CLOSED: [2015-12-08 二 18:17]
+** DONE return type test
+CLOSED: [2015-12-09 三 00:22]
+* variable.c
+** DONE a redeclared
+CLOSED: [2015-12-08 二 18:17]
+** DONE c undeclared assign
+CLOSED: [2015-12-08 二 18:17]
