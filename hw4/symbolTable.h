@@ -10,6 +10,8 @@
 #define SYMBOL_TABLE_VOID_NAME "void"
 #define SYMBOL_TABLE_SYS_LIB_READ "read"
 #define SYMBOL_TABLE_SYS_LIB_FREAD "fread"
+#define SYMBOL_TABLE_SYS_LIB_WRITE "write"
+// I don't want to use it
 #define HASH_TABLE_SIZE 256
 
 typedef enum SymbolAttributeKind

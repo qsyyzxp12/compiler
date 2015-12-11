@@ -12,13 +12,13 @@
  */
 
 int HASH(char * str) {
-	int idx=0;
-	while (*str){
-		idx = idx << 1;
-		idx+=*str;
-		str++;
-	}
-	return (idx & (HASH_TABLE_SIZE-1));
+  int idx=0;
+  while (*str){
+    idx = idx << 1;
+    idx+=*str;
+    str++;
+  }
+  return (idx & (HASH_TABLE_SIZE-1));
 }
 
 SymbolTable symbolTable;
@@ -62,9 +62,11 @@ void enterIntoHashTrain(int hashIndex, SymbolTableEntry* entry){
   symbolTable.hashTable[hashIndex] = entry;
 }
 
-void initReservedID();
-void enterEntry(char* name, DATA_TYPE type, int level);
+void initReservedID(int);
+void enterReservedVariable(char* name, DATA_TYPE type, int level);
+void enterReservedFunction(char* name, Parameter* parameterList, int parametersCount, DATA_TYPE returnType);
 #define INITIAL_SCOPE_NUM 5
+#define GLOBAL_SCOPE_LEVEL 0
 void initializeSymbolTable(){
   symbolTable.currentLevel = 0;//set global = 0
   for(int i = 0; i < HASH_TABLE_SIZE; i++)//256
@@ -73,16 +75,35 @@ void initializeSymbolTable(){
   for(int i = 0; i < INITIAL_SCOPE_NUM; i++)
     symbolTable.scopeDisplay[i] = NULL;
 
-  initReservedID();
+  initReservedID(GLOBAL_SCOPE_LEVEL);
 }
-#define GLOBAL_SCOPE_LEVEL 0
-void initReservedID(){//if no this, void, int, double... is undeclared
+
+void initReservedID(int level){//if no this, void, int, double... is undeclared
   //void int float //TODO: if else return while for main 
-  enterEntry("int", INT_TYPE, GLOBAL_SCOPE_LEVEL);
-  enterEntry("void", VOID_TYPE, GLOBAL_SCOPE_LEVEL);
-  enterEntry("float", FLOAT_TYPE, GLOBAL_SCOPE_LEVEL);
+  enterReservedVariable("int", INT_TYPE, level);
+  enterReservedVariable("void", VOID_TYPE, level);
+  enterReservedVariable("float", FLOAT_TYPE, level);
+  //... I found these functions in C-- descriptions
+  enterReservedFunction("read", NULL, 0, INT_TYPE);
+  enterReservedFunction("fread", NULL, 0, FLOAT_TYPE);
+  Parameter* writeParameter = new Parameter;
+  writeParameter->next = NULL;
+  //TODO: wtf is parameter name?
+  writeParameter->type = new TypeDescriptor;
+  writeParameter->type->kind = SCALAR_TYPE_DESCRIPTOR;
+  writeParameter->type->properties.dataType = CONST_STRING_TYPE;
+  enterReservedFunction("write", writeParameter, 1, VOID_TYPE);
 }
-void enterEntry(char* name, DATA_TYPE type, int level){
+void enterReservedFunction(char* name, Parameter* parameterList, int parametersCount, DATA_TYPE returnType){
+  SymbolAttribute* attr = new SymbolAttribute;
+  attr->attributeKind = FUNCTION_SIGNATURE;
+  attr->attr.functionSignature = new FunctionSignature;
+  attr->attr.functionSignature->returnType = returnType;
+  attr->attr.functionSignature->parameterList = parameterList;
+  attr->attr.functionSignature->parametersCount = parametersCount;
+  enterSymbol(name, attr);//Impossible to redeclare...
+}
+void enterReservedVariable(char* name, DATA_TYPE type, int level){
   SymbolTableEntry* entry = newSymbolTableEntry(level);
   entry->name = name;
   entry->attribute = new SymbolAttribute;
@@ -103,13 +124,13 @@ void symbolTableEnd(){
     while(hashentry != NULL){
       SymbolTableEntry* todelete = hashentry;
       hashentry = hashentry->nextInHashChain;
-      delete todelete;
+      delete todelete;//Need to delete more interal structures...
     }
   }
 }
 
 SymbolTableEntry* retrieveSymbol(char* symbolName){
-  fprintf(stderr, "try to retrieve %s\n", symbolName);
+  //fprintf(stderr, "try to retrieve %s\n", symbolName);
   for(int i = symbolTable.currentLevel; i >= 0; i--){//from the most closest scope, search the name
     SymbolTableEntry* hashentry = symbolTable.scopeDisplay[i];
     while(hashentry != NULL){
@@ -123,14 +144,14 @@ SymbolTableEntry* retrieveSymbol(char* symbolName){
 }
 
 SymbolTableEntry* enterSymbol(char* symbolName, SymbolAttribute* attribute){
-  fprintf(stderr, "enter symbol %s in level %d\n", symbolName, symbolTable.currentLevel);
+  //fprintf(stderr, "enter symbol %s in level %d\n", symbolName, symbolTable.currentLevel);
   int hashValue = HASH(symbolName);
   SymbolTableEntry* hashentry = symbolTable.hashTable[hashValue];
 
   while(hashentry != NULL){
     if(strcmp(hashentry->name, symbolName) == 0)
       if(symbolTable.currentLevel == hashentry->currentLevel){
-	fprintf(stderr, "ERROR:redeclare error\n");
+	//fprintf(stderr, "ERROR:redeclare error\n");
 	return NULL;
       }
     hashentry = hashentry->nextInHashChain;
@@ -211,6 +232,7 @@ void openScope(){
   } else {
     symbolTable.scopeDisplay[symbolTable.currentLevel] = NULL;//new empty scope instead
   }
+  initReservedID(symbolTable.currentLevel);//every scope has 3 reserved ids
 }
 
 void closeScope(){//revert to previous scope

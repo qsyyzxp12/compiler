@@ -1,5 +1,6 @@
 %{
 #include <stdio.h>
+#include <sstream>
 %}
 letter          [A-Za-z]
 digit           [0-9]
@@ -90,7 +91,11 @@ error            .
                     CON_Type *p;
                     p = (CON_Type *)malloc(sizeof(CON_Type));
                     p->const_type = INTEGERC;
-                    p->const_u.intval = atoi(yytext);
+		    int result;
+		    if(!(std::stringstream(yytext) >> result)){
+		       fprintf(stderr, "Error in line %d:\nint value %s incorrect\n", linenumber, yytext);
+		    }
+                    p->const_u.intval = result;
                     yylval.const1 = p;
                     return CONST;
                 }
@@ -98,7 +103,8 @@ error            .
                     CON_Type *p;
                     p = (CON_Type *)malloc(sizeof(CON_Type));
                     p->const_type = FLOATC;
-                    p->const_u.fval = atof(yytext);
+		    float result;
+                    p->const_u.fval = result;
                     yylval.const1 = p;
                     return CONST;
                 }

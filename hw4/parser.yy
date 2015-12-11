@@ -276,7 +276,7 @@ param		: type ID
                     makeFamily($$, 2, makeIDNode($1, NORMAL_ID), makeChild(makeIDNode($2, ARRAY_ID), $3));
                 }
             ;
-dim_fn		: MK_LB expr_null MK_RB 
+dim_fn		: MK_LB expr MK_RB 
                 {
                     $$ = $2;
                 }
@@ -354,6 +354,12 @@ var_decl	: type init_id_list MK_SEMICOLON
                     $$ = makeDeclNode(VARIABLE_DECL);
                     makeFamily($$, 2, $1, $2);
                 }
+            | VOID init_id_list MK_SEMICOLON 
+                {
+		    /* it's sure to be error */
+                    $$ = makeDeclNode(VARIABLE_DECL);
+                    makeFamily($$, 2, makeIDNode("void", NORMAL_ID), $2);
+                }
             | ID id_list MK_SEMICOLON
                 {
                     $$ = makeDeclNode(VARIABLE_DECL);
@@ -388,11 +394,11 @@ id_list		: ID
                     $$ = makeChild(makeIDNode($1, ARRAY_ID), $2);
                 }
 		;
-dim_decl	: MK_LB cexpr MK_RB 
+dim_decl	: MK_LB expr MK_RB 
                 {
                     $$ = $2;
                 } 
-            | dim_decl MK_LB cexpr MK_RB 
+            | dim_decl MK_LB expr MK_RB 
                 {
                     $$ = makeSibling($1, $3);
                 } 
@@ -763,6 +769,10 @@ var_ref		: ID
 
 
 dim_list	: dim_list MK_LB expr MK_RB 
+                {
+                    $$ = makeSibling($1, $3);
+                }
+		| dim_list MK_LB var_ref MK_RB 
                 {
                     $$ = makeSibling($1, $3);
                 }

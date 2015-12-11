@@ -153,7 +153,36 @@ struct Parameter;
 struct TypeDescriptor;
 struct IdentifierSemanticValue;
 struct SymbolAttribute;
-
+typedef enum ErrorMsgKind
+  {
+    SYMBOL_IS_NOT_TYPE,
+    SYMBOL_REDECLARE,
+    SYMBOL_UNDECLARED,
+    NOT_FUNCTION_NAME,
+    TRY_TO_INIT_ARRAY,
+    EXCESSIVE_ARRAY_DIM_DECLARATION,
+    RETURN_ARRAY,
+    VOID_VARIABLE,
+    TYPEDEF_VOID_ARRAY,
+    PARAMETER_TYPE_UNMATCH,
+    TOO_FEW_ARGUMENTS,
+    TOO_MANY_ARGUMENTS,
+    RETURN_TYPE_UNMATCH,
+    INCOMPATIBLE_ARRAY_DIMENSION,
+    NOT_ASSIGNABLE,
+    NOT_ARRAY,
+    IS_TYPE_NOT_VARIABLE,
+    IS_FUNCTION_NOT_VARIABLE,
+    STRING_OPERATION,
+    ARRAY_SIZE_NOT_INT,
+    ARRAY_SIZE_NEGATIVE,
+    ARRAY_SUBSCRIPT_NOT_INT,
+    PASS_ARRAY_TO_SCALAR,
+    PASS_SCALAR_TO_ARRAY,
+    ASSIGN_FLOAT_TO_INT,
+    VOID_ASSIGNMENT,
+    DECLARED_AS_FUNCTION
+  } ErrorMsgKind;
 
 
 struct AST_NODE {
@@ -172,17 +201,19 @@ struct AST_NODE {
     CON_Type *const1;
   } semantic_value;
 
+  //TODO: change to bool to reduce recheck (datatype == null)
+  void processProgramNode();
   void processDeclarationNodes();
   void processDeclarationNode();
-  void declareIdList(int isVariableOrTypeAttribute, bool ignoreArrayFirstDimSize);//enum cannot be forward declared...
+  void declareIdList(TypeDescriptor* typeTypeDescriptor,int isVariableOrTypeAttribute, bool ignoreArrayFirstDimSize);//enum cannot be forward declared...
   void declareId(int isVariableOrTypeAttribute, bool ignoreArrayFirstDimSize, TypeDescriptor* typeTypeDescriptor);
-  
-  //TODO: change to bool to reduce recheck (datatype == null)
 
-  void processExprRelatedNode();//main
+  void processNodeWithValue();//main
   void processExprNode();//1
+  void checkExprType();
   void evaluateExprValue();
   void evaluateBinaryExprValue();
+  void evaluateNonRelationExpr(AST_NODE* leftOp, AST_NODE* rightOp, float lvalue, float rvalue);
   void evaluateUnaryExprValue();
   void checkFunctionCall();//2
   void processParameterList();
@@ -192,26 +223,32 @@ struct AST_NODE {
   void processConstExpr();//4
 
   void declareFunction();
-  void checkAssignOrExpr();
-  
-  bool isArray();
-  bool isConst();
+  void processAssignOrExpr();
 
   void processDeclDimList(TypeDescriptor* typeDescriptor, int ignoreFirstDimSize);
   void processTypeNode();
 
-  void processGeneralNode();
+  void processBlock();
   void processStmtNode();
+  void checkWhileStmt();
+  void checkForStmt();
+  void checkIfStmt();
+  void checkWriteFunction();
 
-  //void processVariableLValue();
   void checkAssignmentStmt();
   void checkReturnStmt();
   void processBlockNode();
-  void getExprOrConstValue(int*, float*);
+  float getValue();
   void processVariableLValue();
 
-  void printNodeType(const char*);
   
+  bool isArray();
+  bool isConst();
+  void setError();
+  void printNodeType(const char*);
+  void printErrorMsg(ErrorMsgKind errorMsgKind, char* para="");
+  
+  void processChildren(void(AST_NODE::*fn)());
 };
 typedef struct AST_NODE AST_NODE;
 typedef struct AST_NODE node;
