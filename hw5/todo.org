@@ -1,0 +1,57 @@
+* Description
+use QEMU (A machine emulator that can emulate ARMv8 on PC/x86-based workstations) to verify the correctness of the
+generated code
+** The output file: ARMv8 assembly code rather than ARMv8 machine code.
+However, the input executable for QEMU is in ELF(Executable and Linkable Format or Extensible Linkling Format)
+*** need to use some tools to convert our output.s to an executable in ELF.
+** useful reference
+1. Procedure Call Standard for the ARMv8® Architecture
+http://infocenter.arm.com/help/topic/com.arm.doc.ihi0055b/IHI0055B_aapcs64.pdf
+2. QEMU website and download site
+http://wiki.qemu.org/Main_Page
+* Requirement
+use qemu-aarch64 version 2.0.0 to test run your processed executables
+1) Assignment statements
+2) Arithmetic expressions
+3) Control statements: while, if-then-else
+4) Parameterless procedure calls
+5) Read and Write I/O calls
+PS: For variable initialization, we support only simple constant initializations, such as 
+Int I=1;
+Float a=2.0;
+More features (as listed below) will be implemented in assignment #6.
+6) Short-circuit boolean expressions
+7) Variable initializations
+8) Procedure and function calls with parameters
+9) For loops
+10) Multiple dimensional arrays
+11) Implicit type conversions
+** Read and Write will be translated into external function calls
+# a=read();
+bl _read_int
+mov w9, w0   # the read integer will be put in w0. 
+str w9, [x29, #-4]
+# b=fread();
+bl _read_float
+fmov s16, s0   # the read float number will be put in s0.
+str s16, [x29, #-8]
+# write(a); a is an integer variable
+ldr w9, [x29, #-4]
+mov w0, w9     #w0 is used to pass the value you would like to write.
+bl _write_int
+# write(b); b is a floating point variable.
+ldr s16, [x29, #-8]
+fmov s0, s16   #s0 is used to pass the value you would like to write out.
+bl _write_float
+# write("Enter a number\n");
+.data
+_CONSTANT_0: .ascii "Enter a number\n\000"
+.align 3
+ldr x9, =_CONSTANT_0   # Load address of _CONSTANT_0 to x9
+mov x0, x9   # move x9 to x0, x0 is used to pass parameter. It is used to pass the string label to _write_str. 
+bl _write_str       #jump to _write_str
+** Example: fact.s
+* Submission requirements
+1. DO NOT change the executable name (parser)
+2. We grade the assignments on the QEMU installed on Ubuntu 14.04
+
