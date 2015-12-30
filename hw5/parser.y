@@ -892,7 +892,7 @@ printCode()
     whileCount = 0;
     constCount = 0;
     writeV8("_start_MAIN:\n");
-    writeV8(".text:\n");
+    writeString("hii", "hello world\n");//only this auto-generated, and temporally move to the begin of function
     writeV8("str x30, [sp, #0]\n");
     writeV8("str x29, [sp, #-8]\n");
     writeV8("add x29, sp, #-8\n");
@@ -901,7 +901,7 @@ printCode()
     writeV8("ldr x30, [x30, #0]\n");
     writeV8("sub sp, sp, w30\n");
     
-    writeString("hii", "hello world\n");//only this auto-generated
+
 
     writeV8("_end_MAIN:\n");
     writeV8("ldr x30, [x29, #8]\n");
