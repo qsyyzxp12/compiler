@@ -753,6 +753,10 @@ dim_list	: dim_list MK_LB expr MK_RB
 
 %%
 
+void printCode()
+{
+}
+
 #include "lex.yy.c"
 main (argc, argv)
 int argc;
@@ -774,6 +778,7 @@ char *argv[];
         printf("Parsing completed. No errors found.\n");
      }
   } /* main */
+
 
 
 int yyerror (mesg)
