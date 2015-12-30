@@ -775,16 +775,20 @@ dim_list	: dim_list MK_LB expr MK_RB
       char* newStrValue = (char*)malloc(sizeof(strValue)*2);
       int count = 0;
       int newcount = 0;
-      while(strValue[count]){
-	if(strValue[count] == '\\'){
+      while(strValue[count] != '\0'){
+	if(strValue[count] == '\n'){
 	  newStrValue[newcount++] = '\\';
+	  newStrValue[newcount++] = 'n';
+	} else if(strValue[count] == '\t'){
 	  newStrValue[newcount++] = '\\';
+	  newStrValue[newcount++] = 't';
 	} else {
 	  newStrValue[newcount++] = strValue[count];
 	}
 	count++;
       }
-      fprintf(stderr, "original strvalue = %s, after = %s\n", strValue, newStrValue);
+      newStrValue[newcount] = '\0';
+      fprintf(stderr, "original strvalue = [%s], after = [%s]\n", strValue, newStrValue);
 
       writeV8("%s: .ascii \"%s\\000\"\n", strName, newStrValue);
       //TODO: constant_0 -> constant_n
