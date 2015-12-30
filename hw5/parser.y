@@ -784,6 +784,7 @@ dim_list	: dim_list MK_LB expr MK_RB
 	}
 	count++;
       }
+      fprintf(stderr, "original strvalue = %s, after = %s\n", strValue, newStrValue);
 
       writeV8("%s: .ascii \"%s\\000\"\n", strName, newStrValue);
       //TODO: constant_0 -> constant_n
