@@ -892,7 +892,26 @@ printCode()
     whileCount = 0;
     constCount = 0;
     writeV8("_start_MAIN:\n");
-    writeString("hii", "hello world\n");
+    writeV8(".text:\n");
+    writeV8("str x30, [sp, #0]\n");
+    writeV8("str x29, [sp, #-8]\n");
+    writeV8("add x29, sp, #-8\n");
+    writeV8("add sp, sp, #-16\n");
+    writeV8("ldr x30, =_frameSize_MAIN\n");
+    writeV8("ldr x30, [x30, #0]\n");
+    writeV8("sub sp, sp, w30\n");
+    
+    writeString("hii", "hello world\n");//only this auto-generated
+
+    writeV8("_end_MAIN:\n");
+    writeV8("ldr x30, [x29, #8]\n");
+    writeV8("mov sp, x29\n");
+    writeV8("add sp, sp, #8\n");
+    writeV8("ldr x29, [x29,#0]\n");
+    writeV8("RET x30\n");
+    writeV8(".data\n");
+    
+    writeV8("_frameSize_MAIN: .word 16\n");
 }
 
 main (argc, argv)
