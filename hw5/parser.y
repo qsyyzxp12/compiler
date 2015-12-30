@@ -782,6 +782,15 @@ dim_list	: dim_list MK_LB expr MK_RB
 	} else if(strValue[count] == '\t'){
 	  newStrValue[newcount++] = '\\';
 	  newStrValue[newcount++] = 't';
+	} else if(strValue[count] == '\\'){
+	  newStrValue[newcount++] = '\\';
+	  newStrValue[newcount++] = '\\';
+	} else if(strValue[count] == '\r'){
+	  newStrValue[newcount++] = '\\';
+	  newStrValue[newcount++] = 'r';
+	} else if(strValue[count] == '\0'){
+	  newStrValue[newcount++] = '\\';
+	  newStrValue[newcount++] = '0';
 	} else {
 	  newStrValue[newcount++] = strValue[count];
 	}
@@ -800,34 +809,30 @@ dim_list	: dim_list MK_LB expr MK_RB
       //test part
       writeV8(".text\n");
       writeV8("ldr x0, =%s\n", strName);//"_CONSTANT_0" or what?
-      //mov x0, x9 //TODO: wtf is this?
+      //mov x0, x9 //TODO: check is needed or not
       writeV8("bl _write_str\n");
     }
-
-    void writeInt(char* reg){
-      writeV8("ldr w9, [x29, #-4]\n");
-      writeV8("mov %s, w9\n", reg);//#w0 is used to pass the value you would like to write.
+    void writeInt(char* reg){//reg will read the value from local stack and write
+//if directly give a reg to write, it's value will be deleted(?) after called write()
+      writeV8("ldr %s, [x29, #-4]\n", reg);
+      writeV8("mov w0, %s\n", reg);
       writeV8("bl _write_int\n");
     }
-
     void writeFloat(char* reg){
-      writeV8("ldr s16, [x29, #-8]\n");
-      writeV8("fmov %s, s16\n", reg);//#s0 is used to pass the value you would like to write out
+      writeV8("ldr %s, [x29, #-8]\n", reg);
+      writeV8("fmov s0, %s\n", reg);
       writeV8("bl _write_float\n");
     }
-
-    void readInt(char* reg){
+    void readInt(char* reg){//will read value into reg and write into local stack
       writeV8("bl _read_int\n");
-      writeV8("mov w9, %s\n", reg);
-      writeV8("str w9, [x29, #-4]\n");
+      writeV8("mov %s, w0\n", reg);
+      writeV8("str %s, [x29, #-4]\n", reg);
     }
-
     void readFloat(char* reg){
-      writeV8("bl _read_float");
-      writeV8("fmov s16, %s\n", reg);
-      writeV8("str s16, [x29, #-8]\n");
+      writeV8("bl _read_float\n");
+      writeV8("fmov %s, s0\n", reg);
+      writeV8("str %s, [x29, #-8]\n", reg);
     }
-
     void doWhile(){//while(xxx) yyy
       whileCount++;
       char testName[15];
@@ -835,16 +840,16 @@ dim_list	: dim_list MK_LB expr MK_RB
       char exitName[15];
       sprintf(exitName, "WhileExit%d", whileCount);
 
-      writeV8("%s:", testName);
+      writeV8("%s:\n", testName);
       //TODO: generate xxx
-    
+      //xxx
       //I wish to get result register 
-      //writeV8("cmp %s, 0\n", resultReg);
+      writeV8("cmp %s, 0\n", resultReg);
       writeV8("beq %s\n", exitName);
       //TODO: generate yyy
-    
+      //yyy
       writeV8("b %s\n", testName);
-      writeV8("%s:", exitName);
+      writeV8("%s:\n", exitName);
     }
 
     void doIf(){//if(xxx) yyy
@@ -853,12 +858,12 @@ dim_list	: dim_list MK_LB expr MK_RB
       sprintf(exitName, "IfExit%d", ifCount);
       //if xxx eq false or 0 , jump to exit
       //TODO: code of xxx(with final compare jump to exit)
-
-      //I wish to get result register 
-      //writeV8("cmp %s, 0\n", resultReg);
+      //xxx
+      //I wish to get result register of xxx
+      writeV8("cmp %s, 0\n", resultReg);
       writeV8("beq %s\n", exitName); 
       //TODO: code of block(yyy)
-    
+      //yyy
       writeV8("%s:\n", exitName);
     }
 
@@ -871,28 +876,34 @@ dim_list	: dim_list MK_LB expr MK_RB
       sprintf(exitName, "IfExit%d", ifCount);
 
       //TODO: code of xxx(with final compare jump to else)
-
+      //xxx
       //I wish to get result register 
-      //writeV8("cmp %s, 0\n", resultReg);
+      writeV8("cmp %s, 0\n", resultReg);
       writeV8("beq %s\n", elseName);
       //TODO: code of if block(yyy)(with final jump to exit)
-
+      //yyy
       writeV8("b %s\n", exitName);
       //TODO: code of else block(zzz)
       writeV8("%s:\n", elseName);
-
+      //zzz
       writeV8("%s:\n", exitName);
     }
 
 printCode()
 {
-    //TODO: move out(to semanticAnalysis )
+//frame information: temporarily added
     outputFile = fopen("output.s", "w");
     ifCount = 0;
     whileCount = 0;
     constCount = 0;
     writeV8("_start_MAIN:\n");
     writeString("hii", "hello world\n");//only this auto-generated, and temporally move to the begin of function
+    writeV8("ldr w8 #10");
+    writeInt("w8");
+
+    doWhile();
+
+//frame information: temporarily added
     writeV8("str x30, [sp, #0]\n");
     writeV8("str x29, [sp, #-8]\n");
     writeV8("add x29, sp, #-8\n");
@@ -900,8 +911,6 @@ printCode()
     writeV8("ldr x30, =_frameSize_MAIN\n");
     writeV8("ldr x30, [x30, #0]\n");
     writeV8("sub sp, sp, w30\n");
-    
-
 
     writeV8("_end_MAIN:\n");
     writeV8("ldr x30, [x29, #8]\n");
