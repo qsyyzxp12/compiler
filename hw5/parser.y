@@ -754,6 +754,7 @@ dim_list	: dim_list MK_LB expr MK_RB
 %%
 
 #include "lex.yy.c"
+#include <string.h>
 
     FILE* outputFile;
     int ifCount;
@@ -770,9 +771,23 @@ dim_list	: dim_list MK_LB expr MK_RB
     void writeString(char* strName, char* strValue){
       //data part
       writeV8(".data\n");
-      writeV8("%s: .ascii \"%s\\000\"\n", strName, strValue);
+
+      char* newStrValue = (char*)malloc(sizeof(strValue)*2);
+      int count = 0;
+      int newcount = 0;
+      while(strValue[count]){
+	if(strValue[count] == '\\'){
+	  newStrValue[newcount++] = '\\';
+	  newStrValue[newcount++] = '\\';
+	} else {
+	  newStrValue[newcount++] = strValue[count];
+	}
+	count++;
+      }
+
+      writeV8("%s: .ascii \"%s\\000\"\n", strName, newStrValue);
       //TODO: constant_0 -> constant_n
-      int alignNum = 4-(strlen(strValue)%4);
+      int alignNum = 4-(strlen(newStrValue)%4);
       if(alignNum == 4)
 	alignNum = 0;
       writeV8(".align %d\n", alignNum);//align is 4 times
@@ -866,15 +881,12 @@ dim_list	: dim_list MK_LB expr MK_RB
 
 printCode()
 {
-
-
-
-
     //TODO: move out(to semanticAnalysis )
     outputFile = fopen("output.s", "w");
     ifCount = 0;
     whileCount = 0;
     constCount = 0;
+    writeV8("_start_MAIN:\n");
     writeString("hii", "hello world\n");
 }
 
