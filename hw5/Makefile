@@ -12,7 +12,7 @@ parser: parser.tab.o alloc.o functions.o symbolTable.o semanticAnalysis.o
 
 parser.tab.o: parser.tab.c lex.yy.c alloc.o functions.c symbolTable.o semanticAnalysis.o
 	$(CC) -c parser.tab.c
-    
+
 semanticAnalysis.o: semanticAnalysis.c symbolTable.o
 	$(CC) -c semanticAnalysis.c
 
@@ -27,7 +27,7 @@ parser.tab.c: parser.y
 
 alloc.o: alloc.c
 	$(CC) -c alloc.c
-	
+
 functions.o: functions.c
 	$(CC) -c functions.c
 

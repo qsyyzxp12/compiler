@@ -24,6 +24,7 @@
 #define isConstNode(a)		(a->nodeType == CONST_VALUE_NODE)
 #define isDeclNode(a)		(a->nodeType == DECLARATION_NODE)
 #define isFuncCallNode(a)	(a->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT)
+#define isAssignNode(a)		(a->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT)
 #define ConstNodeType(a)	(a->semantic_value.const1->const_type)
 #define isIntConstNode(a)	(a->semantic_value.const1->const_type == INTEGERC)
 #define isFloatConstNode(a) (a->semantic_value.const1->const_type == FLOATC)
@@ -331,7 +332,10 @@ void checkAssignOrExpr(AST_NODE* assignOrExprRelatedNode)
 {
 	while(assignOrExprRelatedNode)
 	{
-		checkAssignmentStmt(assignOrExprRelatedNode);
+		if(isExprNode(assignOrExprRelatedNode) || (isStmtNode(assignOrExprRelatedNode) && isAssignNode(assignOrExprRelatedNode)))
+			checkAssignmentStmt(assignOrExprRelatedNode);
+		else
+			checkOneSideOfAssignmentStmt(assignOrExprRelatedNode);
 		assignOrExprRelatedNode = assignOrExprRelatedNode->rightSibling;
 	}
 }
@@ -350,7 +354,7 @@ void checkForStmt(AST_NODE* forNode)
 
 	if(LNode->nodeType == NONEMPTY_ASSIGN_EXPR_LIST_NODE)
 		checkAssignOrExpr(LNode->child);
-
+	
 	if(MNode->nodeType == NONEMPTY_RELOP_EXPR_LIST_NODE)
 	{
 	;	
