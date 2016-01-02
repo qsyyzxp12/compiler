@@ -760,6 +760,8 @@ dim_list	: dim_list MK_LB expr MK_RB
     int ifCount;
     int whileCount;
     int constCount;//TODO: need to merge
+	int AROffset;
+	int currLv;
     //label number should be maintained on a stack.
 
 #define writeV8(s, b...)			\
@@ -767,7 +769,65 @@ dim_list	: dim_list MK_LB expr MK_RB
     fprintf(outputFile, s, ##b);		\
   }
 
+void gen_prologue(char* name)
+{
+    writeV8(".text\n");
+    writeV8("_start_%s\n", name);
+    writeV8("str x30, [sp, #0]\n");
+    writeV8("str x29, [sp, #-8]\n");
+    writeV8("add x29, sp, #-8\n");
+    writeV8("add sp, sp, #-16\n");
+    writeV8("ldr x30, =_frameSize_%s\n", name);
+    writeV8("ldr x30, [x30, #0]\n");
+    writeV8("sub sp, sp, w30\n");
+	writeV8("x9, [sp, #8]\n");
+	writeV8("x10, [sp, #16]\n");
+	writeV8("x11, [sp, #24]\n");
+	writeV8("x12, [sp, #32]\n");
+	writeV8("x13, [sp, #40]\n");
+	writeV8("x14, [sp, #48]\n");
+	writeV8("x15, [sp, #56]\n");
+	writeV8("x16, [sp, #64]\n");
+	writeV8("x17, [sp, #68]\n");
+	writeV8("x18, [sp, #72]\n");
+	writeV8("x19, [sp, #76]\n");
+	writeV8("x20, [sp, #80]\n");
+	writeV8("x21, [sp, #84]\n");
+	writeV8("x22, [sp, #88]\n");
+	writeV8("x23, [sp, #92]\n");
+}
 
+void gen_epilogue(char* name)
+{
+	writeV8("_end_%s:\n", name);
+	writeV8("x9, [sp, #8]\n");
+	writeV8("x10, [sp, #16]\n");
+	writeV8("x11, [sp, #24]\n");
+	writeV8("x12, [sp, #32]\n");
+	writeV8("x13, [sp, #40]\n");
+	writeV8("x14, [sp, #48]\n");
+	writeV8("x15, [sp, #56]\n");
+	writeV8("x16, [sp, #64]\n");
+	writeV8("x17, [sp, #68]\n");
+	writeV8("x18, [sp, #72]\n");
+	writeV8("x19, [sp, #76]\n");
+	writeV8("x20, [sp, #80]\n");
+	writeV8("x21, [sp, #84]\n");
+	writeV8("x22, [sp, #88]\n");
+	writeV8("x23, [sp, #92]\n");
+	writeV8("x30, [x29, #8]\n");
+	writeV8("mov sp, x29\n");
+	writeV8("add sp, sp, #8\n");
+	writeV8("ldr x29, [x29, #0]\n");
+	writeV8("RET x30\n");
+	writeV8(".data\n");
+}
+
+void gen_frameSizeLabel(char* name, int size)
+{
+	writeV8("_frameSize_%s:\n", name);
+	writeV8(".word %d\n", size);
+}
 void writeString(char* strName, char* strValue)
 {
 	//data part
@@ -854,7 +914,7 @@ void readFloat(char* reg)
 	writeV8("fmov %s, s0\n", reg);
 	writeV8("str %s, [x29, #-8]\n", reg);
 }
-
+/*
 void doWhile() //while(xxx) yyy
 {
 	whileCount++;
@@ -874,7 +934,8 @@ void doWhile() //while(xxx) yyy
 	writeV8("b %s\n", testName);
 	writeV8("%s:\n", exitName);
 }
-
+*/
+/*
 void doIf()  //if(xxx) yyy
 {
 	ifCount++;
@@ -890,7 +951,7 @@ void doIf()  //if(xxx) yyy
     //yyy
     writeV8("%s:\n", exitName);
 }
-
+*//*
 //Don't know whether to write else if or not
 void doIfElse()//if(xxx) yyy else zzz
 {
@@ -913,15 +974,130 @@ void doIfElse()//if(xxx) yyy else zzz
 	//zzz
 	writeV8("%s:\n", exitName);
 }
+*/
 
-printCode()
+float doMath(AST_NODE* node)
+{
+	if(node->nodeType == CONST_VALUE_NODE)
+	{
+		switch(node->semantic_value.const1->const_type)
+		{
+			case INTEGERC:
+				return (float)node->semantic_value.const1->const_u.intval;
+			case FLOATC:
+				return node->semantic_value.const1->const_u.fval;
+		}
+	}
+	else if(node->nodeType == EXPR_NODE)
+	{
+		;
+	}
+}
+
+void doAssignStmt(AST_NODE* assignStatNode)
+{
+	AST_NODE* LHS = assignStatNode->child;
+	AST_NODE* RHS = LHS->rightSibling;
+	
+	SymbolTableEntry* LHSEntry = LHS->semantic_value.identifierSemanticValue.symbolTableEntry;
+	if(LHSEntry->nestingLevel == 0)
+	{
+		;
+	}
+	else
+	{
+		LHSEntry->FpOffset = AROffset;
+		AROffset -= 4;
+		float ret = doMath(RHS);
+		if(LHSEntry->attribute->attr.typeDescriptor->properties.dataType == INT_TYPE)
+		{
+			writeV8("mov [fp, %d], %d\n", LHSEntry->FpOffset, (int)ret);
+		}
+		else if(LHSEntry->attribute->attr.typeDescriptor->properties.dataType == FLOAT_TYPE)
+		{
+			writeV8("mov [fp, %d], %f\n", LHSEntry->FpOffset, ret);
+		}
+	}
+	
+}
+
+void doStmtLst(AST_NODE* stmtLstNode)
+{
+	AST_NODE* stmtNode = stmtLstNode->child;
+	while(stmtNode)
+	{
+		switch(stmtNode->semantic_value.stmtSemanticValue.kind)
+		{
+			case ASSIGN_STMT:
+				doAssignStmt(stmtNode);
+				break;
+		}
+	}
+}
+
+void doDeclFunc(AST_NODE* declNode)
+{
+	AST_NODE* blockNode = declNode->child->rightSibling->rightSibling->rightSibling;
+	AST_NODE* content = blockNode->child;
+	
+
+	int frameSize = 92;
+	currLv++;
+	AROffset = 0;
+	char* funcName = declNode->child->rightSibling->semantic_value.identifierSemanticValue.identifierName;
+	gen_prologue(funcName);
+
+	while(content)
+	{
+		switch(content->nodeType)
+		{
+			case STMT_LIST_NODE:
+				doStmtLst(content);
+				break;
+		}
+	}
+
+	gen_epilogue(funcName);
+	gen_frameSizeLabel(funcName, frameSize-AROffset);
+}
+
+void doVarDeclLst(AST_NODE* varDeclNode)
+{
+}
+
+void doDeclLst(AST_NODE* declNode)
+{
+	switch(declNode->semantic_value.declSemanticValue.kind)
+	{
+		case FUNCTION_DECL:
+			doDeclFunc(declNode);
+			break;
+	}
+}
+
+printCode(AST_NODE *root)
 {
 //frame information: temporarily added
     outputFile = fopen("output.s", "w");
     ifCount = 0;
     whileCount = 0;
     constCount = 0;
-    writeV8("_start_MAIN:\n");
+
+	AST_NODE* child = root->child;
+	while(child)
+	{
+		if(child->nodeType == VARIABLE_DECL_LIST_NODE)
+		{
+			doVarDeclLst(child);
+		}
+		else if(child->nodeType == DECLARATION_NODE);
+		{
+			doDeclLst(child);
+		}
+		child = child->rightSibling;
+	}
+	
+/*    writeV8("_start_MAIN:\n");
     writeString("hii", "hello world\n");//only this auto-generated, and temporally move to the begin of function
     writeV8("ldr w8 #10");
     writeInt("w8");
@@ -946,28 +1122,28 @@ printCode()
     writeV8(".data\n");
     
     writeV8("_frameSize_MAIN: .word 16\n");
-}
+*/}
 
 main (argc, argv)
 int argc;
 char *argv[];
-  {
-     yyin = fopen(argv[1],"r");
-     yyparse();
-     // printGV(prog, NULL);
+{
+	yyin = fopen(argv[1],"r");
+	yyparse();
+	// printGV(prog, NULL);
 
-     initializeSymbolTable();
+	initializeSymbolTable();
 
-     semanticAnalysis(prog);
+	semanticAnalysis(prog);	
 
-     symbolTableEnd();
+	symbolTableEnd();
 
-     printCode();
+	printCode(prog);
      
-     if (!g_anyErrorOccur) {
-        printf("Parsing completed. No errors found.\n");
-     }
-  } /* main */
+	if (!g_anyErrorOccur) {
+		printf("Parsing completed. No errors found.\n");
+	}
+} /* main */
 
 
 
