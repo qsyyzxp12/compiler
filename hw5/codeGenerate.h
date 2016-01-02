@@ -6,4 +6,5 @@ void writeInt(char* reg);
 void writeFloat(char* reg);
 void readInt(char* reg);
 void doVarDeclLst(AST_NODE* varDeclNode, int lv);
+void doFuncCallStmt(AST_NODE* funcCallStmtNode);
 

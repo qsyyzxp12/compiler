@@ -1,5 +1,12 @@
-int n[2];
+int n;
+int foo()
+{
+	n = n + 1;
+	return n;
+}
+
 int main()
 {
-	n[1] = 1;
+	int a;
+	a = foo();
 }
