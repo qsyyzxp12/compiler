@@ -80,7 +80,11 @@ typedef struct SymbolTableEntry
     char* name;
     SymbolAttribute* attribute;
     int nestingLevel;
-	int FpOffset;
+	union
+	{
+		int FpOffset;
+		char* label;
+	}address;
 
 } SymbolTableEntry;
 

@@ -2924,13 +2924,27 @@ float doMath(AST_NODE* node)
 {
 	if(node->nodeType == CONST_VALUE_NODE)
 	{
+		int regNo;
 		switch(node->semantic_value.const1->const_type)
 		{
 			case INTEGERC:
-				return (float)node->semantic_value.const1->const_u.intval;
+				writeV8("_CONSTANT_%d:\n", constCount);
+				writeV8("\t.word %d\n", node->semantic_value.const1->const_u.intval);
+				writeV8("\t.align 3\n");
+				writeV8("\t.text\n");
+				regNo = getFreeReg(INT_TYPE);
+				writeV8("\tldr w%d, _CONSTANT_%d\n", regNo, constCount);
+				break;
 			case FLOATC:
-				return node->semantic_value.const1->const_u.fval;
+				writeV8("_CONSTANT_%d:\n", constCount);
+				writeV8("\t.float %f\n", node->semantic_value.const1->const_u.fval);
+				writeV8("\t.align 3\n");
+				writeV8("\t.text\n");
+				regNo = getFreeReg(FLOAT_TYPE);
+				writeV8("\tldr s%d, _CONSTANT_%d\n", regNo, constCount);
+				break;
 		}
+		return regNo;
 	}
 	else if(node->nodeType == EXPR_NODE)
 	{
@@ -2979,58 +2993,54 @@ void doAssignStmt(AST_NODE* assignStatNode)
 {
 	AST_NODE* LHS = assignStatNode->child;
 	AST_NODE* RHS = LHS->rightSibling;
+	int RHSValueReg = doMath(RHS);
 	int offset = 0;
+	
+	SymbolTableEntry* LHSEntry = LHS->semantic_value.identifierSemanticValue.symbolTableEntry;
+	DATA_TYPE type;
+	if(LHS->semantic_value.identifierSemanticValue.kind == NORMAL_ID)
+	{
+		type = LHSEntry->attribute->attr.typeDescriptor->properties.dataType;
+	}
+	if(LHS->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
+	{
+		type = LHSEntry->attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
+	}
 
 	if(LHS->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
 	{
 		AST_NODE* indexNode = LHS->child;
 		offset = indexNode->semantic_value.const1->const_u.intval;
-		printf("index = %d\n", offset);
 	}
 
-
-	SymbolTableEntry* LHSEntry = LHS->semantic_value.identifierSemanticValue.symbolTableEntry;
 	if(LHSEntry->nestingLevel == 0)
 	{
-		;
-	}
-	else
-	{
-		float ret = doMath(RHS);
-		DATA_TYPE type;
-		if(LHS->semantic_value.identifierSemanticValue.kind == NORMAL_ID)
-		{
-			type = LHSEntry->attribute->attr.typeDescriptor->properties.dataType;
-		}
-		if(LHS->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
-		{
-			type = LHSEntry->attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
-		}
+		char* label = LHSEntry->address.label;
+		int labelReg = getFreeReg(INT_TYPE);
+		writeV8("\tldr x%d, =%s\n", labelReg, label);
 		if(type == INT_TYPE)
 		{
-			writeV8("_CONSTANT_%d:\n", constCount);
-			writeV8("\t.word %d\n", (int)ret);
-			writeV8("\t.align 3\n");
-			writeV8("\t.text\n");
-			int regNo = getFreeReg(INT_TYPE);
-			writeV8("\tldr w%d, _CONSTANT_%d\n", regNo, constCount);
-			writeV8("\tstr w%d, [x29, #%d]\n", regNo, LHSEntry->FpOffset - 4*offset);
-			constCount++;
-			intRegStat[regNo] = 0;
+			writeV8("\tstr w%d, [x%d, #%d]\n", RHSValueReg, labelReg, -offset*4);
 		}
 		else if(type == FLOAT_TYPE)
 		{
-			writeV8("_CONSTANT_%d:\n", constCount);
-			writeV8("\t.float %f\n", ret);
-			writeV8("\t.align 3\n");
-			writeV8("\t.text\n");
-			int regNo = getFreeReg(FLOAT_TYPE);
-			writeV8("\tldr s%d, _CONSTANT_%d\n", regNo, constCount);
-			writeV8("\tstr s%d, [x29, #%d]\n", regNo, LHSEntry->FpOffset);
-			constCount++;
-			intRegStat[regNo] = 0;
+			writeV8("\tstr s%d, [x%d, #%d]\n", RHSValueReg, labelReg, -offset*4);
 		}
+		intRegStat[labelReg] = 0;
 	}
+	else
+	{
+		if(type == INT_TYPE)
+		{
+			writeV8("\tstr w%d, [x29, #%d]\n", RHSValueReg, LHSEntry->address.FpOffset - 4*offset);		
+		}
+		else if(type == FLOAT_TYPE)
+		{
+			writeV8("\tstr s%d, [x29, #%d]\n", RHSValueReg, LHSEntry->address.FpOffset);
+		}
+		constCount++;
+	}
+	intRegStat[RHSValueReg] = 0;
 	
 }
 
@@ -3087,12 +3097,17 @@ void doVarDeclLst(AST_NODE* varDeclNode, int lv)
 		AST_NODE* typeNode = varDeclNode->child;
 		AST_NODE* nameNode = typeNode->rightSibling;
 		char* name = nameNode->semantic_value.identifierSemanticValue.identifierName;
+		SymbolTableEntry* entry = nameNode->semantic_value.identifierSemanticValue.symbolTableEntry;
 		if(nameNode->semantic_value.identifierSemanticValue.kind == NORMAL_ID)
 		{
 			if(lv == 0) //global var decl
 			{
+				char* label = (char*)malloc(sizeof(char)*(5+strlen(name)));
+				sprintf(label, "_g_%s:", name);
+				label[strlen(name)+4] = '\0';
+
 				writeV8("\t.data\n");
-				writeV8("_g_%s:\n", name);
+				writeV8("%s\n", label);
 				if(typeNode->dataType == INT_TYPE)
 				{
 					writeV8("\t.word 0\n");
@@ -3103,37 +3118,34 @@ void doVarDeclLst(AST_NODE* varDeclNode, int lv)
 				}
 				writeV8("\t.align 3\n");
 				writeV8("\t.text\n");
+				entry->address.label = label;
 			}
 			else
 			{
-				SymbolTableEntry* entry = nameNode->semantic_value.identifierSemanticValue.symbolTableEntry;
 				AROffset -= 4;
-				entry->FpOffset = AROffset;
+				entry->address.FpOffset = AROffset;
 			}
 		}
 		else if(nameNode->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
 		{
 			AST_NODE* arraySizeNode = nameNode->child;
 			int arraySize = arraySizeNode->semantic_value.const1->const_u.intval;
+			SymbolTableEntry* entry = nameNode->semantic_value.identifierSemanticValue.symbolTableEntry;
 			if(lv == 0)
 			{
+				char* label = (char*)malloc(sizeof(char)*(5+strlen(name)));
+				sprintf(label, "_g_%s:", name);
+				label[strlen(name)+4] = '\0';
+
 				writeV8("\t.data\n");
-				writeV8("_g_%s:\n", name);
-				if(typeNode->dataType == INT_TYPE)
-				{
-					writeV8("\t.word 0\n");
-				}
-				else if(typeNode->dataType == FLOAT_TYPE)
-				{
-					writeV8("\t.float 0\n");
-				}
-				writeV8("\t.align 3\n");
+				writeV8("%s\n", label);
+				writeV8("\t.place %d\n", arraySize);
 				writeV8("\t.text\n");
+				entry->address.label = label;
 			}
 			else
 			{
-				SymbolTableEntry* entry = nameNode->semantic_value.identifierSemanticValue.symbolTableEntry;
-				entry->FpOffset = AROffset-4;
+				entry->address.FpOffset = AROffset-4;
 				AROffset -= 4*arraySize;
 			}
 		}

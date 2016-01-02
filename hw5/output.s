@@ -1,3 +1,7 @@
+	.data
+_g_n:
+	.place 2
+	.text
 	.text
 _start_main
 	str x30, [sp, #0]
@@ -28,7 +32,8 @@ _CONSTANT_0:
 	.align 3
 	.text
 	ldr w9, _CONSTANT_0
-	str w9, [x29, #-8]
+	ldr x10, =_g_n:
+	str w9, [x10, #-4]
 
 _end_main:
 	x9, [sp, #8]
@@ -53,4 +58,4 @@ _end_main:
 	RET x30
 	.data
 _frameSize_main:
-	.word 116
+	.word 92
