@@ -761,7 +761,6 @@ dim_list	: dim_list MK_LB expr MK_RB
     int whileCount;
     int constCount;//TODO: need to merge
 	int AROffset;
-	int currLv;
 	int regStat[15] = {0};
 
     //label number should be maintained on a stack.
@@ -1250,7 +1249,6 @@ void doDeclFunc(AST_NODE* declNode)
 	
 
 	int frameSize = 92;
-	currLv++;
 	AROffset = 0;
 	char* funcName = declNode->child->rightSibling->semantic_value.identifierSemanticValue.identifierName;
 	gen_prologue(funcName);
