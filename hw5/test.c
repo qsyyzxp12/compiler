@@ -1,12 +1,5 @@
-int n;
-int foo()
-{
-	n = n + 1;
-	return n;
-}
-
 int main()
 {
-	int a;
-	a = foo();
+	float a;
+	a = 1.5 + 1.5;
 }

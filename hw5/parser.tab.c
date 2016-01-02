@@ -2919,8 +2919,9 @@ void doIfElse()//if(xxx) yyy else zzz
 }
 */
 
-int doMath(AST_NODE* node)
+Reg doMath(AST_NODE* node)
 {
+	Reg reg;
 	if(node->nodeType == CONST_VALUE_NODE)
 	{
 		int regNo;
@@ -2934,6 +2935,7 @@ int doMath(AST_NODE* node)
 				regNo = getFreeReg(INT_TYPE);
 				writeV8("\tldr w%d, _CONSTANT_%d\n", regNo, constCount);
 				constCount++;
+				reg.c = 'w';
 				break;
 			case FLOATC:
 				writeV8("_CONSTANT_%d:\n", constCount);
@@ -2943,9 +2945,11 @@ int doMath(AST_NODE* node)
 				regNo = getFreeReg(FLOAT_TYPE);
 				writeV8("\tldr s%d, _CONSTANT_%d\n", regNo, constCount);
 				constCount++;
+				reg.c = 's';
 				break;
 		}
-		return regNo;
+		reg.no = regNo;
+		return reg;
 	}
 	else if(node->nodeType == IDENTIFIER_NODE)
 	{
@@ -2975,11 +2979,13 @@ int doMath(AST_NODE* node)
 			{
 				regNo = getFreeReg(INT_TYPE);
 				writeV8("\tldr w%d, [x%d, #%d]\n", regNo, labelReg, 4*index);
+				reg.c = 'w';
 			}
 			else if(type == FLOAT_TYPE)
 			{
 				regNo = getFreeReg(FLOAT_TYPE);
 				writeV8("\tldr s%d, [x%d, #%d]\n", regNo, labelReg, 4*index);
+				reg.c = 's';
 			}
 			regStat[labelReg-9] = 0;
 		}
@@ -2991,52 +2997,57 @@ int doMath(AST_NODE* node)
 			{
 				regNo = getFreeReg(INT_TYPE);
 				writeV8("\tldr w%d, [x29, #%d]\n", regNo, FpOffset-4*index);
+				reg.c = 'w';
 			}
 			else if(type == FLOAT_TYPE)
 			{
 				regNo = getFreeReg(FLOAT_TYPE);
 				writeV8("\tldr s%d, [x29, #%d]\n", regNo, FpOffset-4*index);
+				reg.c = 's';
 			}
 		}
-		return regNo;
+		reg.no = regNo;
+		return reg;
 	}
 	else if(node->nodeType == EXPR_NODE)
 	{
 		if(node->semantic_value.exprSemanticValue.kind == BINARY_OPERATION)
 		{
-			int LHSValueReg = doMath(node->child);
-			int RHSValueReg = doMath(node->child->rightSibling);
+			Reg LHSReg = doMath(node->child);
+			Reg RHSReg = doMath(node->child->rightSibling);
 			switch(node->semantic_value.exprSemanticValue.op.binaryOp)
 			{
 				case BINARY_OP_ADD:
-					writeV8("\tadd w%d, w%d, w%d\n", LHSValueReg, LHSValueReg, RHSValueReg);
+					writeV8("\tadd %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
 					break;
 				case BINARY_OP_SUB:
-					writeV8("\tsub w%d, w%d, w%d\n", LHSValueReg, LHSValueReg, RHSValueReg);
+					writeV8("\tsub %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
 					break;
 				case BINARY_OP_MUL:
-					writeV8("\tmul w%d, w%d, w%d\n", LHSValueReg, LHSValueReg, RHSValueReg);
+					writeV8("\tmul %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
 					break;
 				case BINARY_OP_DIV:
-					writeV8("\tdiv w%d, w%d, w%d\n", LHSValueReg, LHSValueReg, RHSValueReg);
+					writeV8("\tdiv %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
 					break;
 			}
-			regStat[RHSValueReg-9] = 0;
-			return LHSValueReg;
+			regStat[RHSReg.no-9] = 0;
+			return LHSReg;
 		}
 		else if(node->semantic_value.exprSemanticValue.kind == UNARY_OPERATION)
 		{
 			AST_NODE* valueNode = node->child;
-			int valReg = doMath(valueNode);
+			reg = doMath(valueNode);
 			writeV8("_CONSTANT_%d:\n", constCount);
 			writeV8("\t.word %d\n", -1);
 			writeV8("\t.align 3\n");
 			writeV8("\t.text\n");
+
+			
 			int minusRegNo = getFreeReg(INT_TYPE);
 			writeV8("\tldr w%d, _CONSTANT_%d\n", minusRegNo, constCount++);
-			writeV8("\tmul w%d, w%d, w%d\n", valReg, valReg, minusRegNo);
+			writeV8("\tmul %c%d, %c%d, w%d\n", reg.c, reg.no, reg.c, reg.no, minusRegNo);
 			regStat[minusRegNo-9] = 0;
-			return valReg;
+			return reg;
 		}
 	}
 	else if(node->nodeType == STMT_NODE && node->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT)
@@ -3050,13 +3061,16 @@ int doMath(AST_NODE* node)
 		{
 			retReg = getFreeReg(INT_TYPE);
 			writeV8("\tmov w%d, w0\n", retReg);
+			reg.c = 'w';
 		}
 		else if(type == FLOAT_TYPE)
 		{
 			retReg = getFreeReg(FLOAT_TYPE);
 			writeV8("\tmov s%d, w0\n", retReg);
+			reg.c = 's';
 		}
-		return retReg;
+		reg.no = retReg;
+		return reg;
 	}
 }
 
@@ -3087,7 +3101,7 @@ void doAssignStmt(AST_NODE* assignStatNode)
 {
 	AST_NODE* LHS = assignStatNode->child;
 	AST_NODE* RHS = LHS->rightSibling;
-	int RHSValueReg = doMath(RHS);
+	Reg RHSReg = doMath(RHS);
 	int offset = 0;
 	
 	SymbolTableEntry* LHSEntry = LHS->semantic_value.identifierSemanticValue.symbolTableEntry;
@@ -3110,11 +3124,11 @@ void doAssignStmt(AST_NODE* assignStatNode)
 		writeV8("\tldr x%d, =%s\n", labelReg, label);
 		if(type == INT_TYPE)
 		{
-			writeV8("\tstr w%d, [x%d, #%d]\n", RHSValueReg, labelReg, offset*4);
+			writeV8("\tstr %c%d, [x%d, #%d]\n", RHSReg.c, RHSReg.no, labelReg, offset*4);
 		}
 		else if(type == FLOAT_TYPE)
 		{
-			writeV8("\tstr s%d, [x%d, #%d]\n", RHSValueReg, labelReg, offset*4);
+			writeV8("\tstr %c%d, [x%d, #%d]\n", RHSReg.c, RHSReg.no, labelReg, offset*4);
 		}
 		regStat[labelReg-9] = 0;
 	}
@@ -3122,15 +3136,15 @@ void doAssignStmt(AST_NODE* assignStatNode)
 	{
 		if(type == INT_TYPE)
 		{
-			writeV8("\tstr w%d, [x29, #%d]\n", RHSValueReg, LHSEntry->address.FpOffset - 4*offset);		
+			writeV8("\tstr %c%d, [x29, #%d]\n", RHSReg.c, RHSReg.no, LHSEntry->address.FpOffset - 4*offset);		
 		}
 		else if(type == FLOAT_TYPE)
 		{
-			writeV8("\tstr s%d, [x29, #%d]\n", RHSValueReg, LHSEntry->address.FpOffset);
+			writeV8("\tstr %c%d, [x29, #%d]\n", RHSReg.c, RHSReg.no, LHSEntry->address.FpOffset);
 		}
 		constCount++;
 	}
-	regStat[RHSValueReg-9] = 0;
+	regStat[RHSReg.no-9] = 0;
 }
 
 void doFuncCallStmt(AST_NODE* funcCallStmtNode)
@@ -3143,10 +3157,10 @@ void doFuncCallStmt(AST_NODE* funcCallStmtNode)
 void doRetStmt(AST_NODE* stmtNode, char* funcName)
 {
 	AST_NODE* retValNode = stmtNode->child;
-	int retValReg = doMath(retValNode);
-	writeV8("\tmov w0, w%d\n", retValReg);
+	Reg retReg = doMath(retValNode);
+	writeV8("\tmov w0, %c%d\n", retReg.c, retReg.no);
 	writeV8("\tb _end_%s\n", funcName);
-	regStat[retValReg-9] = 0;
+	regStat[retReg.no-9] = 0;
 }
 
 void doStmtLst(AST_NODE* stmtLstNode, char* funcName)

@@ -1,3 +1,9 @@
+typedef struct
+{
+	int no;
+	char c;
+}Reg;
+
 void gen_prologue(char* name);
 void gen_epilogue(char* name);
 void gen_frameSizeLabel(char* name, int size);
