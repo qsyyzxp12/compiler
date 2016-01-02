@@ -2981,6 +2981,7 @@ int doMath(AST_NODE* node)
 				regNo = getFreeReg(FLOAT_TYPE);
 				writeV8("\tldr s%d, [x%d, #%d]\n", regNo, labelReg, 4*index);
 			}
+			regStat[labelReg-9] = 0;
 		}
 		else
 		{

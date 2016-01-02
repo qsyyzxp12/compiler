@@ -34,13 +34,13 @@ _CONSTANT_0:
 	.word 1
 	.align 3
 	.text
-	ldr w11, _CONSTANT_0
-	add w10, w10, w11
-	ldr x11, =_g_n:
-	str w10, [x11, #0]
-	ldr x10, =_g_n:
-	ldr w11, [x10, #0]
-	mov w0, w11
+	ldr w9, _CONSTANT_0
+	add w10, w10, w9
+	ldr x9, =_g_n:
+	str w10, [x9, #0]
+	ldr x9, =_g_n:
+	ldr w10, [x9, #0]
+	mov w0, w10
 	b _end_foo
 
 _end_foo:
@@ -93,8 +93,8 @@ _start_main:
 	x23, [sp, #92]
 
 	bl _start_foo
-	mov w11, w0
-	str w11, [x29, #-4]
+	mov w9, w0
+	str w9, [x29, #-4]
 
 _end_main:
 	x9, [sp, #8]
