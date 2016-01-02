@@ -2696,13 +2696,16 @@ yyreturn:
 
 #include "lex.yy.c"
 #include <string.h>
-
+#include "codeGenerate.h"
     FILE* outputFile;
     int ifCount;
     int whileCount;
     int constCount;//TODO: need to merge
 	int AROffset;
 	int currLv;
+	int intRegStat[7] = {0};
+	int floatRegStat[8] = {0};
+
     //label number should be maintained on a stack.
 
 #define writeV8(s, b...)			\
@@ -2712,67 +2715,67 @@ yyreturn:
 
 void gen_prologue(char* name)
 {
-    writeV8(".text\n");
+    writeV8("\t.text\n");
     writeV8("_start_%s\n", name);
-    writeV8("str x30, [sp, #0]\n");
-    writeV8("str x29, [sp, #-8]\n");
-    writeV8("add x29, sp, #-8\n");
-    writeV8("add sp, sp, #-16\n");
-    writeV8("ldr x30, =_frameSize_%s\n", name);
-    writeV8("ldr x30, [x30, #0]\n");
-    writeV8("sub sp, sp, w30\n");
-	writeV8("x9, [sp, #8]\n");
-	writeV8("x10, [sp, #16]\n");
-	writeV8("x11, [sp, #24]\n");
-	writeV8("x12, [sp, #32]\n");
-	writeV8("x13, [sp, #40]\n");
-	writeV8("x14, [sp, #48]\n");
-	writeV8("x15, [sp, #56]\n");
-	writeV8("x16, [sp, #64]\n");
-	writeV8("x17, [sp, #68]\n");
-	writeV8("x18, [sp, #72]\n");
-	writeV8("x19, [sp, #76]\n");
-	writeV8("x20, [sp, #80]\n");
-	writeV8("x21, [sp, #84]\n");
-	writeV8("x22, [sp, #88]\n");
-	writeV8("x23, [sp, #92]\n");
+    writeV8("\tstr x30, [sp, #0]\n");
+    writeV8("\tstr x29, [sp, #-8]\n");
+    writeV8("\tadd x29, sp, #-8\n");
+    writeV8("\tadd sp, sp, #-16\n");
+    writeV8("\tldr x30, =_frameSize_%s\n", name);
+    writeV8("\tldr x30, [x30, #0]\n");
+    writeV8("\tsub sp, sp, w30\n");
+	writeV8("\tx9, [sp, #8]\n");
+	writeV8("\tx10, [sp, #16]\n");
+	writeV8("\tx11, [sp, #24]\n");
+	writeV8("\tx12, [sp, #32]\n");
+	writeV8("\tx13, [sp, #40]\n");
+	writeV8("\tx14, [sp, #48]\n");
+	writeV8("\tx15, [sp, #56]\n");
+	writeV8("\tx16, [sp, #64]\n");
+	writeV8("\tx17, [sp, #68]\n");
+	writeV8("\tx18, [sp, #72]\n");
+	writeV8("\tx19, [sp, #76]\n");
+	writeV8("\tx20, [sp, #80]\n");
+	writeV8("\tx21, [sp, #84]\n");
+	writeV8("\tx22, [sp, #88]\n");
+	writeV8("\tx23, [sp, #92]\n\n");
 }
 
 void gen_epilogue(char* name)
 {
-	writeV8("_end_%s:\n", name);
-	writeV8("x9, [sp, #8]\n");
-	writeV8("x10, [sp, #16]\n");
-	writeV8("x11, [sp, #24]\n");
-	writeV8("x12, [sp, #32]\n");
-	writeV8("x13, [sp, #40]\n");
-	writeV8("x14, [sp, #48]\n");
-	writeV8("x15, [sp, #56]\n");
-	writeV8("x16, [sp, #64]\n");
-	writeV8("x17, [sp, #68]\n");
-	writeV8("x18, [sp, #72]\n");
-	writeV8("x19, [sp, #76]\n");
-	writeV8("x20, [sp, #80]\n");
-	writeV8("x21, [sp, #84]\n");
-	writeV8("x22, [sp, #88]\n");
-	writeV8("x23, [sp, #92]\n");
-	writeV8("x30, [x29, #8]\n");
-	writeV8("mov sp, x29\n");
-	writeV8("add sp, sp, #8\n");
-	writeV8("ldr x29, [x29, #0]\n");
-	writeV8("RET x30\n");
-	writeV8(".data\n");
+	writeV8("\n_end_%s:\n", name);
+	writeV8("\tx9, [sp, #8]\n");
+	writeV8("\tx10, [sp, #16]\n");
+	writeV8("\tx11, [sp, #24]\n");
+	writeV8("\tx12, [sp, #32]\n");
+	writeV8("\tx13, [sp, #40]\n");
+	writeV8("\tx14, [sp, #48]\n");
+	writeV8("\tx15, [sp, #56]\n");
+	writeV8("\tx16, [sp, #64]\n");
+	writeV8("\tx17, [sp, #68]\n");
+	writeV8("\tx18, [sp, #72]\n");
+	writeV8("\tx19, [sp, #76]\n");
+	writeV8("\tx20, [sp, #80]\n");
+	writeV8("\tx21, [sp, #84]\n");
+	writeV8("\tx22, [sp, #88]\n");
+	writeV8("\tx23, [sp, #92]\n");
+	writeV8("\tx30, [x29, #8]\n");
+	writeV8("\tmov sp, x29\n");
+	writeV8("\tadd sp, sp, #8\n");
+	writeV8("\tldr x29, [x29, #0]\n");
+	writeV8("\tRET x30\n");
+	writeV8("\t.data\n");
 }
 
 void gen_frameSizeLabel(char* name, int size)
 {
 	writeV8("_frameSize_%s:\n", name);
-	writeV8(".word %d\n", size);
+	writeV8("\t.word %d\n", size);
 }
 void writeString(char* strName, char* strValue)
 {
 	//data part
-	writeV8(".data\n");
+	writeV8("\t.data\n");
 
 	char* newStrValue = (char*)malloc(sizeof(strValue)*2);
 	int count = 0;
@@ -2821,39 +2824,39 @@ void writeString(char* strName, char* strValue)
 	writeV8(".align %d\n", alignNum);//align is 4 times
     
 	//test part
-	writeV8(".text\n");
-	writeV8("ldr x0, =%s\n", strName);//"_CONSTANT_0" or what?
+	writeV8("\t.text\n");
+	writeV8("\tldr x0, =%s\n", strName);//"_CONSTANT_0" or what?
 	//mov x0, x9 //TODO: check is needed or not
-	writeV8("bl _write_str\n");
+	writeV8("\tbl _write_str\n");
 }
 void writeInt(char* reg)
 {
 //reg will read the value from local stack and write
 //if directly give a reg to write, it's value will be deleted(?) after called write()
-	writeV8("ldr %s, [x29, #-4]\n", reg);
-	writeV8("mov w0, %s\n", reg);
-	writeV8("bl _write_int\n");
+	writeV8("\tldr %s, [x29, #-4]\n", reg);
+	writeV8("\tmov w0, %s\n", reg);
+	writeV8("\tbl _write_int\n");
 }
 
 void writeFloat(char* reg)
 {
-	writeV8("ldr %s, [x29, #-8]\n", reg);
-	writeV8("fmov s0, %s\n", reg);
-	writeV8("bl _write_float\n");
+	writeV8("\tldr %s, [x29, #-8]\n", reg);
+	writeV8("\tfmov s0, %s\n", reg);
+	writeV8("\tbl _write_float\n");
 }
 
 void readInt(char* reg) //will read value into reg and write into local stack
 {
-	writeV8("bl _read_int\n");
-	writeV8("mov %s, w0\n", reg);
-	writeV8("str %s, [x29, #-4]\n", reg);
+	writeV8("\tbl _read_int\n");
+	writeV8("\tmov %s, w0\n", reg);
+	writeV8("\tstr %s, [x29, #-4]\n", reg);
 }
 
 void readFloat(char* reg)
 {
-	writeV8("bl _read_float\n");
-	writeV8("fmov %s, s0\n", reg);
-	writeV8("str %s, [x29, #-8]\n", reg);
+	writeV8("\tbl _read_float\n");
+	writeV8("\tfmov %s, s0\n", reg);
+	writeV8("\tstr %s, [x29, #-8]\n", reg);
 }
 /*
 void doWhile() //while(xxx) yyy
@@ -2931,7 +2934,44 @@ float doMath(AST_NODE* node)
 	}
 	else if(node->nodeType == EXPR_NODE)
 	{
-		;
+		if(node->semantic_value.exprSemanticValue.kind == BINARY_OPERATION)
+		{
+			switch(node->semantic_value.exprSemanticValue.op.binaryOp)
+			{
+				case BINARY_OP_ADD:
+					break;
+				case BINARY_OP_SUB:
+					break;
+				case BINARY_OP_MUL:
+					break;
+				case BINARY_OP_DIV:
+					break;
+			}
+		}
+	}
+}
+
+int getFreeReg(DATA_TYPE type)
+{
+	int i = 0;
+	if(type == INT_TYPE)
+	{
+		while(intRegStat[i] && i<7)
+			i++;
+		if(i == 7)
+			return -1;
+	
+		intRegStat[i] = 1;
+		return i + 9;
+	}
+	else
+	{
+		while(floatRegStat[i] && i<8)
+			i++;
+		if(i == 8)
+			return -1;
+		floatRegStat[i] = 1;
+		return i+16;
 	}
 }
 
@@ -2939,7 +2979,16 @@ void doAssignStmt(AST_NODE* assignStatNode)
 {
 	AST_NODE* LHS = assignStatNode->child;
 	AST_NODE* RHS = LHS->rightSibling;
-	
+	int offset = 0;
+
+	if(LHS->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
+	{
+		AST_NODE* indexNode = LHS->child;
+		offset = indexNode->semantic_value.const1->const_u.intval;
+		printf("index = %d\n", offset);
+	}
+
+
 	SymbolTableEntry* LHSEntry = LHS->semantic_value.identifierSemanticValue.symbolTableEntry;
 	if(LHSEntry->nestingLevel == 0)
 	{
@@ -2947,16 +2996,39 @@ void doAssignStmt(AST_NODE* assignStatNode)
 	}
 	else
 	{
-		LHSEntry->FpOffset = AROffset;
-		AROffset -= 4;
 		float ret = doMath(RHS);
-		if(LHSEntry->attribute->attr.typeDescriptor->properties.dataType == INT_TYPE)
+		DATA_TYPE type;
+		if(LHS->semantic_value.identifierSemanticValue.kind == NORMAL_ID)
 		{
-			writeV8("mov [fp, %d], %d\n", LHSEntry->FpOffset, (int)ret);
+			type = LHSEntry->attribute->attr.typeDescriptor->properties.dataType;
 		}
-		else if(LHSEntry->attribute->attr.typeDescriptor->properties.dataType == FLOAT_TYPE)
+		if(LHS->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
 		{
-			writeV8("mov [fp, %d], %f\n", LHSEntry->FpOffset, ret);
+			type = LHSEntry->attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
+		}
+		if(type == INT_TYPE)
+		{
+			writeV8("_CONSTANT_%d:\n", constCount);
+			writeV8("\t.word %d\n", (int)ret);
+			writeV8("\t.align 3\n");
+			writeV8("\t.text\n");
+			int regNo = getFreeReg(INT_TYPE);
+			writeV8("\tldr w%d, _CONSTANT_%d\n", regNo, constCount);
+			writeV8("\tstr w%d, [x29, #%d]\n", regNo, LHSEntry->FpOffset - 4*offset);
+			constCount++;
+			intRegStat[regNo] = 0;
+		}
+		else if(type == FLOAT_TYPE)
+		{
+			writeV8("_CONSTANT_%d:\n", constCount);
+			writeV8("\t.float %f\n", ret);
+			writeV8("\t.align 3\n");
+			writeV8("\t.text\n");
+			int regNo = getFreeReg(FLOAT_TYPE);
+			writeV8("\tldr s%d, _CONSTANT_%d\n", regNo, constCount);
+			writeV8("\tstr s%d, [x29, #%d]\n", regNo, LHSEntry->FpOffset);
+			constCount++;
+			intRegStat[regNo] = 0;
 		}
 	}
 	
@@ -2973,6 +3045,7 @@ void doStmtLst(AST_NODE* stmtLstNode)
 				doAssignStmt(stmtNode);
 				break;
 		}
+		stmtNode = stmtNode->rightSibling;
 	}
 }
 
@@ -2995,15 +3068,77 @@ void doDeclFunc(AST_NODE* declNode)
 			case STMT_LIST_NODE:
 				doStmtLst(content);
 				break;
+			case VARIABLE_DECL_LIST_NODE:
+				doVarDeclLst(content, 1);
+				break;
 		}
+		content = content->rightSibling;
 	}
 
 	gen_epilogue(funcName);
 	gen_frameSizeLabel(funcName, frameSize-AROffset);
 }
 
-void doVarDeclLst(AST_NODE* varDeclNode)
+void doVarDeclLst(AST_NODE* varDeclNode, int lv)
 {
+	varDeclNode = varDeclNode->child;
+	while(varDeclNode)
+	{
+		AST_NODE* typeNode = varDeclNode->child;
+		AST_NODE* nameNode = typeNode->rightSibling;
+		char* name = nameNode->semantic_value.identifierSemanticValue.identifierName;
+		if(nameNode->semantic_value.identifierSemanticValue.kind == NORMAL_ID)
+		{
+			if(lv == 0) //global var decl
+			{
+				writeV8("\t.data\n");
+				writeV8("_g_%s:\n", name);
+				if(typeNode->dataType == INT_TYPE)
+				{
+					writeV8("\t.word 0\n");
+				}
+				else if(typeNode->dataType == FLOAT_TYPE)
+				{
+					writeV8("\t.float 0\n");
+				}
+				writeV8("\t.align 3\n");
+				writeV8("\t.text\n");
+			}
+			else
+			{
+				SymbolTableEntry* entry = nameNode->semantic_value.identifierSemanticValue.symbolTableEntry;
+				AROffset -= 4;
+				entry->FpOffset = AROffset;
+			}
+		}
+		else if(nameNode->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
+		{
+			AST_NODE* arraySizeNode = nameNode->child;
+			int arraySize = arraySizeNode->semantic_value.const1->const_u.intval;
+			if(lv == 0)
+			{
+				writeV8("\t.data\n");
+				writeV8("_g_%s:\n", name);
+				if(typeNode->dataType == INT_TYPE)
+				{
+					writeV8("\t.word 0\n");
+				}
+				else if(typeNode->dataType == FLOAT_TYPE)
+				{
+					writeV8("\t.float 0\n");
+				}
+				writeV8("\t.align 3\n");
+				writeV8("\t.text\n");
+			}
+			else
+			{
+				SymbolTableEntry* entry = nameNode->semantic_value.identifierSemanticValue.symbolTableEntry;
+				entry->FpOffset = AROffset-4;
+				AROffset -= 4*arraySize;
+			}
+		}
+		varDeclNode = varDeclNode->rightSibling;
+	}
 }
 
 void doDeclLst(AST_NODE* declNode)
@@ -3029,7 +3164,7 @@ printCode(AST_NODE *root)
 	{
 		if(child->nodeType == VARIABLE_DECL_LIST_NODE)
 		{
-			doVarDeclLst(child);
+			doVarDeclLst(child, 0);
 		}
 		else if(child->nodeType == DECLARATION_NODE);
 		{
@@ -3037,33 +3172,7 @@ printCode(AST_NODE *root)
 		}
 		child = child->rightSibling;
 	}
-	
-/*    writeV8("_start_MAIN:\n");
-    writeString("hii", "hello world\n");//only this auto-generated, and temporally move to the begin of function
-    writeV8("ldr w8 #10");
-    writeInt("w8");
-
-    doWhile();
-
-//frame information: temporarily added
-    writeV8("str x30, [sp, #0]\n");
-    writeV8("str x29, [sp, #-8]\n");
-    writeV8("add x29, sp, #-8\n");
-    writeV8("add sp, sp, #-16\n");
-    writeV8("ldr x30, =_frameSize_MAIN\n");
-    writeV8("ldr x30, [x30, #0]\n");
-    writeV8("sub sp, sp, w30\n");
-
-    writeV8("_end_MAIN:\n");
-    writeV8("ldr x30, [x29, #8]\n");
-    writeV8("mov sp, x29\n");
-    writeV8("add sp, sp, #8\n");
-    writeV8("ldr x29, [x29,#0]\n");
-    writeV8("RET x30\n");
-    writeV8(".data\n");
-    
-    writeV8("_frameSize_MAIN: .word 16\n");
-*/}
+}
 
 main (argc, argv)
 int argc;
@@ -3071,14 +3180,14 @@ char *argv[];
 {
 	yyin = fopen(argv[1],"r");
 	yyparse();
-	// printGV(prog, NULL);
+	printGV(prog, NULL);
 
 	initializeSymbolTable();
 
 	semanticAnalysis(prog);	
 
 	symbolTableEnd();
-
+printf("semantic end\n");
 	printCode(prog);
      
 	if (!g_anyErrorOccur) {

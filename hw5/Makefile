@@ -10,6 +10,9 @@ LIBS = -lfl
 parser: parser.tab.o alloc.o functions.o symbolTable.o semanticAnalysis.o 
 	$(CC) -o $(TARGET) parser.tab.o alloc.o functions.o symbolTable.o semanticAnalysis.o $(LIBS)
 
+dv:
+	dot AST_Graph.gv -T png -o result.png
+
 parser.tab.o: parser.tab.c lex.yy.c alloc.o functions.c symbolTable.o semanticAnalysis.o
 	$(CC) -c parser.tab.c
 
