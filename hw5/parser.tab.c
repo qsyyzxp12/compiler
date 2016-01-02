@@ -3295,7 +3295,7 @@ void doDeclLst(AST_NODE* declNode)
 	}
 }
 
-printCode(AST_NODE *root)
+void printCode(AST_NODE *root)
 {
 //frame information: temporarily added
     outputFile = fopen("output.s", "w");
