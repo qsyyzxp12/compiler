@@ -929,7 +929,14 @@ Reg doMath(AST_NODE* node)
 			switch(node->semantic_value.exprSemanticValue.op.binaryOp)
 			{
 				case BINARY_OP_ADD:
-					writeV8("\tadd %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					if(LHSReg.c == 'w')
+					{
+						writeV8("\tadd %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					}
+					else
+					{	
+						writeV8("\tfadd %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					}
 					break;
 				case BINARY_OP_SUB:
 					writeV8("\tsub %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
@@ -1310,12 +1317,12 @@ void doVarDeclLst(AST_NODE* varDeclNode, int lv)
 			{
 				if(lv == 0) //global var decl
 				{
-					char* label = (char*)malloc(sizeof(char)*(5+strlen(name)));
-					sprintf(label, "_g_%s:", name);
-					label[strlen(name)+4] = '\0';
+					char* label = (char*)malloc(sizeof(char)*(4+strlen(name)));
+					sprintf(label, "_g_%s", name);
+					label[strlen(name)+3] = '\0';
 	
 					writeV8("\t.data\n");
-					writeV8("%s\n", label);
+					writeV8("%s:\n", label);
 					if(typeNode->dataType == INT_TYPE)
 					{
 						writeV8("\t.word 0\n");
@@ -1341,12 +1348,12 @@ void doVarDeclLst(AST_NODE* varDeclNode, int lv)
 				SymbolTableEntry* entry = nameNode->semantic_value.identifierSemanticValue.symbolTableEntry;
 				if(lv == 0)
 				{
-					char* label = (char*)malloc(sizeof(char)*(5+strlen(name)));
-					sprintf(label, "_g_%s:", name);
-					label[strlen(name)+4] = '\0';
+					char* label = (char*)malloc(sizeof(char)*(4+strlen(name)));
+					sprintf(label, "_g_%s", name);
+					label[strlen(name)+3] = '\0';
 	
 					writeV8("\t.data\n");
-					writeV8("%s\n", label);
+					writeV8("%s:\n", label);
 					writeV8("\t.place %d\n", arraySize);
 					writeV8("\t.text\n");
 					entry->address.label = label;
