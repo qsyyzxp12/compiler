@@ -1005,7 +1005,7 @@ Reg doMath(AST_NODE* node)
 		else if(type == FLOAT_TYPE)
 		{
 			retReg = getFreeReg(FLOAT_TYPE);
-			writeV8("\tmov s%d, s0\n", retReg);
+			writeV8("\tfmov s%d, s0\n", retReg);
 			reg.c = 's';
 		}
 		reg.no = retReg;
@@ -1117,7 +1117,7 @@ void writeString(char* strName, char* strValue){
   newStrValue[newcount] = '\0';
   fprintf(stderr, "original strvalue = [%s], after = [%s]\n", strValue, newStrValue);
 
-  writeV8("%s: .ascii \"%s\\000\"\n", strName, newStrValue);
+  writeV8("%s: .ascii %s\n", strName, newStrValue);
   int alignNum = 4-(strlen(newStrValue)%4);
   if(alignNum == 4)
     alignNum = 0;
@@ -1239,7 +1239,12 @@ void doWhileStmt(AST_NODE* stmtNode, char* funcName){
   writeV8("%s:\n", testName);
   Reg reg = doMath(stmtNode->child);  //generate xxx
   //I wish to get result register 
-  writeV8("cmp %c%d, 0\n", reg.c, reg.no);
+  if(reg.c == 'w'){
+    writeV8("cmp %c%d, 0\n", reg.c, reg.no);
+  } else {
+    writeV8("fcmp %c%d, 0\n", reg.c, reg.no);
+  }
+
   writeV8("beq %s\n", exitName);
   doBlock(stmtNode->child->rightSibling, funcName);  //generate yyy
   writeV8("b %s\n", testName);
@@ -1253,7 +1258,11 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName){
     sprintf(exitName, "IfExit%d", ifCount);
     //if xxx eq false or 0 , jump to exit
     Reg reg = doMath(stmtNode->child);    //code of xxx(with final compare jump to exit)
+  if(reg.c == 'w'){
     writeV8("cmp %c%d, 0\n", reg.c, reg.no);
+  } else {
+    writeV8("fcmp %c%d, 0\n", reg.c, reg.no);
+  }
     writeV8("beq %s\n", exitName); 
     doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of block(yyy)
     writeV8("%s:\n", exitName);  
@@ -1266,7 +1275,12 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName){
     sprintf(exitName, "IfExit%d", ifCount);
 
     Reg reg = doMath(stmtNode->child);    //TODO: code of xxx(with final compare jump to else)
+  if(reg.c == 'w'){
     writeV8("cmp %c%d, 0\n", reg.c, reg.no);
+  } else {
+    writeV8("fcmp %c%d, 0\n", reg.c, reg.no);
+  }
+
     writeV8("beq %s\n", elseName);
     doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of if block(yyy)(with final jump to exit)
     writeV8("b %s\n", exitName);
