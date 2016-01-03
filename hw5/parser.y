@@ -1194,14 +1194,18 @@ void doFuncCallStmt(AST_NODE* funcCallStmtNode)
 	} else if(strcmp(funcName, "read") == 0){
 	  readInt();
 	} else if(strcmp(funcName, "write") == 0){
-	  Reg reg = doMath(firstParameter);
+	  Reg reg;
 	  char strName[20];
 	  switch(firstParameter->dataType){
 	  case INT_TYPE:
+	    reg = doMath(firstParameter);
 	    writeInt(reg);
+	    regStat[reg.no-9] = 0;
 	    break;
 	  case FLOAT_TYPE:
+	    reg = doMath(firstParameter);
 	    writeFloat(reg);
+	    regStat[reg.no-9] = 0;
 	    break;
 	  case CONST_STRING_TYPE:
 	    sprintf(strName, "_CONSTANT_%d", constCount++);//TODO: check data declare twice
