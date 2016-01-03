@@ -25,3 +25,6 @@ void doDeclFunc(AST_NODE* declNode);
 void doDeclLst(AST_NODE* declNode);
 void doVarDeclLst(AST_NODE* varDeclNode, int lv);
 void printCode(AST_NODE *root);
+void doWhileStmt(AST_NODE* stmtNode, char* funcName);
+void doIfStmt(AST_NODE* stmtNode, char* funcName);
+void doBlock(AST_NODE* blockNode, char* funcName);

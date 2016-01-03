@@ -1213,7 +1213,7 @@ void doWhileStmt(AST_NODE* stmtNode, char* funcName){
   //I wish to get result register 
   writeV8("cmp %c%d, 0\n", reg.c, reg.no);
   writeV8("beq %s\n", exitName);
-  doBlock(stmtNode->child->rightSibling);  //generate yyy
+  doBlock(stmtNode->child->rightSibling, funcName);  //generate yyy
   writeV8("b %s\n", testName);
   writeV8("%s:\n", exitName);
 }
@@ -1227,7 +1227,7 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName){
     Reg reg = doMath(stmtNode->child);    //code of xxx(with final compare jump to exit)
     writeV8("cmp %c%d, 0\n", reg.c, reg.no);
     writeV8("beq %s\n", exitName); 
-    doBlock(stmtNode->child->rightSibling);    //TODO: code of block(yyy)
+    doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of block(yyy)
     writeV8("%s:\n", exitName);  
   } else {
     ///if else
