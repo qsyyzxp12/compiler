@@ -839,6 +839,7 @@ Reg doMath(AST_NODE* node)
 		switch(node->semantic_value.const1->const_type)
 		{
 			case INTEGERC:
+				writeV8("\t.data\n");
 				writeV8("_CONSTANT_%d:\n", constCount);
 				writeV8("\t.word %d\n", node->semantic_value.const1->const_u.intval);
 				writeV8("\t.align 3\n");
@@ -849,6 +850,7 @@ Reg doMath(AST_NODE* node)
 				reg.c = 'w';
 				break;
 			case FLOATC:
+				writeV8("\t.data\n");
 				writeV8("_CONSTANT_%d:\n", constCount);
 				writeV8("\t.float %f\n", node->semantic_value.const1->const_u.fval);
 				writeV8("\t.align 3\n");
