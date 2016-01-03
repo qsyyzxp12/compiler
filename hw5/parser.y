@@ -975,16 +975,33 @@ Reg doMath(AST_NODE* node)
 		else if(node->semantic_value.exprSemanticValue.kind == UNARY_OPERATION)
 		{
 			AST_NODE* valueNode = node->child;
+			int minusRegNo;
+//			DATA_TYPE type = valueNode->semantic_value.const1->const_type;
 			reg = doMath(valueNode);
 			writeV8("_CONSTANT_%d:\n", constCount);
-			writeV8("\t.word %d\n", -1);
+			if(reg.c == 'w')
+			{
+				writeV8("\t.word %d\n", -1);
+				minusRegNo = getFreeReg(INT_TYPE);
+			}
+			else
+			{
+				writeV8("\t.float %f\n", -1.0);
+				minusRegNo = getFreeReg(FLOAT_TYPE);
+			}
 			writeV8("\t.align 3\n");
 			writeV8("\t.text\n");
 
-			
-			int minusRegNo = getFreeReg(INT_TYPE);
-			writeV8("\tldr w%d, _CONSTANT_%d\n", minusRegNo, constCount++);
-			writeV8("\tmul %c%d, %c%d, w%d\n", reg.c, reg.no, reg.c, reg.no, minusRegNo);
+			if(reg.c == 'w')
+			{
+				writeV8("\tldr w%d, _CONSTANT_%d\n", minusRegNo, constCount++);
+				writeV8("\tmul %c%d, %c%d, w%d\n", reg.c, reg.no, reg.c, reg.no, minusRegNo);
+			}
+			else
+			{
+				writeV8("\tldr s%d, _CONSTANT_%d\n", minusRegNo, constCount++);
+				writeV8("\tfmul %c%d, %c%d, s%d\n", reg.c, reg.no, reg.c, reg.no, minusRegNo);
+			}
 			regStat[minusRegNo-9] = 0;
 			return reg;
 		}

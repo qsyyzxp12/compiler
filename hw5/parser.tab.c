@@ -2870,16 +2870,44 @@ Reg doMath(AST_NODE* node)
 			switch(node->semantic_value.exprSemanticValue.op.binaryOp)
 			{
 				case BINARY_OP_ADD:
-					writeV8("\tadd %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					if(LHSReg.c == 'w')
+					{
+						writeV8("\tadd %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					}
+					else
+					{	
+						writeV8("\tfadd %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					}
 					break;
 				case BINARY_OP_SUB:
-					writeV8("\tsub %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					if(LHSReg.c == 'w')
+					{
+						writeV8("\tsub %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					}
+					else
+					{
+						writeV8("\tfsub %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					}
 					break;
 				case BINARY_OP_MUL:
-					writeV8("\tmul %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					if(LHSReg.c == 'w')
+					{
+						writeV8("\tmul %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					}
+					else
+					{
+						writeV8("\tfmul %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					}
 					break;
 				case BINARY_OP_DIV:
-					writeV8("\tdiv %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					if(LHSReg.c == 'w')
+					{
+						writeV8("\tsdiv %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					}
+					else
+					{
+						writeV8("\tfdiv %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					}
 					break;
 			}
 			regStat[RHSReg.no-9] = 0;
@@ -2888,16 +2916,33 @@ Reg doMath(AST_NODE* node)
 		else if(node->semantic_value.exprSemanticValue.kind == UNARY_OPERATION)
 		{
 			AST_NODE* valueNode = node->child;
+			int minusRegNo;
+//			DATA_TYPE type = valueNode->semantic_value.const1->const_type;
 			reg = doMath(valueNode);
 			writeV8("_CONSTANT_%d:\n", constCount);
-			writeV8("\t.word %d\n", -1);
+			if(reg.c == 'w')
+			{
+				writeV8("\t.word %d\n", -1);
+				minusRegNo = getFreeReg(INT_TYPE);
+			}
+			else
+			{
+				writeV8("\t.float %f\n", -1.0);
+				minusRegNo = getFreeReg(FLOAT_TYPE);
+			}
 			writeV8("\t.align 3\n");
 			writeV8("\t.text\n");
 
-			
-			int minusRegNo = getFreeReg(INT_TYPE);
-			writeV8("\tldr w%d, _CONSTANT_%d\n", minusRegNo, constCount++);
-			writeV8("\tmul %c%d, %c%d, w%d\n", reg.c, reg.no, reg.c, reg.no, minusRegNo);
+			if(reg.c == 'w')
+			{
+				writeV8("\tldr w%d, _CONSTANT_%d\n", minusRegNo, constCount++);
+				writeV8("\tmul %c%d, %c%d, w%d\n", reg.c, reg.no, reg.c, reg.no, minusRegNo);
+			}
+			else
+			{
+				writeV8("\tldr s%d, _CONSTANT_%d\n", minusRegNo, constCount++);
+				writeV8("\tfmul %c%d, %c%d, s%d\n", reg.c, reg.no, reg.c, reg.no, minusRegNo);
+			}
 			regStat[minusRegNo-9] = 0;
 			return reg;
 		}
@@ -2918,7 +2963,7 @@ Reg doMath(AST_NODE* node)
 		else if(type == FLOAT_TYPE)
 		{
 			retReg = getFreeReg(FLOAT_TYPE);
-			writeV8("\tmov s%d, s0\n", retReg);
+			writeV8("\tfmov s%d, s0\n", retReg);
 			reg.c = 's';
 		}
 		reg.no = retReg;
@@ -3030,7 +3075,7 @@ void writeString(char* strName, char* strValue){
   newStrValue[newcount] = '\0';
   fprintf(stderr, "original strvalue = [%s], after = [%s]\n", strValue, newStrValue);
 
-  writeV8("%s: .ascii \"%s\\000\"\n", strName, newStrValue);
+  writeV8("%s: .ascii %s\n", strName, newStrValue);
   int alignNum = 4-(strlen(newStrValue)%4);
   if(alignNum == 4)
     alignNum = 0;
@@ -3152,7 +3197,12 @@ void doWhileStmt(AST_NODE* stmtNode, char* funcName){
   writeV8("%s:\n", testName);
   Reg reg = doMath(stmtNode->child);  //generate xxx
   //I wish to get result register 
-  writeV8("cmp %c%d, 0\n", reg.c, reg.no);
+  if(reg.c == 'w'){
+    writeV8("cmp %c%d, 0\n", reg.c, reg.no);
+  } else {
+    writeV8("fcmp %c%d, 0\n", reg.c, reg.no);
+  }
+
   writeV8("beq %s\n", exitName);
   doBlock(stmtNode->child->rightSibling, funcName);  //generate yyy
   writeV8("b %s\n", testName);
@@ -3166,7 +3216,11 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName){
     sprintf(exitName, "IfExit%d", ifCount);
     //if xxx eq false or 0 , jump to exit
     Reg reg = doMath(stmtNode->child);    //code of xxx(with final compare jump to exit)
+  if(reg.c == 'w'){
     writeV8("cmp %c%d, 0\n", reg.c, reg.no);
+  } else {
+    writeV8("fcmp %c%d, 0\n", reg.c, reg.no);
+  }
     writeV8("beq %s\n", exitName); 
     doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of block(yyy)
     writeV8("%s:\n", exitName);  
@@ -3179,7 +3233,12 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName){
     sprintf(exitName, "IfExit%d", ifCount);
 
     Reg reg = doMath(stmtNode->child);    //TODO: code of xxx(with final compare jump to else)
+  if(reg.c == 'w'){
     writeV8("cmp %c%d, 0\n", reg.c, reg.no);
+  } else {
+    writeV8("fcmp %c%d, 0\n", reg.c, reg.no);
+  }
+
     writeV8("beq %s\n", elseName);
     doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of if block(yyy)(with final jump to exit)
     writeV8("b %s\n", exitName);
@@ -3251,12 +3310,12 @@ void doVarDeclLst(AST_NODE* varDeclNode, int lv)
 			{
 				if(lv == 0) //global var decl
 				{
-					char* label = (char*)malloc(sizeof(char)*(5+strlen(name)));
-					sprintf(label, "_g_%s:", name);
-					label[strlen(name)+4] = '\0';
+					char* label = (char*)malloc(sizeof(char)*(4+strlen(name)));
+					sprintf(label, "_g_%s", name);
+					label[strlen(name)+3] = '\0';
 	
 					writeV8("\t.data\n");
-					writeV8("%s\n", label);
+					writeV8("%s:\n", label);
 					if(typeNode->dataType == INT_TYPE)
 					{
 						writeV8("\t.word 0\n");
@@ -3282,12 +3341,12 @@ void doVarDeclLst(AST_NODE* varDeclNode, int lv)
 				SymbolTableEntry* entry = nameNode->semantic_value.identifierSemanticValue.symbolTableEntry;
 				if(lv == 0)
 				{
-					char* label = (char*)malloc(sizeof(char)*(5+strlen(name)));
-					sprintf(label, "_g_%s:", name);
-					label[strlen(name)+4] = '\0';
+					char* label = (char*)malloc(sizeof(char)*(4+strlen(name)));
+					sprintf(label, "_g_%s", name);
+					label[strlen(name)+3] = '\0';
 	
 					writeV8("\t.data\n");
-					writeV8("%s\n", label);
+					writeV8("%s:\n", label);
 					writeV8("\t.place %d\n", arraySize);
 					writeV8("\t.text\n");
 					entry->address.label = label;
