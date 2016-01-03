@@ -1102,6 +1102,7 @@ void doAssignStmt(AST_NODE* assignStatNode)
 		}
 		constCount++;
 	}
+	regStat[RHSReg.no-9] = 0;
 }
 
 void writeString(char* strName, char* strValue){
