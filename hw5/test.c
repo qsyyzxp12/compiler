@@ -1,4 +1,6 @@
+typedef int INT;
 int main()
 {
-	return 0;
+	INT a;
+	a = 1;
 }

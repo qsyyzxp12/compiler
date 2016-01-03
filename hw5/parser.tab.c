@@ -3043,7 +3043,6 @@ void doAssignStmt(AST_NODE* assignStatNode)
 		}
 		constCount++;
 	}
-	regStat[RHSReg.no-9] = 0;
 }
 
 void writeString(char* strName, char* strValue){
@@ -3053,8 +3052,9 @@ void writeString(char* strName, char* strValue){
   char* newStrValue = (char*)malloc(sizeof(strValue)*2);
   int count = 0;
   int newcount = 0;
+  int length = 0;
   while(strValue[count] != '\0'){
-    if(strValue[count] == '\n'){
+    /*if(strValue[count] == '\n'){
       newStrValue[newcount++] = '\\';
       newStrValue[newcount++] = 'n';
     } else if(strValue[count] == '\t'){
@@ -3069,16 +3069,17 @@ void writeString(char* strName, char* strValue){
     } else if(strValue[count] == '\0'){
       newStrValue[newcount++] = '\\';
       newStrValue[newcount++] = '0';
-    } else {
+      } else {*/
       newStrValue[newcount++] = strValue[count];
-    }
+      //}
     count++;
   }
   newStrValue[newcount] = '\0';
   fprintf(stderr, "original strvalue = [%s], after = [%s]\n", strValue, newStrValue);
 
   writeV8("%s: .ascii %s\n", strName, newStrValue);
-  int alignNum = 4-(strlen(newStrValue)%4);
+
+  int alignNum = 4-((strlen(newStrValue)+2)%4);
   if(alignNum == 4)
     alignNum = 0;
   writeV8(".align %d\n", alignNum);//align is 4 times
@@ -3204,6 +3205,7 @@ void doWhileStmt(AST_NODE* stmtNode, char* funcName){
   } else {
     writeV8("fcmp %c%d, 0\n", reg.c, reg.no);
   }
+  regStat[reg.no-9] = 0;
 
   writeV8("beq %s\n", exitName);
   doBlock(stmtNode->child->rightSibling, funcName);  //generate yyy
@@ -3223,6 +3225,7 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName){
   } else {
     writeV8("fcmp %c%d, 0\n", reg.c, reg.no);
   }
+regStat[reg.no-9] = 0;
     writeV8("beq %s\n", exitName); 
     doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of block(yyy)
     writeV8("%s:\n", exitName);  
@@ -3240,7 +3243,7 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName){
   } else {
     writeV8("fcmp %c%d, 0\n", reg.c, reg.no);
   }
-
+regStat[reg.no-9] = 0;
     writeV8("beq %s\n", elseName);
     doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of if block(yyy)(with final jump to exit)
     writeV8("b %s\n", exitName);

@@ -1088,7 +1088,7 @@ void doAssignStmt(AST_NODE* assignStatNode)
 		{
 			writeV8("\tstr %c%d, [x%d, #%d]\n", RHSReg.c, RHSReg.no, labelReg, offset*4);
 		}
-
+		regStat[labelReg-9] = 0;
 	}
 	else
 	{
