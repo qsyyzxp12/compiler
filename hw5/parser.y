@@ -977,7 +977,7 @@ Reg doMath(AST_NODE* node)
 		else if(type == FLOAT_TYPE)
 		{
 			retReg = getFreeReg(FLOAT_TYPE);
-			writeV8("\tmov s%d, w0\n", retReg);
+			writeV8("\tmov s%d, s0\n", retReg);
 			reg.c = 's';
 		}
 		reg.no = retReg;
@@ -1169,7 +1169,7 @@ void doRetStmt(AST_NODE* stmtNode, char* funcName)
 {
 	AST_NODE* retValNode = stmtNode->child;
 	Reg retReg = doMath(retValNode);
-	writeV8("\tmov w0, %c%d\n", retReg.c, retReg.no);
+	writeV8("\tmov %c0, %c%d\n", retReg.c, retReg.c, retReg.no);
 	writeV8("\tb _end_%s\n", funcName);
 	regStat[retReg.no-9] = 0;
 }
