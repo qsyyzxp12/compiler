@@ -25,246 +25,37 @@ _start_MAIN:
 
 	.data
 _CONSTANT_0:
-	.word 1
+	.float 2.000000
 	.align 3
 	.text
-	ldr w9, _CONSTANT_0
-	.data
-_CONSTANT_1:
-	.word 2
-	.align 3
-	.text
-	ldr w10, _CONSTANT_1
-	add w9, w9, w10
+	ldr s16, _CONSTANT_0
+	str s16, [x29, #-4]
+	ldr s16, [x29, #-4]
 	.data
 _CONSTANT_2:
-	.word 3
-	.align 3
-	.text
-	ldr w10, _CONSTANT_2
-	mul w9, w9, w10
-	.data
-_CONSTANT_3:
-	.word 4
-	.align 3
-	.text
-	ldr w10, _CONSTANT_3
-	.data
-_CONSTANT_4:
-	.word 5
-	.align 3
-	.text
-	ldr w11, _CONSTANT_4
-	sdiv w10, w10, w11
-	sub w9, w9, w10
-	.data
-_CONSTANT_5:
-	.word 1
-	.align 3
-	.text
-	ldr w10, _CONSTANT_5
-_CONSTANT_6:
-	.word -1
-	.align 3
-	.text
-	ldr w11, _CONSTANT_6
-	mul w10, w10, w11
-	add w9, w9, w10
-	str w9, [x29, #-12]
-	ldr w9, [x29, #-12]
-mov w0, w9
-bl _write_int
-.data
-_CONSTANT_8: .ascii "\n"
-.align 2
-.text
-ldr x0, =_CONSTANT_8
-bl _write_str
-	.data
-_CONSTANT_9:
-	.word 1
-	.align 3
-	.text
-	ldr w9, _CONSTANT_9
-	str w9, [x29, #-4]
-	.data
-_CONSTANT_11:
-	.word 2
-	.align 3
-	.text
-	ldr w9, _CONSTANT_11
-	str w9, [x29, #-8]
-	.data
-_CONSTANT_13:
-	.word 3
-	.align 3
-	.text
-	ldr w9, _CONSTANT_13
-	str w9, [x29, #-12]
-	ldr w9, [x29, #-4]
-	ldr w10, [x29, #-8]
-	mul w9, w9, w10
-	ldr w10, [x29, #-12]
-	.data
-_CONSTANT_15:
-	.word 4
-	.align 3
-	.text
-	ldr w11, _CONSTANT_15
-	mul w10, w10, w11
-	sub w9, w9, w10
-	.data
-_CONSTANT_16:
-	.word 5
-	.align 3
-	.text
-	ldr w10, _CONSTANT_16
-	sub w9, w9, w10
-	str w9, [x29, #-12]
-	ldr w9, [x29, #-12]
-mov w0, w9
-bl _write_int
-.data
-_CONSTANT_18: .ascii "\n"
-.align 2
-.text
-ldr x0, =_CONSTANT_18
-bl _write_str
-	.data
-_CONSTANT_19:
 	.float 1.000000
 	.align 3
 	.text
-	ldr s16, _CONSTANT_19
-	.data
-_CONSTANT_20:
-	.float 2.000000
-	.align 3
-	.text
-	ldr s17, _CONSTANT_20
-	fadd s16, s16, s17
-	.data
-_CONSTANT_21:
-	.float 3.000000
-	.align 3
-	.text
-	ldr s17, _CONSTANT_21
-	fmul s16, s16, s17
-	.data
-_CONSTANT_22:
-	.float 4.000000
-	.align 3
-	.text
-	ldr s17, _CONSTANT_22
-	.data
-_CONSTANT_23:
-	.float 5.000000
-	.align 3
-	.text
-	ldr s18, _CONSTANT_23
-	fdiv s17, s17, s18
-	fsub s16, s16, s17
-	.data
-_CONSTANT_24:
-	.float 1.000000
-	.align 3
-	.text
-	ldr s17, _CONSTANT_24
-_CONSTANT_25:
-	.float -1.000000
-	.align 3
-	.text
-	ldr s18, _CONSTANT_25
-	fmul s17, s17, s18
-	fadd s16, s16, s17
-	str s16, [x29, #-24]
-	ldr s16, [x29, #-24]
-fmov s0, s16
-bl _write_float
+	ldr s17, _CONSTANT_2
+	fcmp s16, s17
+	cset w9, eq
+cmp w9, 0
+beq IfElse1
 .data
-_CONSTANT_27: .ascii "\n"
-.align 2
+_CONSTANT_3: .ascii "yes\n"
+.align 3
 .text
-ldr x0, =_CONSTANT_27
+ldr x0, =_CONSTANT_3
 bl _write_str
-	.data
-_CONSTANT_28:
-	.float 1.000000
-	.align 3
-	.text
-	ldr s16, _CONSTANT_28
-	str s16, [x29, #-16]
-	.data
-_CONSTANT_30:
-	.float 2.000000
-	.align 3
-	.text
-	ldr s16, _CONSTANT_30
-	str s16, [x29, #-20]
-	.data
-_CONSTANT_32:
-	.float 3.000000
-	.align 3
-	.text
-	ldr s16, _CONSTANT_32
-	str s16, [x29, #-24]
-	ldr s16, [x29, #-16]
-	ldr s17, [x29, #-20]
-	fmul s16, s16, s17
-	ldr s17, [x29, #-24]
-	.data
-_CONSTANT_34:
-	.float 4.000000
-	.align 3
-	.text
-	ldr s18, _CONSTANT_34
-	fmul s17, s17, s18
-	fsub s16, s16, s17
-	.data
-_CONSTANT_35:
-	.float 5.000000
-	.align 3
-	.text
-	ldr s17, _CONSTANT_35
-	fsub s16, s16, s17
-	str s16, [x29, #-24]
-	ldr s16, [x29, #-24]
-fmov s0, s16
-bl _write_float
+b IfExit1
+IfElse1:
 .data
-_CONSTANT_37: .ascii "\n"
-.align 2
+_CONSTANT_4: .ascii "no\n"
+.align 0
 .text
-ldr x0, =_CONSTANT_37
+ldr x0, =_CONSTANT_4
 bl _write_str
-	ldr s16, [x29, #-24]
-	.data
-_CONSTANT_38:
-	.float 2.000000
-	.align 3
-	.text
-	ldr s17, _CONSTANT_38
-	ldr s18, [x29, #-24]
-	fmul s17, s17, s18
-	fdiv s16, s16, s17
-	str s16, [x29, #-24]
-	ldr s16, [x29, #-24]
-fmov s0, s16
-bl _write_float
-.data
-_CONSTANT_40: .ascii "\n"
-.align 2
-.text
-ldr x0, =_CONSTANT_40
-bl _write_str
-	.data
-_CONSTANT_41:
-	.word 0
-	.align 3
-	.text
-	ldr w9, _CONSTANT_41
-	mov w0, w9
-	b _end_MAIN
+IfExit1:
 
 _end_MAIN:
 	ldr x9, [sp, #8]
@@ -289,4 +80,4 @@ _end_MAIN:
 	RET x30
 	.data
 _frameSize_MAIN:
-	.word 116
+	.word 96
