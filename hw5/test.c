@@ -1,9 +1,6 @@
 int MAIN()
 {
-	int k;
-	k = 5;
-	if(k <= 5)
-	{
-		write(k);
-	}
+	float t1;
+	t1 = -2.0;
+	write(t1);
 }

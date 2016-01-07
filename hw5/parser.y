@@ -1112,36 +1112,21 @@ Reg doMath(AST_NODE* node)
 		}
 		else if(node->semantic_value.exprSemanticValue.kind == UNARY_OPERATION)
 		{
-			AST_NODE* valueNode = node->child;
-			int minusRegNo;
-//			DATA_TYPE type = valueNode->semantic_value.const1->const_type;
-			reg = doMath(valueNode);
-			writeV8("_CONSTANT_%d:\n", constCount);
-			if(reg.c == 'w')
+			if(node->semantic_value.exprSemanticValue.op.unaryOp == UNARY_OP_NEGATIVE)
 			{
-				writeV8("\t.word %d\n", -1);
-				minusRegNo = getFreeReg(INT_TYPE);
+				AST_NODE* valueNode = node->child;
+//				DATA_TYPE type = valueNode->semantic_value.const1->const_type;
+				reg = doMath(valueNode);
+				if(reg.c == 'w')
+				{
+					writeV8("\tneg %c%d, %c%d\n", reg.c, reg.no, reg.c, reg.no);
+				}
+				else
+				{
+					writeV8("\tfneg %c%d, %c%d\n", reg.c, reg.no, reg.c, reg.no);
+				}
+				return reg;
 			}
-			else
-			{
-				writeV8("\t.float %f\n", -1.0);
-				minusRegNo = getFreeReg(FLOAT_TYPE);
-			}
-			writeV8("\t.align 3\n");
-			writeV8("\t.text\n");
-
-			if(reg.c == 'w')
-			{
-				writeV8("\tldr w%d, _CONSTANT_%d\n", minusRegNo, constCount++);
-				writeV8("\tmul %c%d, %c%d, w%d\n", reg.c, reg.no, reg.c, reg.no, minusRegNo);
-			}
-			else
-			{
-				writeV8("\tldr s%d, _CONSTANT_%d\n", minusRegNo, constCount++);
-				writeV8("\tfmul %c%d, %c%d, s%d\n", reg.c, reg.no, reg.c, reg.no, minusRegNo);
-			}
-			freeReg(minusRegNo);
-			return reg;
 		}
 	}
 	else if(node->nodeType == STMT_NODE && node->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT)
@@ -1260,7 +1245,7 @@ void doAssignStmt(AST_NODE* assignStatNode)
 void writeString(char* strName, char* strValue)
 {
 	//data part
-	writeV8(".data\n");
+	writeV8("\t.data\n");
 
 	char* newStrValue = (char*)malloc(sizeof(strValue)*2);
 	int count = 0;
@@ -1295,41 +1280,41 @@ void writeString(char* strName, char* strValue)
 	int alignNum = 4-((strlen(newStrValue)+2)%4);
 	if(alignNum == 4)
 		alignNum = 0;
-	writeV8(".align %d\n", alignNum);//align is 4 times
+	writeV8("\t.align %d\n", alignNum);//align is 4 times
     
 	//test part
-	writeV8(".text\n");
-	writeV8("ldr x0, =%s\n", strName);//"_CONSTANT_0" or what?
+	writeV8("\t.text\n");
+	writeV8("\tldr x0, =%s\n", strName);//"_CONSTANT_0" or what?
 	//mov x0, x9 //TODO: check is needed or not
-	writeV8("bl _write_str\n");
+	writeV8("\tbl _write_str\n");
 }
 
 void writeInt(Reg reg)//reg will read the value from local stack and write
 {
 	//if directly give a reg to write, it's value will be deleted(?) after called write()
-	writeV8("mov w0, %c%d\n", reg.c, reg.no);
-	writeV8("bl _write_int\n");
+	writeV8("\tmov w0, %c%d\n", reg.c, reg.no);
+	writeV8("\tbl _write_int\n");
 }
 
 void writeFloat(Reg reg)
 {
-	writeV8("fmov s0, %c%d\n", reg.c, reg.no);
-	writeV8("bl _write_float\n");
+	writeV8("\tfmov s0, %c%d\n", reg.c, reg.no);
+	writeV8("\tbl _write_float\n");
 }
 
 void readInt()//will read value into reg and write into local stack
 {
 	int i = getFreeReg(INT_TYPE);
-	writeV8("bl _read_int\n");
-	writeV8("mov w%d, w0\n", i);
+	writeV8("\tbl _read_int\n");
+	writeV8("\tmov w%d, w0\n", i);
 	//writeV8("str w%d, [x29, #-4]\n", i);
 }
 
 void readFloat()
 {
 	int i = getFreeReg(FLOAT_TYPE);
-	writeV8("bl _read_float\n");
-	writeV8("fmov s%d, s0\n", i);
+	writeV8("\tbl _read_float\n");
+	writeV8("\tfmov s%d, s0\n", i);
 	//writeV8("str s%d, [x29, #-8]\n", i);
 }
 
@@ -1419,7 +1404,7 @@ void doWhileStmt(AST_NODE* stmtNode, char* funcName)
 	char exitName[15];
 	sprintf(exitName, "WhileExit%d", whileCount);
 
-	writeV8("\t%s:\n", testName);
+	writeV8("%s:\n", testName);
 	Reg reg = doMath(stmtNode->child);  //generate xxx
 	//I wish to get result register 
 	if(reg.c == 'w')
@@ -1435,7 +1420,7 @@ void doWhileStmt(AST_NODE* stmtNode, char* funcName)
 	writeV8("\tbeq %s\n", exitName);
 	doBlock(stmtNode->child->rightSibling, funcName);  //generate yyy
 	writeV8("\tb %s\n", testName);
-	writeV8("\t%s:\n", exitName);
+	writeV8("%s:\n", exitName);
 }
 
 void doIfStmt(AST_NODE* stmtNode, char* funcName)
@@ -1459,7 +1444,7 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName)
 		freeReg(reg.no);
     	writeV8("\tbeq %s\n", exitName); 
 		doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of block(yyy)
-		writeV8("\t%s:\n", exitName);  
+		writeV8("%s:\n", exitName);  
 	} 
 	else 
 	{
@@ -1483,9 +1468,9 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName)
 		writeV8("\tbeq %s\n", elseName);
 		doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of if block(yyy)(with final jump to exit)
 		writeV8("\tb %s\n", exitName);
-		writeV8("\t%s:\n", elseName);
+		writeV8("%s:\n", elseName);
 		doBlock(elsePartNode, funcName);    //TODO: code of else block(zzz)
-		writeV8("\t%s:\n", exitName);
+		writeV8("%s:\n", exitName);
 	}
 }
 
