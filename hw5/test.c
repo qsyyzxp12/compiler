@@ -1,11 +1,9 @@
 int MAIN()
 {
-	if( 0.0 && 0.5)
+	int k;
+	k = 5;
+	if(k <= 5)
 	{
-		write("yes\n");
-	}
-	else
-	{
-		write("no\n");
+		write(k);
 	}
 }

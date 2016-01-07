@@ -1197,8 +1197,14 @@ void freeReg(int no, ...)
 	
 	va_list ap;
 	int arg;
+	
+	va_start(ap, no);
 	while(!(arg = va_arg(ap, int)))
+	{
+		printf("arg = %d\n", arg);
 		regStat[arg-9] = 0;
+	}
+	va_end(ap);
 }
 
 void doAssignStmt(AST_NODE* assignStatNode)
@@ -1435,7 +1441,7 @@ void doWhileStmt(AST_NODE* stmtNode, char* funcName)
 void doIfStmt(AST_NODE* stmtNode, char* funcName)
 {
 	AST_NODE* elsePartNode = stmtNode->child->rightSibling->rightSibling;
-	if(elsePartNode == NULL)
+	if(elsePartNode->nodeType == NUL_NODE)
 	{
     	ifCount++;
     	char exitName[10];
