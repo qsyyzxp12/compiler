@@ -14,6 +14,7 @@ dv:
 	dot AST_Graph.gv -T png -o result.png
 
 test:
+	./run.sh ./parser test.c
 	qemu-aarch64 ./a.out
 
 parser.tab.o: parser.tab.c lex.yy.c alloc.o functions.c symbolTable.o semanticAnalysis.o

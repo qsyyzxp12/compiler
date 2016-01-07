@@ -17,7 +17,7 @@ void doIf();
 void doIfElse();
 Reg doMath(AST_NODE* node);
 int getFreeReg(DATA_TYPE type);
-void freeReg(int no);
+void freeReg(int no, ...);
 void doAssignStmt(AST_NODE* assignStatNode);
 void doFuncCallStmt(AST_NODE* funcCallStmtNode);
 void doRetStmt(AST_NODE* stmtNode, char* funcName);

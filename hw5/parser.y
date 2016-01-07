@@ -755,6 +755,7 @@ dim_list	: dim_list MK_LB expr MK_RB
 
 #include "lex.yy.c"
 #include <string.h>
+#include <stdarg.h>
 #include "codeGenerate.h"
     FILE* outputFile;
     int ifCount;
@@ -1064,21 +1065,45 @@ Reg doMath(AST_NODE* node)
 				case BINARY_OP_AND: // &&
 					if(LHSReg.c == 'w')
 					{
-						writeV8("\tsdiv %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+						writeV8("\tand %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
 					}
 					else
-					{
-						writeV8("\tfdiv %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+					{	
+						Reg isLHSZeroReg, isRHSZeroReg;
+						isLHSZeroReg.no = getFreeReg(INT_TYPE);
+						isRHSZeroReg.no = getFreeReg(INT_TYPE);
+						isLHSZeroReg.c = 'w';
+						
+						writeV8("\tfcmp %c%d, #0.0\n", LHSReg.c, LHSReg.no);
+						writeV8("\tcset w%d, eq\n", isLHSZeroReg.no);
+						writeV8("\tfcmp %c%d, #0.0\n", RHSReg.c, RHSReg.no);
+						writeV8("\tcset w%d, eq\n", isRHSZeroReg.no);
+
+						writeV8("\tand w%d, w%d, w%d\n", isLHSZeroReg.no, isLHSZeroReg.no, isRHSZeroReg.no);
+						freeReg(LHSReg.no, RHSReg.no, isRHSZeroReg.no);
+						return isLHSZeroReg;
 					}
 					break;
 				case BINARY_OP_OR:	// ||
 					if(LHSReg.c == 'w')
 					{
-						writeV8("\tsdiv %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+						writeV8("\torr %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
 					}
 					else
 					{
-						writeV8("\tfdiv %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+						Reg isLHSZeroReg, isRHSZeroReg;
+						isLHSZeroReg.no = getFreeReg(INT_TYPE);
+						isRHSZeroReg.no = getFreeReg(INT_TYPE);
+						isLHSZeroReg.c = 'w';
+						
+						writeV8("\tfcmp %c%d, #0.0\n", LHSReg.c, LHSReg.no);
+						writeV8("\tcset w%d, eq\n", isLHSZeroReg.no);
+						writeV8("\tfcmp %c%d, #0.0\n", RHSReg.c, RHSReg.no);
+						writeV8("\tcset w%d, eq\n", isRHSZeroReg.no);
+
+						writeV8("\torr w%d, w%d, w%d\n", isLHSZeroReg.no, isLHSZeroReg.no, isRHSZeroReg.no);
+						freeReg(LHSReg.no, RHSReg.no, isRHSZeroReg.no);
+						return isLHSZeroReg;
 					}
 					break;
 			}
@@ -1166,9 +1191,14 @@ int getFreeReg(DATA_TYPE type)
 	return i+9;
 }
 
-void freeReg(int no)
+void freeReg(int no, ...)
 {
 	regStat[no-9] = 0;
+	
+	va_list ap;
+	int arg;
+	while(!(arg = va_arg(ap, int)))
+		regStat[arg-9] = 0;
 }
 
 void doAssignStmt(AST_NODE* assignStatNode)
@@ -1383,23 +1413,23 @@ void doWhileStmt(AST_NODE* stmtNode, char* funcName)
 	char exitName[15];
 	sprintf(exitName, "WhileExit%d", whileCount);
 
-	writeV8("%s:\n", testName);
+	writeV8("\t%s:\n", testName);
 	Reg reg = doMath(stmtNode->child);  //generate xxx
 	//I wish to get result register 
 	if(reg.c == 'w')
 	{
-		writeV8("cmp %c%d, 0\n", reg.c, reg.no);
+		writeV8("\tcmp %c%d, 0\n", reg.c, reg.no);
   	}
 	else
 	{
-    	writeV8("fcmp %c%d, 0\n", reg.c, reg.no);
+    	writeV8("\tfcmp %c%d, 0\n", reg.c, reg.no);
   	}
 	freeReg(reg.no);
 
-	writeV8("beq %s\n", exitName);
+	writeV8("\tbeq %s\n", exitName);
 	doBlock(stmtNode->child->rightSibling, funcName);  //generate yyy
-	writeV8("b %s\n", testName);
-	writeV8("%s:\n", exitName);
+	writeV8("\tb %s\n", testName);
+	writeV8("\t%s:\n", exitName);
 }
 
 void doIfStmt(AST_NODE* stmtNode, char* funcName)
@@ -1414,16 +1444,16 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName)
 		Reg reg = doMath(stmtNode->child);    //code of xxx(with final compare jump to exit)
 		if(reg.c == 'w')
 		{
-			writeV8("cmp %c%d, 0\n", reg.c, reg.no);
+			writeV8("\tcmp %c%d, 0\n", reg.c, reg.no);
 		} 
 		else 
 		{
-			writeV8("fcmp %c%d, 0\n", reg.c, reg.no);
+			writeV8("\tfcmp %c%d, 0\n", reg.c, reg.no);
 		}
 		freeReg(reg.no);
-    	writeV8("beq %s\n", exitName); 
+    	writeV8("\tbeq %s\n", exitName); 
 		doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of block(yyy)
-		writeV8("%s:\n", exitName);  
+		writeV8("\t%s:\n", exitName);  
 	} 
 	else 
 	{
@@ -1437,19 +1467,19 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName)
 		Reg reg = doMath(stmtNode->child);    //TODO: code of xxx(with final compare jump to else)
 		if(reg.c == 'w')
 		{
-			writeV8("cmp %c%d, 0\n", reg.c, reg.no);
+			writeV8("\tcmp %c%d, 0\n", reg.c, reg.no);
 		} 
 		else 
 		{
-    		writeV8("fcmp %c%d, 0\n", reg.c, reg.no);
+    		writeV8("\tfcmp %c%d, 0\n", reg.c, reg.no);
   		}
 		freeReg(reg.no);
-		writeV8("beq %s\n", elseName);
+		writeV8("\tbeq %s\n", elseName);
 		doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of if block(yyy)(with final jump to exit)
-		writeV8("b %s\n", exitName);
-		writeV8("%s:\n", elseName);
+		writeV8("\tb %s\n", exitName);
+		writeV8("\t%s:\n", elseName);
 		doBlock(elsePartNode, funcName);    //TODO: code of else block(zzz)
-		writeV8("%s:\n", exitName);
+		writeV8("\t%s:\n", exitName);
 	}
 }
 

@@ -1,8 +1,6 @@
 int MAIN()
 {
-	float i;
-	i = 2.0;
-	if(i == 1.0)
+	if( 0.0 && 0.5)
 	{
 		write("yes\n");
 	}

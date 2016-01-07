@@ -25,37 +25,38 @@ _start_MAIN:
 
 	.data
 _CONSTANT_0:
-	.float 2.000000
+	.float 0.000000
 	.align 3
 	.text
 	ldr s16, _CONSTANT_0
-	str s16, [x29, #-4]
-	ldr s16, [x29, #-4]
 	.data
-_CONSTANT_2:
-	.float 1.000000
+_CONSTANT_1:
+	.float 0.500000
 	.align 3
 	.text
-	ldr s17, _CONSTANT_2
-	fcmp s16, s17
+	ldr s17, _CONSTANT_1
+	fcmp s16, #0.0
 	cset w9, eq
-cmp w9, 0
-beq IfElse1
+	fcmp s17, #0.0
+	cset w10, eq
+	and w9, w9, w10
+	cmp w9, 0
+	beq IfElse1
 .data
-_CONSTANT_3: .ascii "yes\n"
+_CONSTANT_2: .ascii "yes\n"
 .align 3
+.text
+ldr x0, =_CONSTANT_2
+bl _write_str
+	b IfExit1
+	IfElse1:
+.data
+_CONSTANT_3: .ascii "no\n"
+.align 0
 .text
 ldr x0, =_CONSTANT_3
 bl _write_str
-b IfExit1
-IfElse1:
-.data
-_CONSTANT_4: .ascii "no\n"
-.align 0
-.text
-ldr x0, =_CONSTANT_4
-bl _write_str
-IfExit1:
+	IfExit1:
 
 _end_MAIN:
 	ldr x9, [sp, #8]
@@ -80,4 +81,4 @@ _end_MAIN:
 	RET x30
 	.data
 _frameSize_MAIN:
-	.word 96
+	.word 92
