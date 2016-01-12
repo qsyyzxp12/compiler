@@ -15,6 +15,7 @@
 FILE* outputFile;
 int ifCount;
 int whileCount;
+int forCount;
 int constCount;
 int AROffset;
 int regStat[15] = {0};
@@ -643,6 +644,8 @@ void doStmtLst(AST_NODE* stmtLstNode, char* funcName)
 	case WHILE_STMT:
 	  doWhileStmt(stmtNode, funcName);
 	  break;
+	case FOR_STMT:
+	  doForStmt(stmtNode, funcName);
 	case IF_STMT:
 	  doIfStmt(stmtNode, funcName);
 	  break;
@@ -651,8 +654,55 @@ void doStmtLst(AST_NODE* stmtLstNode, char* funcName)
     }
 }
 
-void doWhileStmt(AST_NODE* stmtNode, char* funcName)
-{
+inline void genLabel(char* name){
+  writeV8("%s:\n", name);
+}
+inline void genGoto(char* name){
+  writeV8("b %s\n", name);
+}
+inline void genBranch(Reg reg, char* tname, char* fname){
+  if(reg.c == 'w'){
+    writeV8("\tcmp %c%d, 0\n", reg.c, reg.no);
+  } else{
+    writeV8("\tfcmp %c%d, 0\n", reg.c, reg.no);
+  }
+  freeReg(reg.no);
+  writeV8("\tbeq %s\n", fname);
+  writeV8("\tb %s\n", tname);
+}
+void doForStmt(AST_NODE* stmtNode, char* funcName){
+  forCount++;
+  char testName[15];
+  sprintf(testName, "ForTest%d", forCount);
+  char incName[15];
+  sprintf(incName, "ForInc%d", forCount);
+  char bodyName[15];
+  sprintf(bodyName, "ForBody%d", forCount);
+  char exitName[15];
+  sprintf(exitName, "ForExit%d", forCount);
+
+  AST_NODE* initNode = forStmtNode->child;
+  AST_NODE* testNode = initNode->rightSibling;
+  AST_NODE* incNode = testNode->rightSibling;
+  AST_NODE* bodyNode = incNode->rightSibling;
+  //init
+  doBlock(initNode, funcName);
+  //test
+  genLabel(testName);
+  Reg reg = doMath(testNode);  //generate xxx
+  genBranch(reg, bodyName, exitName);
+  //inc
+  genLabel(incName);
+  doStmtLst(incNode, funcName);
+  genGoto(testName);
+  //body
+  genLabel(bodyName);
+  doBlock(bodyNode, funcName);
+  genGoto(incName);
+  //exit
+  genLabel(exitName);
+}
+void doWhileStmt(AST_NODE* stmtNode, char* funcName){
   whileCount++;
   char testName[15];
   sprintf(testName, "WhileTest%d", whileCount);
@@ -677,9 +727,7 @@ void doWhileStmt(AST_NODE* stmtNode, char* funcName)
   writeV8("\tb %s\n", testName);
   writeV8("%s:\n", exitName);
 }
-
-void doIfStmt(AST_NODE* stmtNode, char* funcName)
-{
+void doIfStmt(AST_NODE* stmtNode, char* funcName){
   AST_NODE* elsePartNode = stmtNode->child->rightSibling->rightSibling;
   if(elsePartNode->nodeType == NUL_NODE)
     {
@@ -729,8 +777,7 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName)
     }
 }
 
-void doBlock(AST_NODE* blockNode, char* funcName)
-{
+void doBlock(AST_NODE* blockNode, char* funcName){
   AST_NODE* content = blockNode->child;
   while(content)
     {
@@ -747,19 +794,15 @@ void doBlock(AST_NODE* blockNode, char* funcName)
     }
 }
 
-void doDeclFunc(AST_NODE* declNode)
-{
+void doDeclFunc(AST_NODE* declNode){
   AST_NODE* blockNode = declNode->child->rightSibling->rightSibling->rightSibling;
   AST_NODE* content = blockNode->child;
-	
-
   int frameSize = 92;
   AROffset = 0;
   char* funcName = declNode->child->rightSibling->semantic_value.identifierSemanticValue.identifierName;
   gen_prologue(funcName);
 
-  while(content)
-    {
+  while(content){
       switch(content->nodeType)
 	{
 	case STMT_LIST_NODE:
@@ -864,6 +907,7 @@ void printCode(AST_NODE *root)
   ifCount = 0;
   whileCount = 0;
   constCount = 0;
+  forCount = 0;
 
   AST_NODE* child = root->child;
   while(child)
