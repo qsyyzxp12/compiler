@@ -1,3 +1,10 @@
+#ifndef CODEGEN_H
+#define CODEGEN_H
+
+
+#include "header.h"
+#include "symbolTable.h"
+
 typedef struct
 {
 	int no;
@@ -29,3 +36,5 @@ void printCode(AST_NODE *root);
 void doWhileStmt(AST_NODE* stmtNode, char* funcName);
 void doIfStmt(AST_NODE* stmtNode, char* funcName);
 void doBlock(AST_NODE* blockNode, char* funcName);
+
+#endif
