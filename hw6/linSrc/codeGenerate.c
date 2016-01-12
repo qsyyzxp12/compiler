@@ -681,7 +681,7 @@ void doForStmt(AST_NODE* stmtNode, char* funcName){
   char exitName[15];
   sprintf(exitName, "ForExit%d", forCount);
 
-  AST_NODE* initNode = forStmtNode->child;
+  AST_NODE* initNode = stmtNode->child;
   AST_NODE* testNode = initNode->rightSibling;
   AST_NODE* incNode = testNode->rightSibling;
   AST_NODE* bodyNode = incNode->rightSibling;
@@ -689,7 +689,7 @@ void doForStmt(AST_NODE* stmtNode, char* funcName){
   doBlock(initNode, funcName);
   //test
   genLabel(testName);
-  Reg reg = doMath(testNode);  //generate xxx
+  doBlock(testNode, funcName);  //generate xxx
   genBranch(reg, bodyName, exitName);
   //inc
   genLabel(incName);
