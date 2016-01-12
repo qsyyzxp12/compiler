@@ -646,6 +646,7 @@ void doStmtLst(AST_NODE* stmtLstNode, char* funcName)
 	  break;
 	case FOR_STMT:
 	  doForStmt(stmtNode, funcName);
+	  break;
 	case IF_STMT:
 	  doIfStmt(stmtNode, funcName);
 	  break;
@@ -689,7 +690,7 @@ void doForStmt(AST_NODE* stmtNode, char* funcName){
   doBlock(initNode, funcName);
   //test
   genLabel(testName);
-  doBlock(testNode, funcName);  //generate xxx
+  Reg reg = doMath(testNode->child);  //generate xxx
   genBranch(reg, bodyName, exitName);
   //inc
   genLabel(incName);
