@@ -1,6 +1,9 @@
 int MAIN()
 {
-	float t1;
-	t1 = -2.0;
-	write(t1);
+	int A[2];
+	int i;
+	i = 1;
+	A[i] = 5;
+	write(A[i]);
+	write("\n");
 }

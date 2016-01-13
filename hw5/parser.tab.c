@@ -2773,7 +2773,8 @@ void gen_frameSizeLabel(char* name, int size)
 }
 
 Reg doMath(AST_NODE* node)
-{
+{//TODO: 1. "not" expr like `!i`.
+ //		 2. Array with dimension more than 1. a[100][200] -> a[i][j] -> address = a + (200*i+j)*4
 	Reg reg;
 	if(node->nodeType == CONST_VALUE_NODE)
 	{
@@ -2809,7 +2810,6 @@ Reg doMath(AST_NODE* node)
 	else if(node->nodeType == IDENTIFIER_NODE)
 	{
 		int regNo;
-		int index = 0;
 		char* name = node->semantic_value.identifierSemanticValue.identifierName;
 		DATA_TYPE type;
 
@@ -2817,51 +2817,101 @@ Reg doMath(AST_NODE* node)
 		if(node->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
 		{
 			type = entry->attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
-			AST_NODE* indexNode = node->child;
-			index = indexNode->semantic_value.const1->const_u.intval;
+			if(entry->nestingLevel == 0)
+			{
+				char* label = entry->address.label;
+				int labelRegNo = getFreeReg(INT_TYPE);
+				writeV8("\tldr x%d, =%s\n", labelRegNo, label)
+			
+				AST_NODE* indexNode = node->child;	
+				Reg indexReg = doMath(indexNode);
+				writeV8("\tlsl %c%d, %c%d, #2\n", indexReg.c, indexReg.no, indexReg.c, indexReg.no);
+				writeV8("\tadd x%d, x%d, x%d\n", labelRegNo, labelRegNo, indexReg.no);
+				freeReg(indexReg.no);
+	
+				if(type == INT_TYPE)
+				{
+					regNo = getFreeReg(INT_TYPE);
+					writeV8("\tldr w%d, [x%d, #0]\n", regNo, labelRegNo);
+					reg.c = 'w';
+				}
+				else if(type == FLOAT_TYPE)
+				{
+					regNo = getFreeReg(FLOAT_TYPE);
+					writeV8("\tldr s%d, [x%d, #0]\n", regNo, labelRegNo);
+					reg.c = 's';
+				}
+				freeReg(labelRegNo);
+			}
+			else
+			{
+//				printf("id %s FpOffset = %d\n", name, FpOffset);
+				int AddRegNo = getFreeReg(INT_TYPE);
+				writeV8("\tadd x%d, x29, #%d\n", AddRegNo, entry->address.FpOffset);
+
+				AST_NODE* indexNode = node->child;	
+				Reg indexReg = doMath(indexNode);
+				writeV8("\tlsl %c%d, %c%d, #2\n", indexReg.c, indexReg.no, indexReg.c, indexReg.no);
+				writeV8("\tsub x%d, x%d, x%d\n", AddRegNo, AddRegNo, indexReg.no);
+				freeReg(indexReg.no);
+				
+				if(type == INT_TYPE)
+				{
+					regNo = getFreeReg(INT_TYPE);
+					writeV8("\tldr w%d, [x%d, #0]\n", regNo, AddRegNo);
+					reg.c = 'w';
+				}
+				else if(type == FLOAT_TYPE)
+				{
+					regNo = getFreeReg(FLOAT_TYPE);
+					writeV8("\tldr s%d, [x%d, #0]\n", regNo, AddRegNo);
+					reg.c = 's';
+				}
+				freeReg(AddRegNo);
+			}
+			reg.no = regNo;
 		}
 		else if(node->semantic_value.identifierSemanticValue.kind == NORMAL_ID)
 		{
 			type = entry->attribute->attr.typeDescriptor->properties.dataType;
+			if(entry->nestingLevel == 0)
+			{
+				char* label = entry->address.label;
+				int labelReg = getFreeReg(INT_TYPE);
+				writeV8("\tldr x%d, =%s\n", labelReg, label)
+				if(type == INT_TYPE)
+				{
+					regNo = getFreeReg(INT_TYPE);
+					writeV8("\tldr w%d, [x%d, #0]\n", regNo, labelReg);
+					reg.c = 'w';
+				}
+				else if(type == FLOAT_TYPE)
+				{
+					regNo = getFreeReg(FLOAT_TYPE);
+					writeV8("\tldr s%d, [x%d, #0]\n", regNo, labelReg);
+					reg.c = 's';
+				}
+				freeReg(labelReg);
+			}
+			else
+			{
+				int FpOffset = entry->address.FpOffset;
+//				printf("id %s FpOffset = %d\n", name, FpOffset);
+				if(type == INT_TYPE)
+				{
+					regNo = getFreeReg(INT_TYPE);
+					writeV8("\tldr w%d, [x29, #%d]\n", regNo, FpOffset);
+					reg.c = 'w';
+				}
+				else if(type == FLOAT_TYPE)
+				{
+					regNo = getFreeReg(FLOAT_TYPE);
+					writeV8("\tldr s%d, [x29, #%d]\n", regNo, FpOffset);
+					reg.c = 's';
+				}
+			}
+			reg.no = regNo;
 		}
-
-		if(entry->nestingLevel == 0)
-		{
-			char* label = entry->address.label;
-			int labelReg = getFreeReg(INT_TYPE);
-			writeV8("\tldr x%d, =%s\n", labelReg, label)
-			if(type == INT_TYPE)
-			{
-				regNo = getFreeReg(INT_TYPE);
-				writeV8("\tldr w%d, [x%d, #%d]\n", regNo, labelReg, 4*index);
-				reg.c = 'w';
-			}
-			else if(type == FLOAT_TYPE)
-			{
-				regNo = getFreeReg(FLOAT_TYPE);
-				writeV8("\tldr s%d, [x%d, #%d]\n", regNo, labelReg, 4*index);
-				reg.c = 's';
-			}
-			freeReg(labelReg);
-		}
-		else
-		{
-			int FpOffset = entry->address.FpOffset;
-//			printf("id %s FpOffset = %d\n", name, FpOffset);
-			if(type == INT_TYPE)
-			{
-				regNo = getFreeReg(INT_TYPE);
-				writeV8("\tldr w%d, [x29, #%d]\n", regNo, FpOffset-4*index);
-				reg.c = 'w';
-			}
-			else if(type == FLOAT_TYPE)
-			{
-				regNo = getFreeReg(FLOAT_TYPE);
-				writeV8("\tldr s%d, [x29, #%d]\n", regNo, FpOffset-4*index);
-				reg.c = 's';
-			}
-		}
-		reg.no = regNo;
 		return reg;
 	}
 	else if(node->nodeType == EXPR_NODE)
@@ -2917,7 +2967,6 @@ Reg doMath(AST_NODE* node)
 					{
 						writeV8("\tcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
 						writeV8("\tcset %c%d, eq\n", LHSReg.c, LHSReg.no);
-//						writeV8("\tcsel %c%d, %c%d, %c%d, eq\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no, RHSReg.c, RHSReg.no);
 					}
 					else
 					{
@@ -3138,55 +3187,65 @@ void doAssignStmt(AST_NODE* assignStatNode)
 	AST_NODE* LHS = assignStatNode->child;
 	AST_NODE* RHS = LHS->rightSibling;
 	Reg RHSReg = doMath(RHS);
-	int offset = 0;
 	
 	SymbolTableEntry* LHSEntry = LHS->semantic_value.identifierSemanticValue.symbolTableEntry;
 	DATA_TYPE type;
 	if(LHS->semantic_value.identifierSemanticValue.kind == NORMAL_ID)
 	{
 		type = LHSEntry->attribute->attr.typeDescriptor->properties.dataType;
+		if(LHSEntry->nestingLevel == 0)
+		{
+			char* label = LHSEntry->address.label;
+			int labelRegNo = getFreeReg(INT_TYPE);
+			writeV8("\tldr x%d, =%s\n", labelRegNo, label);
+			writeV8("\tstr %c%d, [x%d, #0]\n", RHSReg.c, RHSReg.no, labelRegNo);
+			freeReg(labelRegNo);
+		}
+		else
+		{
+			writeV8("\tstr %c%d, [x29, #%d]\n", RHSReg.c, RHSReg.no, LHSEntry->address.FpOffset);		
+			constCount++;
+		}
 	}
-	if(LHS->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
+	else if(LHS->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
 	{
+//		int* sizeInEachDimension = LHSEntry->attribute->attr.typeDescriptor->propterties.arratProperties.sizeInEachDimension;
+//		int dimCurrSaw = 0;
 		type = LHSEntry->attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
 		AST_NODE* indexNode = LHS->child;
-		offset = indexNode->semantic_value.const1->const_u.intval;
+		Reg indexReg = doMath(indexNode);
+		writeV8("\tlsl %c%d, %c%d, #2\n", indexReg.c, indexReg.no, indexReg.c, indexReg.no);
+
+		if(LHSEntry->nestingLevel == 0)
+		{
+			char* label = LHSEntry->address.label;
+			int labelRegNo = getFreeReg(INT_TYPE);
+			writeV8("\tldr x%d, =%s\n", labelRegNo, label);
+			writeV8("\tadd x%d, x%d, x%d\n", labelRegNo, labelRegNo, indexReg.no);
+			writeV8("\tstr %c%d, [x%d, #0]\n", RHSReg.c, RHSReg.no, labelRegNo);
+
+			freeReg(labelRegNo);
+		}
+		else
+		{
+			int AddRegNo = getFreeReg(INT_TYPE);
+			writeV8("\tadd x%d, x29, #%d\n", AddRegNo, LHSEntry->address.FpOffset);
+			writeV8("\tsub x%d, x%d, x%d\n", AddRegNo, AddRegNo, indexReg.no);
+			writeV8("\tstr %c%d, [x%d, #0]\n", RHSReg.c, RHSReg.no, AddRegNo);
+			freeReg(AddRegNo);
+
+//			constCount++;
+		}
+		freeReg(indexReg.no);
 	}
 
-	if(LHSEntry->nestingLevel == 0)
-	{
-		char* label = LHSEntry->address.label;
-		int labelReg = getFreeReg(INT_TYPE);
-		writeV8("\tldr x%d, =%s\n", labelReg, label);
-		if(type == INT_TYPE)
-		{
-			writeV8("\tstr %c%d, [x%d, #%d]\n", RHSReg.c, RHSReg.no, labelReg, offset*4);
-		}
-		else if(type == FLOAT_TYPE)
-		{
-			writeV8("\tstr %c%d, [x%d, #%d]\n", RHSReg.c, RHSReg.no, labelReg, offset*4);
-		}
-		regStat[labelReg-9] = 0;
-	}
-	else
-	{
-		if(type == INT_TYPE)
-		{
-			writeV8("\tstr %c%d, [x29, #%d]\n", RHSReg.c, RHSReg.no, LHSEntry->address.FpOffset - 4*offset);		
-		}
-		else if(type == FLOAT_TYPE)
-		{
-			writeV8("\tstr %c%d, [x29, #%d]\n", RHSReg.c, RHSReg.no, LHSEntry->address.FpOffset);
-		}
-		constCount++;
-	}
 	freeReg(RHSReg.no);
 }
 
 void writeString(char* strName, char* strValue)
 {
 	//data part
-	writeV8(".data\n");
+	writeV8("\t.data\n");
 
 	char* newStrValue = (char*)malloc(sizeof(strValue)*2);
 	int count = 0;
@@ -3221,41 +3280,41 @@ void writeString(char* strName, char* strValue)
 	int alignNum = 4-((strlen(newStrValue)+2)%4);
 	if(alignNum == 4)
 		alignNum = 0;
-	writeV8(".align %d\n", alignNum);//align is 4 times
+	writeV8("\t.align %d\n", alignNum);//align is 4 times
     
 	//test part
-	writeV8(".text\n");
-	writeV8("ldr x0, =%s\n", strName);//"_CONSTANT_0" or what?
+	writeV8("\t.text\n");
+	writeV8("\tldr x0, =%s\n", strName);//"_CONSTANT_0" or what?
 	//mov x0, x9 //TODO: check is needed or not
-	writeV8("bl _write_str\n");
+	writeV8("\tbl _write_str\n");
 }
 
 void writeInt(Reg reg)//reg will read the value from local stack and write
 {
 	//if directly give a reg to write, it's value will be deleted(?) after called write()
-	writeV8("mov w0, %c%d\n", reg.c, reg.no);
-	writeV8("bl _write_int\n");
+	writeV8("\tmov w0, %c%d\n", reg.c, reg.no);
+	writeV8("\tbl _write_int\n");
 }
 
 void writeFloat(Reg reg)
 {
-	writeV8("fmov s0, %c%d\n", reg.c, reg.no);
-	writeV8("bl _write_float\n");
+	writeV8("\tfmov s0, %c%d\n", reg.c, reg.no);
+	writeV8("\tbl _write_float\n");
 }
 
 void readInt()//will read value into reg and write into local stack
 {
 	int i = getFreeReg(INT_TYPE);
-	writeV8("bl _read_int\n");
-	writeV8("mov w%d, w0\n", i);
+	writeV8("\tbl _read_int\n");
+	writeV8("\tmov w%d, w0\n", i);
 	//writeV8("str w%d, [x29, #-4]\n", i);
 }
 
 void readFloat()
 {
 	int i = getFreeReg(FLOAT_TYPE);
-	writeV8("bl _read_float\n");
-	writeV8("fmov s%d, s0\n", i);
+	writeV8("\tbl _read_float\n");
+	writeV8("\tfmov s%d, s0\n", i);
 	//writeV8("str s%d, [x29, #-8]\n", i);
 }
 
@@ -3345,7 +3404,7 @@ void doWhileStmt(AST_NODE* stmtNode, char* funcName)
 	char exitName[15];
 	sprintf(exitName, "WhileExit%d", whileCount);
 
-	writeV8("\t%s:\n", testName);
+	writeV8("%s:\n", testName);
 	Reg reg = doMath(stmtNode->child);  //generate xxx
 	//I wish to get result register 
 	if(reg.c == 'w')
@@ -3361,7 +3420,7 @@ void doWhileStmt(AST_NODE* stmtNode, char* funcName)
 	writeV8("\tbeq %s\n", exitName);
 	doBlock(stmtNode->child->rightSibling, funcName);  //generate yyy
 	writeV8("\tb %s\n", testName);
-	writeV8("\t%s:\n", exitName);
+	writeV8("%s:\n", exitName);
 }
 
 void doIfStmt(AST_NODE* stmtNode, char* funcName)
@@ -3385,7 +3444,7 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName)
 		freeReg(reg.no);
     	writeV8("\tbeq %s\n", exitName); 
 		doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of block(yyy)
-		writeV8("\t%s:\n", exitName);  
+		writeV8("%s:\n", exitName);  
 	} 
 	else 
 	{
@@ -3409,9 +3468,9 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName)
 		writeV8("\tbeq %s\n", elseName);
 		doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of if block(yyy)(with final jump to exit)
 		writeV8("\tb %s\n", exitName);
-		writeV8("\t%s:\n", elseName);
+		writeV8("%s:\n", elseName);
 		doBlock(elsePartNode, funcName);    //TODO: code of else block(zzz)
-		writeV8("\t%s:\n", exitName);
+		writeV8("%s:\n", exitName);
 	}
 }
 
