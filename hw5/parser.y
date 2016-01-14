@@ -1389,7 +1389,7 @@ void doFuncCallStmt(AST_NODE* funcCallStmtNode)
 	} 
 	else if(strcmp(funcName, "read") == 0)
 	{
-	  readInt();
+		readInt();
 	} 
 	else if(strcmp(funcName, "write") == 0)
 	{
@@ -1415,7 +1415,7 @@ void doFuncCallStmt(AST_NODE* funcCallStmtNode)
 	} 
 	else
 	{
-	  writeV8("\tbl _start_%s\n", funcName);
+		writeV8("\tbl _start_%s\n", funcName);
 	}
 }
 
