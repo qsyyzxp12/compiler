@@ -25,17 +25,17 @@ _start_MAIN:
 
 	.data
 _CONSTANT_0:
-	.word 1
+	.word 0
 	.align 3
 	.text
 	ldr w9, _CONSTANT_0
 	str w9, [x29, #-12]
 	.data
-_CONSTANT_2:
+_CONSTANT_1:
 	.word 5
 	.align 3
 	.text
-	ldr w9, _CONSTANT_2
+	ldr w9, _CONSTANT_1
 	ldr w10, [x29, #-12]
 	lsl w10, w10, #2
 	add x11, x29, #-4
@@ -45,14 +45,16 @@ _CONSTANT_2:
 	lsl w9, w9, #2
 	add x10, x29, #-4
 	sub x10, x10, x9
-	ldr w11, [x10, #0]
-	mov w0, w11
+	ldr w9, [x10, #0]
+	str w9, [x29, #-8]
+	ldr w9, [x29, #-8]
+	mov w0, w9
 	bl _write_int
 	.data
-_CONSTANT_3: .ascii "\n"
+_CONSTANT_2: .ascii "\n"
 	.align 2
 	.text
-	ldr x0, =_CONSTANT_3
+	ldr x0, =_CONSTANT_2
 	bl _write_str
 
 _end_MAIN:

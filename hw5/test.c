@@ -1,9 +1,11 @@
 int MAIN()
 {
-	int A[2];
+	int A[1];
+	int x;
 	int i;
-	i = 1;
+	i = 0;
 	A[i] = 5;
-	write(A[i]);
+	x = A[i];
+	write(x);
 	write("\n");
 }

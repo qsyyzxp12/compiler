@@ -875,60 +875,24 @@ Reg doMath(AST_NODE* node)
 		SymbolTableEntry* entry = node->semantic_value.identifierSemanticValue.symbolTableEntry;
 		if(node->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
 		{
+			int arrayElemRegNo = ldrArrayElem(node);
 			type = entry->attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
-			if(entry->nestingLevel == 0)
-			{
-				char* label = entry->address.label;
-				int labelRegNo = getFreeReg(INT_TYPE);
-				writeV8("\tldr x%d, =%s\n", labelRegNo, label)
 			
-				AST_NODE* indexNode = node->child;	
-				Reg indexReg = doMath(indexNode);
-				writeV8("\tlsl %c%d, %c%d, #2\n", indexReg.c, indexReg.no, indexReg.c, indexReg.no);
-				writeV8("\tadd x%d, x%d, x%d\n", labelRegNo, labelRegNo, indexReg.no);
-				freeReg(indexReg.no);
-	
-				if(type == INT_TYPE)
-				{
-					regNo = getFreeReg(INT_TYPE);
-					writeV8("\tldr w%d, [x%d, #0]\n", regNo, labelRegNo);
-					reg.c = 'w';
-				}
-				else if(type == FLOAT_TYPE)
-				{
-					regNo = getFreeReg(FLOAT_TYPE);
-					writeV8("\tldr s%d, [x%d, #0]\n", regNo, labelRegNo);
-					reg.c = 's';
-				}
-				freeReg(labelRegNo);
-			}
-			else
+			if(type == INT_TYPE)
 			{
-//				printf("id %s FpOffset = %d\n", name, FpOffset);
-				int AddRegNo = getFreeReg(INT_TYPE);
-				writeV8("\tadd x%d, x29, #%d\n", AddRegNo, entry->address.FpOffset);
-
-				AST_NODE* indexNode = node->child;	
-				Reg indexReg = doMath(indexNode);
-				writeV8("\tlsl %c%d, %c%d, #2\n", indexReg.c, indexReg.no, indexReg.c, indexReg.no);
-				writeV8("\tsub x%d, x%d, x%d\n", AddRegNo, AddRegNo, indexReg.no);
-				freeReg(indexReg.no);
-				
-				if(type == INT_TYPE)
-				{
-					regNo = getFreeReg(INT_TYPE);
-					writeV8("\tldr w%d, [x%d, #0]\n", regNo, AddRegNo);
-					reg.c = 'w';
-				}
-				else if(type == FLOAT_TYPE)
-				{
-					regNo = getFreeReg(FLOAT_TYPE);
-					writeV8("\tldr s%d, [x%d, #0]\n", regNo, AddRegNo);
-					reg.c = 's';
-				}
-				freeReg(AddRegNo);
+				regNo = getFreeReg(INT_TYPE);
+				writeV8("\tldr w%d, [x%d, #0]\n", regNo, arrayElemRegNo);
+				reg.c = 'w';
 			}
+			else if(type == FLOAT_TYPE)
+			{
+				regNo = getFreeReg(FLOAT_TYPE);
+				writeV8("\tldr s%d, [x%d, #0]\n", regNo, arrayElemRegNo);
+				reg.c = 's';
+			}		
+			freeReg(arrayElemRegNo);
 			reg.no = regNo;
+			return reg;
 		}
 		else if(node->semantic_value.identifierSemanticValue.kind == NORMAL_ID)
 		{
@@ -970,8 +934,8 @@ Reg doMath(AST_NODE* node)
 				}
 			}
 			reg.no = regNo;
+			return reg;
 		}
-		return reg;
 	}
 	else if(node->nodeType == EXPR_NODE)
 	{
@@ -1241,6 +1205,29 @@ void freeReg(int no, ...)
 	va_end(ap);
 }
 
+int ldrArrayElem(AST_NODE* arrayIDNode)
+{
+	SymbolTableEntry* entry = arrayIDNode->semantic_value.identifierSemanticValue.symbolTableEntry;
+	AST_NODE* indexNode = arrayIDNode->child;
+	Reg indexReg = doMath(indexNode);
+	writeV8("\tlsl %c%d, %c%d, #2\n", indexReg.c, indexReg.no, indexReg.c, indexReg.no);
+
+	int addressRegNo = getFreeReg(INT_TYPE);
+	if(entry->nestingLevel == 0)
+	{
+		char* label = entry->address.label;
+		writeV8("\tldr x%d, =%s\n", addressRegNo, label);
+		writeV8("\tadd x%d, x%d, x%d\n", addressRegNo, addressRegNo, indexReg.no);
+	}
+	else
+	{
+		writeV8("\tadd x%d, x29, #%d\n", addressRegNo, entry->address.FpOffset);
+		writeV8("\tsub x%d, x%d, x%d\n", addressRegNo, addressRegNo, indexReg.no);
+	}
+	freeReg(indexReg.no);
+	return addressRegNo;
+}
+
 void doAssignStmt(AST_NODE* assignStatNode)
 {
 	AST_NODE* LHS = assignStatNode->child;
@@ -1263,39 +1250,15 @@ void doAssignStmt(AST_NODE* assignStatNode)
 		else
 		{
 			writeV8("\tstr %c%d, [x29, #%d]\n", RHSReg.c, RHSReg.no, LHSEntry->address.FpOffset);		
-			constCount++;
+//			constCount++;
 		}
 	}
 	else if(LHS->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
 	{
-//		int* sizeInEachDimension = LHSEntry->attribute->attr.typeDescriptor->propterties.arratProperties.sizeInEachDimension;
-//		int dimCurrSaw = 0;
-		type = LHSEntry->attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
-		AST_NODE* indexNode = LHS->child;
-		Reg indexReg = doMath(indexNode);
-		writeV8("\tlsl %c%d, %c%d, #2\n", indexReg.c, indexReg.no, indexReg.c, indexReg.no);
-
-		if(LHSEntry->nestingLevel == 0)
-		{
-			char* label = LHSEntry->address.label;
-			int labelRegNo = getFreeReg(INT_TYPE);
-			writeV8("\tldr x%d, =%s\n", labelRegNo, label);
-			writeV8("\tadd x%d, x%d, x%d\n", labelRegNo, labelRegNo, indexReg.no);
-			writeV8("\tstr %c%d, [x%d, #0]\n", RHSReg.c, RHSReg.no, labelRegNo);
-
-			freeReg(labelRegNo);
-		}
-		else
-		{
-			int AddRegNo = getFreeReg(INT_TYPE);
-			writeV8("\tadd x%d, x29, #%d\n", AddRegNo, LHSEntry->address.FpOffset);
-			writeV8("\tsub x%d, x%d, x%d\n", AddRegNo, AddRegNo, indexReg.no);
-			writeV8("\tstr %c%d, [x%d, #0]\n", RHSReg.c, RHSReg.no, AddRegNo);
-			freeReg(AddRegNo);
-
-//			constCount++;
-		}
-		freeReg(indexReg.no);
+		int arrayElemRegNo = ldrArrayElem(LHS);
+		
+		writeV8("\tstr %c%d, [x%d, #0]\n", RHSReg.c, RHSReg.no, arrayElemRegNo);
+		freeReg(arrayElemRegNo);	
 	}
 
 	freeReg(RHSReg.no);

@@ -29,3 +29,4 @@ void printCode(AST_NODE *root);
 void doWhileStmt(AST_NODE* stmtNode, char* funcName);
 void doIfStmt(AST_NODE* stmtNode, char* funcName);
 void doBlock(AST_NODE* blockNode, char* funcName);
+int ldrArrayElem(AST_NODE* arrayIDNode);
