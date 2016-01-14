@@ -3149,23 +3149,44 @@ void freeReg(int no, ...)
 int ldrArrayElem(AST_NODE* arrayIDNode)
 {
 	SymbolTableEntry* entry = arrayIDNode->semantic_value.identifierSemanticValue.symbolTableEntry;
+	
+	int dimension = entry->attribute->attr.typeDescriptor->properties.arrayProperties.dimension;
+	int* sizeInEachDimension = entry->attribute->attr.typeDescriptor->properties.arrayProperties.sizeInEachDimension;
+	
+	int ctn;
 	AST_NODE* indexNode = arrayIDNode->child;
-	Reg indexReg = doMath(indexNode);
-	writeV8("\tlsl %c%d, %c%d, #2\n", indexReg.c, indexReg.no, indexReg.c, indexReg.no);
-
+	int offsetRegNo = getFreeReg(INT_TYPE);
+	writeV8("\tmov w%d, #0\n", offsetRegNo);
+	for(ctn=0; ctn < dimension; ctn++)
+	{
+		Reg indexReg = doMath(indexNode);
+		int i = ctn+1;
+		while(i < dimension)
+		{
+			int dimensionSizeRegNo = getFreeReg(INT_TYPE);
+			writeV8("\tmov w%d, #%d\n", dimensionSizeRegNo, sizeInEachDimension[i++]);
+			writeV8("\tmul w%d, w%d, w%d\n", indexReg.no, indexReg.no, dimensionSizeRegNo);
+			freeReg(dimensionSizeRegNo);
+		}
+		writeV8("\tadd w%d, w%d, w%d\n", offsetRegNo, offsetRegNo, indexReg.no);
+		freeReg(indexReg.no);
+		indexNode = indexNode->rightSibling;
+	}
+	writeV8("\tlsl w%d, w%d, #2\n", offsetRegNo, offsetRegNo);
+	
 	int addressRegNo = getFreeReg(INT_TYPE);
 	if(entry->nestingLevel == 0)
 	{
 		char* label = entry->address.label;
 		writeV8("\tldr x%d, =%s\n", addressRegNo, label);
-		writeV8("\tadd x%d, x%d, x%d\n", addressRegNo, addressRegNo, indexReg.no);
+		writeV8("\tadd x%d, x%d, x%d\n", addressRegNo, addressRegNo, offsetRegNo);
 	}
 	else
 	{
 		writeV8("\tadd x%d, x29, #%d\n", addressRegNo, entry->address.FpOffset);
-		writeV8("\tsub x%d, x%d, x%d\n", addressRegNo, addressRegNo, indexReg.no);
+		writeV8("\tsub x%d, x%d, x%d\n", addressRegNo, addressRegNo, offsetRegNo);
 	}
-	freeReg(indexReg.no);
+	freeReg(offsetRegNo);
 	return addressRegNo;
 }
 
@@ -3176,10 +3197,8 @@ void doAssignStmt(AST_NODE* assignStatNode)
 	Reg RHSReg = doMath(RHS);
 	
 	SymbolTableEntry* LHSEntry = LHS->semantic_value.identifierSemanticValue.symbolTableEntry;
-	DATA_TYPE type;
 	if(LHS->semantic_value.identifierSemanticValue.kind == NORMAL_ID)
 	{
-		type = LHSEntry->attribute->attr.typeDescriptor->properties.dataType;
 		if(LHSEntry->nestingLevel == 0)
 		{
 			char* label = LHSEntry->address.label;
