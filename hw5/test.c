@@ -1,10 +1,13 @@
-int foo(float a[][3])
+int foo()
 {
-	write(a[0][1]);
+	write("xxx\n");
+	return 0;
 }
+
 int MAIN()
 {
-	float A[5][3];
-	A[0][1] = 1.2;
-	foo(A);
+	if(1 && foo())
+	{
+		write("1\n");
+	}
 }

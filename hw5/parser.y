@@ -1093,7 +1093,7 @@ Reg doMath(AST_NODE* node)
 						writeV8("\tcset w%d, lt\n", LHSReg.no);
 					}
 					break;
-				case BINARY_OP_AND: // &&
+/*				case BINARY_OP_AND: // &&
 					if(LHSReg.c == 'w')
 					{
 						writeV8("\tand %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
@@ -1137,7 +1137,7 @@ Reg doMath(AST_NODE* node)
 						return isLHSZeroReg;
 					}
 					break;
-			}
+*/			}
 			freeReg(RHSReg.no);
 			return LHSReg;
 		}
@@ -1516,6 +1516,71 @@ void doWhileStmt(AST_NODE* stmtNode, char* funcName)
 	writeV8("%s:\n", exitName);
 }
 
+void doLogicalExpr(AST_NODE* exprNode, char* startName, char* exitName)
+{
+	if(exprNode->semantic_value.exprSemanticValue.kind == BINARY_OPERATION)
+	{
+		if(exprNode->semantic_value.exprSemanticValue.op.binaryOp == BINARY_OP_AND ||
+		   exprNode->semantic_value.exprSemanticValue.op.binaryOp == BINARY_OP_OR)
+		{
+			Reg RHSReg = doMath(exprNode->child);
+			if(RHSReg.c == 'w')
+			{
+				writeV8("\tcmp %c%d, 0\n", RHSReg.c, RHSReg.no);
+			} 
+			else 
+			{
+				writeV8("\tfcmp %c%d, 0\n", RHSReg.c, RHSReg.no);
+			}
+			freeReg(RHSReg.no);
+
+			if(exprNode->semantic_value.exprSemanticValue.op.binaryOp == BINARY_OP_AND)
+			{
+				writeV8("\tbeq %s\n", exitName);
+				Reg LHSReg = doMath(exprNode->child->rightSibling);
+				if(LHSReg.c == 'w')
+				{
+					writeV8("\tcmp %c%d, 0\n", LHSReg.c, LHSReg.no);
+				} 
+				else 
+				{
+					writeV8("\tfcmp %c%d, 0\n", LHSReg.c, LHSReg.no);
+				}
+				writeV8("\tbeq %s\n", exitName);
+				freeReg(LHSReg.no);
+			}
+			else if(exprNode->semantic_value.exprSemanticValue.op.binaryOp == BINARY_OP_OR)
+			{
+				writeV8("\tbne %s\n", startName);
+				Reg LHSReg = doMath(exprNode->child->rightSibling);
+				if(LHSReg.c == 'w')
+				{
+					writeV8("\tcmp %c%d, 0\n", LHSReg.c, LHSReg.no);
+				} 
+				else 
+				{
+					writeV8("\tfcmp %c%d, 0\n", LHSReg.c, LHSReg.no);
+				}
+				writeV8("\tbeq %s\n", exitName);
+				freeReg(LHSReg.no);
+			}
+			return;
+		}
+	}
+	
+	Reg reg = doMath(exprNode);
+	if(reg.c == 'w')
+	{
+		writeV8("\tcmp %c%d, 0\n", reg.c, reg.no);
+	} 
+	else 
+	{
+		writeV8("\tfcmp %c%d, 0\n", reg.c, reg.no);
+	}
+	freeReg(reg.no);
+    writeV8("\tbeq %s\n", exitName); 
+}
+
 void doIfStmt(AST_NODE* stmtNode, char* funcName)
 {
 	AST_NODE* elsePartNode = stmtNode->child->rightSibling->rightSibling;
@@ -1523,9 +1588,12 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName)
 	{
     	ifCount++;
     	char exitName[10];
+		char startName[10];
+		sprintf(startName, "IfStart%d", ifCount);
     	sprintf(exitName, "IfExit%d", ifCount);
     	//if xxx eq false or 0 , jump to exit
-		Reg reg = doMath(stmtNode->child);    //code of xxx(with final compare jump to exit)
+		doLogicalExpr(stmtNode->child, startName, exitName);
+/*		Reg reg = doMath(stmtNode->child);    //code of xxx(with final compare jump to exit)
 		if(reg.c == 'w')
 		{
 			writeV8("\tcmp %c%d, 0\n", reg.c, reg.no);
@@ -1536,6 +1604,8 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName)
 		}
 		freeReg(reg.no);
     	writeV8("\tbeq %s\n", exitName); 
+*/		
+		writeV8("%s:\n", startName);
 		doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of block(yyy)
 		writeV8("%s:\n", exitName);  
 	} 

@@ -1,9 +1,9 @@
 	.text
 _start_foo:
-	str x30, [sp, #-8]
-	str x29, [sp, #-16]
-	add x29, sp, #-16
-	add sp, sp, #-24
+	str x30, [sp, #0]
+	str x29, [sp, #-8]
+	add x29, sp, #-8
+	add sp, sp, #-16
 	ldr x30, =_frameSize_foo
 	ldr x30, [x30, #0]
 	sub sp, sp, w30
@@ -23,29 +23,20 @@ _start_foo:
 	str x22, [sp, #88]
 	str x23, [sp, #92]
 
-	mov w9, #0
 	.data
-_CONSTANT_0:
+_CONSTANT_0: .ascii "xxx\n"
+	.align 3
+	.text
+	ldr x0, =_CONSTANT_0
+	bl _write_str
+	.data
+_CONSTANT_1:
 	.word 0
 	.align 3
 	.text
-	ldr w10, _CONSTANT_0
-	mov w11, #3
-	mul w10, w10, w11
-	add w9, w9, w10
-	.data
-_CONSTANT_1:
-	.word 1
-	.align 3
-	.text
-	ldr w10, _CONSTANT_1
-	add w9, w9, w10
-	lsl w9, w9, #2
-	ldr x10, [x29, #16]
-	sub x10, x10, x9
-	ldr s16, [x10, #0]
-	fmov s0, s16
-	bl _write_float
+	ldr w9, _CONSTANT_1
+	mov w0, w9
+	b _end_foo
 
 _end_foo:
 	ldr x9, [sp, #8]
@@ -65,7 +56,7 @@ _end_foo:
 	ldr x23, [sp, #92]
 	ldr x30, [x29, #8]
 	mov sp, x29
-	add sp, sp, #16
+	add sp, sp, #8
 	ldr x29, [x29, #0]
 	RET x30
 	.data
@@ -98,34 +89,24 @@ _start_MAIN:
 
 	.data
 _CONSTANT_2:
-	.float 1.200000
-	.align 3
-	.text
-	ldr s16, _CONSTANT_2
-	mov w9, #0
-	.data
-_CONSTANT_3:
-	.word 0
-	.align 3
-	.text
-	ldr w10, _CONSTANT_3
-	mov w11, #3
-	mul w10, w10, w11
-	add w9, w9, w10
-	.data
-_CONSTANT_4:
 	.word 1
 	.align 3
 	.text
-	ldr w10, _CONSTANT_4
-	add w9, w9, w10
-	lsl w9, w9, #2
-	add x10, x29, #-4
-	sub x10, x10, x9
-	str s16, [x10, #0]
-	add x9, x29, #-4
-	str x9, [sp, #0]
+	ldr w9, _CONSTANT_2
+	cmp w9, 0
+	beq IfExit1
 	bl _start_foo
+	mov w9, w0
+	cmp w9, 0
+	beq IfExit1
+IfStart1:
+	.data
+_CONSTANT_3: .ascii "1\n"
+	.align 1
+	.text
+	ldr x0, =_CONSTANT_3
+	bl _write_str
+IfExit1:
 
 _end_MAIN:
 	ldr x9, [sp, #8]
@@ -150,4 +131,4 @@ _end_MAIN:
 	RET x30
 	.data
 _frameSize_MAIN:
-	.word 112
+	.word 92
