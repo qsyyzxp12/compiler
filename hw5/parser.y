@@ -1584,29 +1584,17 @@ void doLogicalExpr(AST_NODE* exprNode, char* startName, char* exitName)
 void doIfStmt(AST_NODE* stmtNode, char* funcName)
 {
 	AST_NODE* elsePartNode = stmtNode->child->rightSibling->rightSibling;
+	char startName[10];
+	sprintf(startName, "IfStart%d", ifCount);
 	if(elsePartNode->nodeType == NUL_NODE)
 	{
     	ifCount++;
     	char exitName[10];
-		char startName[10];
-		sprintf(startName, "IfStart%d", ifCount);
     	sprintf(exitName, "IfExit%d", ifCount);
     	//if xxx eq false or 0 , jump to exit
-		doLogicalExpr(stmtNode->child, startName, exitName);
-/*		Reg reg = doMath(stmtNode->child);    //code of xxx(with final compare jump to exit)
-		if(reg.c == 'w')
-		{
-			writeV8("\tcmp %c%d, 0\n", reg.c, reg.no);
-		} 
-		else 
-		{
-			writeV8("\tfcmp %c%d, 0\n", reg.c, reg.no);
-		}
-		freeReg(reg.no);
-    	writeV8("\tbeq %s\n", exitName); 
-*/		
+		doLogicalExpr(stmtNode->child, startName, exitName);		
 		writeV8("%s:\n", startName);
-		doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of block(yyy)
+		doBlock(stmtNode->child->rightSibling, funcName);
 		writeV8("%s:\n", exitName);  
 	} 
 	else 
@@ -1618,21 +1606,14 @@ void doIfStmt(AST_NODE* stmtNode, char* funcName)
 		char exitName[10];
 		sprintf(exitName, "IfExit%d", ifCount);
 
-		Reg reg = doMath(stmtNode->child);    //TODO: code of xxx(with final compare jump to else)
-		if(reg.c == 'w')
-		{
-			writeV8("\tcmp %c%d, 0\n", reg.c, reg.no);
-		} 
-		else 
-		{
-    		writeV8("\tfcmp %c%d, 0\n", reg.c, reg.no);
-  		}
-		freeReg(reg.no);
-		writeV8("\tbeq %s\n", elseName);
-		doBlock(stmtNode->child->rightSibling, funcName);    //TODO: code of if block(yyy)(with final jump to exit)
+		doLogicalExpr(stmtNode->child, startName, elseName);
+
+		writeV8("%s:\n", startName);
+		doBlock(stmtNode->child->rightSibling, funcName);    //Code of if block(yyy)(with final jump to exit)
 		writeV8("\tb %s\n", exitName);
+		
 		writeV8("%s:\n", elseName);
-		doBlock(elsePartNode, funcName);    //TODO: code of else block(zzz)
+		doBlock(elsePartNode, funcName);    //Code of else block(zzz)
 		writeV8("%s:\n", exitName);
 	}
 }

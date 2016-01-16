@@ -6,8 +6,12 @@ int foo()
 
 int MAIN()
 {
-	if(1 && foo())
+	if(0 || foo())
 	{
-		write("1\n");
+		write("1");
+	}
+	else
+	{
+		write("2");
 	}
 }

@@ -89,22 +89,30 @@ _start_MAIN:
 
 	.data
 _CONSTANT_2:
-	.word 1
+	.word 0
 	.align 3
 	.text
 	ldr w9, _CONSTANT_2
 	cmp w9, 0
-	beq IfExit1
+	bne IfStart0
 	bl _start_foo
 	mov w9, w0
 	cmp w9, 0
-	beq IfExit1
-IfStart1:
+	beq IfElse1
+IfStart0:
 	.data
-_CONSTANT_3: .ascii "1\n"
-	.align 1
+_CONSTANT_3: .ascii "1"
+	.align 3
 	.text
 	ldr x0, =_CONSTANT_3
+	bl _write_str
+	b IfExit1
+IfElse1:
+	.data
+_CONSTANT_4: .ascii "2"
+	.align 3
+	.text
+	ldr x0, =_CONSTANT_4
 	bl _write_str
 IfExit1:
 
