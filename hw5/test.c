@@ -1,8 +1,10 @@
-int foo(int a, float b)
+int foo(float a[][3])
 {
-	write(b);
+	write(a[0][1]);
 }
 int MAIN()
 {
-	foo(2, 3.0);
+	float A[5][3];
+	A[0][1] = 1.2;
+	foo(A);
 }

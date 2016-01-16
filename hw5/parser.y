@@ -898,43 +898,60 @@ Reg doMath(AST_NODE* node)
 		else if(node->semantic_value.identifierSemanticValue.kind == NORMAL_ID)
 		{
 			type = entry->attribute->attr.typeDescriptor->properties.dataType;
-			if(entry->nestingLevel == 0)
+			if(entry->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR)
 			{
-				char* label = entry->address.label;
-				int labelReg = getFreeReg(INT_TYPE);
-				writeV8("\tldr x%d, =%s\n", labelReg, label)
-				if(type == INT_TYPE)
+				if(entry->nestingLevel == 0)
 				{
-					regNo = getFreeReg(INT_TYPE);
-					writeV8("\tldr w%d, [x%d, #0]\n", regNo, labelReg);
-					reg.c = 'w';
+					char* label = entry->address.label;
+					int labelReg = getFreeReg(INT_TYPE);
+					writeV8("\tldr x%d, =%s\n", labelReg, label)
+					if(type == INT_TYPE)
+					{
+						regNo = getFreeReg(INT_TYPE);
+						writeV8("\tldr w%d, [x%d, #0]\n", regNo, labelReg);
+						reg.c = 'w';
+					}
+					else if(type == FLOAT_TYPE)
+					{
+						regNo = getFreeReg(FLOAT_TYPE);
+						writeV8("\tldr s%d, [x%d, #0]\n", regNo, labelReg);
+						reg.c = 's';
+					}
+					freeReg(labelReg);
 				}
-				else if(type == FLOAT_TYPE)
+				else
 				{
-					regNo = getFreeReg(FLOAT_TYPE);
-					writeV8("\tldr s%d, [x%d, #0]\n", regNo, labelReg);
-					reg.c = 's';
+					int FpOffset = entry->address.FpOffset;
+//					printf("id %s FpOffset = %d\n", name, FpOffset);
+					if(type == INT_TYPE)
+					{
+						regNo = getFreeReg(INT_TYPE);
+						writeV8("\tldr w%d, [x29, #%d]\n", regNo, FpOffset);
+						reg.c = 'w';
+					}
+					else if(type == FLOAT_TYPE)
+					{
+						regNo = getFreeReg(FLOAT_TYPE);
+						writeV8("\tldr s%d, [x29, #%d]\n", regNo, FpOffset);
+						reg.c = 's';
+					}
 				}
-				freeReg(labelReg);
+				reg.no = regNo;
 			}
-			else
-			{
-				int FpOffset = entry->address.FpOffset;
-//				printf("id %s FpOffset = %d\n", name, FpOffset);
-				if(type == INT_TYPE)
+			else //if(entry->attribute->attr.typeDescriptor->kind == ARRAY_TYPE_DESCRIPTOR)
+			{	
+				reg.no = getFreeReg(INT_TYPE);
+				if(entry->nestingLevel == 0)
 				{
-					regNo = getFreeReg(INT_TYPE);
-					writeV8("\tldr w%d, [x29, #%d]\n", regNo, FpOffset);
-					reg.c = 'w';
+					char* label = entry->address.label;
+					writeV8("\tldr x%d, =%s\n", reg.no, label);
 				}
-				else if(type == FLOAT_TYPE)
+				else
 				{
-					regNo = getFreeReg(FLOAT_TYPE);
-					writeV8("\tldr s%d, [x29, #%d]\n", regNo, FpOffset);
-					reg.c = 's';
+					writeV8("\tadd x%d, x29, #%d\n", reg.no, entry->address.FpOffset);
 				}
+				reg.c = 'x';
 			}
-			reg.no = regNo;
 			return reg;
 		}
 	}
@@ -1260,7 +1277,14 @@ int ldrArrayElem(AST_NODE* arrayIDNode)
 	}
 	else
 	{
-		writeV8("\tadd x%d, x29, #%d\n", addressRegNo, entry->address.FpOffset);
+		if(entry->address.FpOffset > 0)
+		{
+			writeV8("\tldr x%d, [x29, #%d]\n", addressRegNo, entry->address.FpOffset);
+		}
+		else
+		{
+			writeV8("\tadd x%d, x29, #%d\n", addressRegNo, entry->address.FpOffset);
+		}
 		writeV8("\tsub x%d, x%d, x%d\n", addressRegNo, addressRegNo, offsetRegNo);
 	}
 	freeReg(offsetRegNo);
