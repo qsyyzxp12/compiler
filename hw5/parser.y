@@ -833,7 +833,6 @@ void gen_frameSizeLabel(char* name, int size)
 
 Reg doMath(AST_NODE* node)
 {//TODO: 1. "not" expr like `!i`.
- //		 2. Array with dimension more than 1. a[100][200] -> a[i][j] -> address = a + (200*i+j)*4
 	Reg reg;
 	if(node->nodeType == CONST_VALUE_NODE)
 	{
@@ -1125,11 +1124,10 @@ Reg doMath(AST_NODE* node)
 		}
 		else if(node->semantic_value.exprSemanticValue.kind == UNARY_OPERATION)
 		{
+			AST_NODE* valueNode = node->child;
+			reg = doMath(valueNode);
 			if(node->semantic_value.exprSemanticValue.op.unaryOp == UNARY_OP_NEGATIVE)
 			{
-				AST_NODE* valueNode = node->child;
-//				DATA_TYPE type = valueNode->semantic_value.const1->const_type;
-				reg = doMath(valueNode);
 				if(reg.c == 'w')
 				{
 					writeV8("\tneg %c%d, %c%d\n", reg.c, reg.no, reg.c, reg.no);
@@ -1138,8 +1136,26 @@ Reg doMath(AST_NODE* node)
 				{
 					writeV8("\tfneg %c%d, %c%d\n", reg.c, reg.no, reg.c, reg.no);
 				}
-				return reg;
 			}
+			else if(node->semantic_value.exprSemanticValue.op.unaryOp == UNARY_OP_LOGICAL_NEGATION)
+			{
+				if(reg.c == 'w')
+				{
+					writeV8("\tcmp %c%d, #0\n", reg.c, reg.no);
+					writeV8("\tcset w%d, eq\n", reg.no);
+				}
+				else
+				{
+					Reg resultReg;
+					resultReg.no = getFreeReg(INT_TYPE);
+					resultReg.c = 'w';
+					writeV8("\tfcmp %c%d, #0.0\n", reg.c, reg.no);
+					writeV8("\tcset w%d, eq\n", resultReg.no);
+					freeReg(reg.no);
+					return resultReg;
+				}	
+			}
+			return reg;
 		}
 	}
 	else if(node->nodeType == STMT_NODE && node->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT)

@@ -25,114 +25,29 @@ _start_MAIN:
 
 	.data
 _CONSTANT_0:
-	.word 1
+	.word 0
 	.align 3
 	.text
 	ldr w9, _CONSTANT_0
-	str w9, [x29, #-52]
+	cmp w9, #0
+	cset w9, eq
+	cmp w9, 0
+	beq IfElse1
 	.data
-_CONSTANT_1:
-	.word 2
+_CONSTANT_1: .ascii "1  \n"
 	.align 3
 	.text
-	ldr w9, _CONSTANT_1
-	str w9, [x29, #-56]
-	.data
-_CONSTANT_2:
-	.float 1.000000
-	.align 3
-	.text
-	ldr s16, _CONSTANT_2
-	mov w9, #0
-	ldr w10, [x29, #-52]
-	mov w11, #20
-	mul w10, w10, w11
-	add w9, w9, w10
-	ldr w10, [x29, #-56]
-	add w9, w9, w10
-	lsl w9, w9, #2
-	add x10, x29, #-4
-	sub x10, x10, x9
-	str s16, [x10, #0]
-	.data
-_CONSTANT_3:
-	.float 2.000000
-	.align 3
-	.text
-	ldr s16, _CONSTANT_3
-	mov w9, #0
-	.data
-_CONSTANT_4:
-	.word 2
-	.align 3
-	.text
-	ldr w10, _CONSTANT_4
-	mov w11, #20
-	mul w10, w10, w11
-	add w9, w9, w10
-	.data
-_CONSTANT_5:
-	.word 3
-	.align 3
-	.text
-	ldr w10, _CONSTANT_5
-	add w9, w9, w10
-	lsl w9, w9, #2
-	add x10, x29, #-4
-	sub x10, x10, x9
-	str s16, [x10, #0]
-	mov w9, #0
-	ldr w10, [x29, #-52]
-	mov w11, #20
-	mul w10, w10, w11
-	add w9, w9, w10
-	ldr w10, [x29, #-56]
-	add w9, w9, w10
-	lsl w9, w9, #2
-	add x10, x29, #-4
-	sub x10, x10, x9
-	ldr s16, [x10, #0]
-	str s16, [x29, #-44]
-	mov w9, #0
-	.data
-_CONSTANT_6:
-	.word 2
-	.align 3
-	.text
-	ldr w10, _CONSTANT_6
-	mov w11, #20
-	mul w10, w10, w11
-	add w9, w9, w10
-	.data
-_CONSTANT_7:
-	.word 3
-	.align 3
-	.text
-	ldr w10, _CONSTANT_7
-	add w9, w9, w10
-	lsl w9, w9, #2
-	add x10, x29, #-4
-	sub x10, x10, x9
-	ldr s16, [x10, #0]
-	str s16, [x29, #-48]
-	ldr s16, [x29, #-44]
-	fmov s0, s16
-	bl _write_float
-	.data
-_CONSTANT_8: .ascii "\n"
-	.align 2
-	.text
-	ldr x0, =_CONSTANT_8
+	ldr x0, =_CONSTANT_1
 	bl _write_str
-	ldr s16, [x29, #-48]
-	fmov s0, s16
-	bl _write_float
+	b IfExit1
+IfElse1:
 	.data
-_CONSTANT_9: .ascii "\n"
-	.align 2
+_CONSTANT_2: .ascii "2  \n"
+	.align 3
 	.text
-	ldr x0, =_CONSTANT_9
+	ldr x0, =_CONSTANT_2
 	bl _write_str
+IfExit1:
 
 _end_MAIN:
 	ldr x9, [sp, #8]
@@ -157,4 +72,4 @@ _end_MAIN:
 	RET x30
 	.data
 _frameSize_MAIN:
-	.word 148
+	.word 92
