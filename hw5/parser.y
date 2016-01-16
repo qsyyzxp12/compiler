@@ -1591,7 +1591,8 @@ void doVarDeclLst(AST_NODE* varDeclNode, int lv)
 			char* name = nameNode->semantic_value.identifierSemanticValue.identifierName;
 //			printf("Decl id %s\n", name);
 			SymbolTableEntry* entry = nameNode->semantic_value.identifierSemanticValue.symbolTableEntry;
-			if(nameNode->semantic_value.identifierSemanticValue.kind == NORMAL_ID)
+			if(nameNode->semantic_value.identifierSemanticValue.kind == NORMAL_ID || 
+			   nameNode->semantic_value.identifierSemanticValue.kind == WITH_INIT_ID)
 			{
 				if(lv == 0) //global var decl
 				{
@@ -1603,11 +1604,25 @@ void doVarDeclLst(AST_NODE* varDeclNode, int lv)
 					writeV8("%s:\n", label);
 					if(typeNode->dataType == INT_TYPE)
 					{
-						writeV8("\t.word 0\n");
+						if(nameNode->child)
+						{
+							writeV8("\t.word %d\n", nameNode->child->semantic_value.const1->const_u.intval);
+						}
+						else
+						{
+							writeV8("\t.word 0\n");
+						}
 					}
 					else if(typeNode->dataType == FLOAT_TYPE)
 					{
-						writeV8("\t.float 0\n");
+						if(nameNode->child)
+						{
+							writeV8("\t.float %f\n", nameNode->child->semantic_value.const1->const_u.fval);
+						}
+						else
+						{
+							writeV8("\t.float 0\n");
+						}
 					}
 					writeV8("\t.align 3\n");
 					writeV8("\t.text\n");
@@ -1619,6 +1634,7 @@ void doVarDeclLst(AST_NODE* varDeclNode, int lv)
 					entry->address.FpOffset = AROffset;
 				}
 			}
+
 			else if(nameNode->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
 			{
 				AST_NODE* arraySizeNode = nameNode->child;

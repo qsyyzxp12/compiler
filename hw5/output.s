@@ -1,3 +1,13 @@
+	.data
+_g_i:
+	.word 1
+	.align 3
+	.text
+	.data
+_g_k:
+	.float 2.000000
+	.align 3
+	.text
 	.text
 _start_MAIN:
 	str x30, [sp, #0]
@@ -23,31 +33,14 @@ _start_MAIN:
 	str x22, [sp, #88]
 	str x23, [sp, #92]
 
-	.data
-_CONSTANT_0:
-	.word 0
-	.align 3
-	.text
-	ldr w9, _CONSTANT_0
-	cmp w9, #0
-	cset w9, eq
-	cmp w9, 0
-	beq IfElse1
-	.data
-_CONSTANT_1: .ascii "1  \n"
-	.align 3
-	.text
-	ldr x0, =_CONSTANT_1
-	bl _write_str
-	b IfExit1
-IfElse1:
-	.data
-_CONSTANT_2: .ascii "2  \n"
-	.align 3
-	.text
-	ldr x0, =_CONSTANT_2
-	bl _write_str
-IfExit1:
+	ldr x9, =_g_i
+	ldr w10, [x9, #0]
+	mov w0, w10
+	bl _write_int
+	ldr x9, =_g_k
+	ldr s16, [x9, #0]
+	fmov s0, s16
+	bl _write_float
 
 _end_MAIN:
 	ldr x9, [sp, #8]

@@ -1,11 +1,7 @@
+int i = 1;
+float k = 2.0;
 int MAIN()
 {
-	if(!0)
-	{
-		write("1  \n");
-	}
-	else
-	{
-		write("2  \n");
-	}
+	write(i);
+	write(k);
 }
