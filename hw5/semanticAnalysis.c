@@ -240,20 +240,20 @@ void processDeclarationNode(AST_NODE* declarationNode)
     
     switch(declarationNode->semantic_value.declSemanticValue.kind)
     {
-    case VARIABLE_DECL:
-        declareIdList(declarationNode, VARIABLE_ATTRIBUTE, 0);
-        break;
-    case TYPE_DECL:
-        declareIdList(declarationNode, TYPE_ATTRIBUTE, 0);
-        break;
-    case FUNCTION_DECL:
-        declareFunction(declarationNode);
-        break;
-    case FUNCTION_PARAMETER_DECL:
-        declareIdList(declarationNode, VARIABLE_ATTRIBUTE, 1);
-        break;
-    }
-    return;
+		case VARIABLE_DECL:
+			declareIdList(declarationNode, VARIABLE_ATTRIBUTE, 0);
+			break;
+		case TYPE_DECL:
+			declareIdList(declarationNode, TYPE_ATTRIBUTE, 0);
+			break;
+		case FUNCTION_DECL:
+			declareFunction(declarationNode);
+			break;
+		case FUNCTION_PARAMETER_DECL:
+			declareIdList(declarationNode, VARIABLE_ATTRIBUTE, 1);
+			break;
+	}
+	return;
 }
 
 
@@ -310,26 +310,26 @@ void declareIdList(AST_NODE* declarationNode, SymbolAttributeKind isVariableOrTy
             attribute->attributeKind = isVariableOrTypeAttribute;
             switch(traverseIDList->semantic_value.identifierSemanticValue.kind)
             {
-            case NORMAL_ID:
-                attribute->attr.typeDescriptor = typeNode->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.typeDescriptor;
-                break;
-            case ARRAY_ID:
-                if((isVariableOrTypeAttribute == TYPE_ATTRIBUTE) && 
-                   (typeDescriptorOfTypeNode->kind == SCALAR_TYPE_DESCRIPTOR) &&
-                   (typeDescriptorOfTypeNode->properties.dataType == VOID_TYPE))
-                {
-                    printErrorMsg(traverseIDList, TYPEDEF_VOID_ARRAY);
-                    traverseIDList->dataType = ERROR_TYPE;
-                    declarationNode->dataType = ERROR_TYPE;
-                    break;
-                }
-                attribute->attr.typeDescriptor = (TypeDescriptor*)malloc(sizeof(TypeDescriptor));
-                processDeclDimList(traverseIDList, attribute->attr.typeDescriptor, ignoreArrayFirstDimSize);
-                if(traverseIDList->dataType == ERROR_TYPE)
-                {
-                    free(attribute->attr.typeDescriptor);
-                    declarationNode->dataType = ERROR_TYPE;
-                }
+				case NORMAL_ID:
+					attribute->attr.typeDescriptor = typeNode->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.typeDescriptor;
+					break;
+				case ARRAY_ID:
+					if((isVariableOrTypeAttribute == TYPE_ATTRIBUTE) && 
+					   (typeDescriptorOfTypeNode->kind == SCALAR_TYPE_DESCRIPTOR) &&
+					   (typeDescriptorOfTypeNode->properties.dataType == VOID_TYPE))
+					{
+						printErrorMsg(traverseIDList, TYPEDEF_VOID_ARRAY);
+                    	traverseIDList->dataType = ERROR_TYPE;
+                    	declarationNode->dataType = ERROR_TYPE;
+                    	break;
+                	}
+                	attribute->attr.typeDescriptor = (TypeDescriptor*)malloc(sizeof(TypeDescriptor));
+                	processDeclDimList(traverseIDList, attribute->attr.typeDescriptor, ignoreArrayFirstDimSize);
+                	if(traverseIDList->dataType == ERROR_TYPE)
+					{
+                    	free(attribute->attr.typeDescriptor);
+                    	declarationNode->dataType = ERROR_TYPE;
+                	}
                 else if(typeNode->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR)
                 {
                     attribute->attr.typeDescriptor->properties.arrayProperties.elementType = 
@@ -1357,7 +1357,8 @@ void declareFunction(AST_NODE* declarationNode)
     int enterFunctionNameToSymbolTable = 0;
     if(!errorOccur)
     {
-        enterSymbol(functionNameID->semantic_value.identifierSemanticValue.identifierName, attribute);
+        functionNameID->semantic_value.identifierSemanticValue.symbolTableEntry = 
+			enterSymbol(functionNameID->semantic_value.identifierSemanticValue.identifierName, attribute);
         enterFunctionNameToSymbolTable = 1;
     }
 

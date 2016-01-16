@@ -4,8 +4,8 @@ typedef struct
 	char c;
 }Reg;
 
-void gen_prologue(char* name);
-void gen_epilogue(char* name);
+void gen_prologue(char* name, int paramCount);
+void gen_epilogue(char* name, int paramCount);
 void gen_frameSizeLabel(char* name, int size);
 void writeString(char* strName, char* strValue);
 void writeInt(Reg reg);

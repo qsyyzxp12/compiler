@@ -1,7 +1,8 @@
-int i = 1;
-float k = 2.0;
+int foo(int a, float b)
+{
+	write(b);
+}
 int MAIN()
 {
-	write(i);
-	write(k);
+	foo(2, 3.0);
 }

@@ -2712,14 +2712,15 @@ yyreturn:
     fprintf(outputFile, s, ##b);		\
   }
 
-void gen_prologue(char* name)
+void gen_prologue(char* name, int paramCount)
 {
+	int paramOffset = -8 * paramCount;
     writeV8("\t.text\n");
     writeV8("_start_%s:\n", name);
-    writeV8("\tstr x30, [sp, #0]\n");
-    writeV8("\tstr x29, [sp, #-8]\n");
-    writeV8("\tadd x29, sp, #-8\n");
-    writeV8("\tadd sp, sp, #-16\n");
+    writeV8("\tstr x30, [sp, #%d]\n", paramOffset);
+    writeV8("\tstr x29, [sp, #%d]\n", paramOffset-8);
+    writeV8("\tadd x29, sp, #%d\n", paramOffset-8);
+    writeV8("\tadd sp, sp, #%d\n", paramOffset-16);
     writeV8("\tldr x30, =_frameSize_%s\n", name);
     writeV8("\tldr x30, [x30, #0]\n");
     writeV8("\tsub sp, sp, w30\n");
@@ -2740,8 +2741,9 @@ void gen_prologue(char* name)
 	writeV8("\tstr x23, [sp, #92]\n\n");
 }
 
-void gen_epilogue(char* name)
+void gen_epilogue(char* name, int paramCount)
 {
+	int paramOffset = 8 * paramCount;
 	writeV8("\n_end_%s:\n", name);
 	writeV8("\tldr x9, [sp, #8]\n");
 	writeV8("\tldr x10, [sp, #16]\n");
@@ -2760,7 +2762,7 @@ void gen_epilogue(char* name)
 	writeV8("\tldr x23, [sp, #92]\n");
 	writeV8("\tldr x30, [x29, #8]\n");
 	writeV8("\tmov sp, x29\n");
-	writeV8("\tadd sp, sp, #8\n");
+	writeV8("\tadd sp, sp, #%d\n", paramOffset + 8);
 	writeV8("\tldr x29, [x29, #0]\n");
 	writeV8("\tRET x30\n");
 	writeV8("\t.data\n");
@@ -2773,7 +2775,7 @@ void gen_frameSizeLabel(char* name, int size)
 }
 
 Reg doMath(AST_NODE* node)
-{//TODO: 1. "not" expr like `!i`.
+{
 	Reg reg;
 	if(node->nodeType == CONST_VALUE_NODE)
 	{
@@ -3320,8 +3322,9 @@ void doFuncCallStmt(AST_NODE* funcCallStmtNode)
 {
 	AST_NODE* funcNameNode = funcCallStmtNode->child;
 	char* funcName = funcNameNode->semantic_value.identifierSemanticValue.identifierName;
+
 	AST_NODE* parameterListNode = funcNameNode->rightSibling;
-	AST_NODE* firstParameter = parameterListNode->child;
+	AST_NODE* paramNode = parameterListNode->child;
 	if(strcmp(funcName, "fread") == 0)
 	{//TODO: 1. how to assign(he use w0 as return val) 2. send parameter
 		readFloat();
@@ -3334,26 +3337,35 @@ void doFuncCallStmt(AST_NODE* funcCallStmtNode)
 	{
 		Reg reg;
 		char strName[20];
-		switch(firstParameter->dataType)
+		switch(paramNode->dataType)
 		{
 			case INT_TYPE:
-				reg = doMath(firstParameter);
+				reg = doMath(paramNode);
 				writeInt(reg);
 				freeReg(reg.no);
 				break;
 			case FLOAT_TYPE:
-				reg = doMath(firstParameter);
+				reg = doMath(paramNode);
 				writeFloat(reg);
 				freeReg(reg.no);
 				break;
 			case CONST_STRING_TYPE:
 				sprintf(strName, "_CONSTANT_%d", constCount++);//TODO: check data declare twice
-				writeString(strName, firstParameter->semantic_value.const1->const_u.sc);
+				writeString(strName, paramNode->semantic_value.const1->const_u.sc);
 				break;
 		}
 	} 
 	else
 	{
+		SymbolTableEntry* funcEntry = funcNameNode->semantic_value.identifierSemanticValue.symbolTableEntry; 
+		int paramCount = funcEntry->attribute->attr.functionSignature->parametersCount;
+		while(paramCount > 0)
+		{
+			Reg paramReg = doMath(paramNode);
+			writeV8("\tstr %c%d, [sp, #%d]\n", paramReg.c, paramReg.no, (paramCount-1)*(-8));
+			paramNode = paramNode -> rightSibling;
+			paramCount--;
+		}
 		writeV8("\tbl _start_%s\n", funcName);
 	}
 }
@@ -3492,14 +3504,26 @@ void doBlock(AST_NODE* blockNode, char* funcName)
 
 void doDeclFunc(AST_NODE* declNode)
 {
-	AST_NODE* blockNode = declNode->child->rightSibling->rightSibling->rightSibling;
+	AST_NODE* funcNameNode = declNode->child->rightSibling;
+	AST_NODE* paramLstNode = funcNameNode->rightSibling;
+	AST_NODE* blockNode = paramLstNode->rightSibling;
 	AST_NODE* content = blockNode->child;
 	
-
+	char* funcName = funcNameNode->semantic_value.identifierSemanticValue.identifierName;	
 	int frameSize = 92;
 	AROffset = 0;
-	char* funcName = declNode->child->rightSibling->semantic_value.identifierSemanticValue.identifierName;
-	gen_prologue(funcName);
+	
+	AST_NODE* paramNode = paramLstNode->child;
+	int paramCount = 0;
+	while(paramNode)
+	{
+		AST_NODE* paramIDNode = paramNode->child->rightSibling;
+		paramIDNode->semantic_value.identifierSemanticValue.symbolTableEntry->address.FpOffset = (paramCount+2) * 8;
+		paramNode = paramNode->rightSibling;
+		paramCount++;
+	}
+	
+	gen_prologue(funcName, paramCount);
 
 	while(content)
 	{
@@ -3515,7 +3539,7 @@ void doDeclFunc(AST_NODE* declNode)
 		content = content->rightSibling;
 	}
 
-	gen_epilogue(funcName);
+	gen_epilogue(funcName, paramCount);
 	gen_frameSizeLabel(funcName, frameSize-AROffset);
 	AROffset = 0;
 }
