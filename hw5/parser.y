@@ -1581,41 +1581,38 @@ void doLogicalExpr(AST_NODE* exprNode, char* startName, char* exitName)
     writeV8("\tbeq %s\n", exitName); 
 }
 
-void doIfStmt(AST_NODE* stmtNode, char* funcName)
+void doIfStmt(AST_NODE* ifStmtNode, char* funcName)
 {
-	AST_NODE* elsePartNode = stmtNode->child->rightSibling->rightSibling;
-	char startName[10];
-	sprintf(startName, "IfStart%d", ifCount);
-	if(elsePartNode->nodeType == NUL_NODE)
+	ifCount++;
+	int elsePartCount = 0;
+	char exitLabel[14];
+	sprintf(exitLabel, "IfStmt%d_exit", ifCount);
+	
+	
+	while(ifStmtNode->nodeType == STMT_NODE)
 	{
-    	ifCount++;
-    	char exitName[10];
-    	sprintf(exitName, "IfExit%d", ifCount);
-    	//if xxx eq false or 0 , jump to exit
-		doLogicalExpr(stmtNode->child, startName, exitName);		
-		writeV8("%s:\n", startName);
-		doBlock(stmtNode->child->rightSibling, funcName);
-		writeV8("%s:\n", exitName);  
-	} 
-	else 
-	{
-		///if else
-		ifCount++;
-		char elseName[10];
-		sprintf(elseName, "IfElse%d", ifCount);
-		char exitName[10];
-		sprintf(exitName, "IfExit%d", ifCount);
+		char beforeStartLabel[14] = {'\0'};
+		char startLabel[14] = {'\0'};
+		char elseIfLabel[14] = {'\0'};
+		sprintf(beforeStartLabel, "IfStmt%d_%d_0", ifCount, elsePartCount);
+		sprintf(startLabel, "IfStmt%d_%d_1", ifCount, elsePartCount++);
+		sprintf(elseIfLabel, "IfStmt%d_%d_0", ifCount, elsePartCount);
 
-		doLogicalExpr(stmtNode->child, startName, elseName);
+		writeV8("%s:\n", beforeStartLabel);
+		doLogicalExpr(ifStmtNode->child, startLabel, elseIfLabel);		
+		writeV8("%s:\n", startLabel);
+		doBlock(ifStmtNode->child->rightSibling, funcName);
+		writeV8("\tb %s\n", exitLabel);  
 
-		writeV8("%s:\n", startName);
-		doBlock(stmtNode->child->rightSibling, funcName);    //Code of if block(yyy)(with final jump to exit)
-		writeV8("\tb %s\n", exitName);
-		
-		writeV8("%s:\n", elseName);
-		doBlock(elsePartNode, funcName);    //Code of else block(zzz)
-		writeV8("%s:\n", exitName);
+		ifStmtNode = ifStmtNode->child->rightSibling->rightSibling;
 	}
+
+	writeV8("IfStmt%d_%d_0:\n", ifCount, elsePartCount);
+	if(ifStmtNode->nodeType == BLOCK_NODE)
+	{
+		doBlock(ifStmtNode, funcName);
+	}
+	writeV8("%s:\n", exitLabel);
 }
 
 void doBlock(AST_NODE* blockNode, char* funcName)
