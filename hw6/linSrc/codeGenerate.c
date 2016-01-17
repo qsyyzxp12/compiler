@@ -687,16 +687,20 @@ void doForStmt(AST_NODE* stmtNode, char* funcName){
   AST_NODE* incNode = testNode->rightSibling;
   AST_NODE* bodyNode = incNode->rightSibling;
   //init
-  doBlock(initNode, funcName);
+  writeV8("# forinit\n");
+  doStmtLst(initNode, funcName);
   //test
+  writeV8("# fortest\n");
   genLabel(testName);
   Reg reg = doMath(testNode->child);  //generate xxx
   genBranch(reg, bodyName, exitName);
   //inc
+  writeV8("# forinc\n");
   genLabel(incName);
   doStmtLst(incNode, funcName);
   genGoto(testName);
   //body
+  writeV8("# forbody\n");
   genLabel(bodyName);
   doBlock(bodyNode, funcName);
   genGoto(incName);
