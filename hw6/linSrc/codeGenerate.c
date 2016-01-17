@@ -87,6 +87,16 @@ void gen_frameSizeLabel(char* name, int size)
   writeV8("\t.word %d\n", size);
 }
 
+void codeGenConvertFromIntToFloat(Reg* reg){
+  Reg newReg;
+  newReg.c = 's';
+  newReg.no = getFreeReg(FLOAT_TYPE);
+  writeV8("SCVTF %c%d, %c%d\n#convert int to float\n", newReg.c, newReg.no, reg->c, reg->no)//scvtf s, w
+  freeReg(reg->no);
+  reg->no = newReg.no;
+  reg->c = newReg.c;
+}
+
 Reg doMath(AST_NODE* node)
 {
   Reg reg;
@@ -185,6 +195,11 @@ Reg doMath(AST_NODE* node)
 	{
 	  Reg LHSReg = doMath(node->child);
 	  Reg RHSReg = doMath(node->child->rightSibling);
+	  //handle implicit type conversion
+	  if(LHSReg.c == 'w' && RHSReg.c == 's')
+	    codeGenConvertFromIntToFloat(&LHSReg);
+	  else if(LHSReg.c == 's' && RHSReg.c == 'w')
+	    codeGenConvertFromIntToFloat(&RHSReg);
 	  switch(node->semantic_value.exprSemanticValue.op.binaryOp)
 	    {
 	    case BINARY_OP_ADD:
@@ -467,6 +482,9 @@ void doAssignStmt(AST_NODE* assignStatNode)
       AST_NODE* indexNode = LHS->child;
       offset = indexNode->semantic_value.const1->const_u.intval;
     }
+  if((type == FLOAT_TYPE) && (RHSReg.c == 'w')){//type conversion
+    codeGenConvertFromIntToFloat(&RHSReg);
+  }
 
   if(LHSEntry->nestingLevel == 0)
     {
