@@ -761,6 +761,7 @@ dim_list	: dim_list MK_LB expr MK_RB
     int ifCount;
     int whileCount;
     int constCount;
+int forCount;
 	int AROffset;
 	int regStat[15] = {0};
 
@@ -831,6 +832,16 @@ void gen_frameSizeLabel(char* name, int size)
 {
 	writeV8("_frameSize_%s:\n", name);
 	writeV8("\t.word %d\n", size);
+}
+
+void codeGenConvertFromIntToFloat(Reg* reg){
+  Reg newReg;
+  newReg.c = 's';
+  newReg.no = getFreeReg(FLOAT_TYPE);
+  writeV8("SCVTF %c%d, %c%d\n#convert int to float\n", newReg.c, newReg.no, reg->c, reg->no)//scvtf s, w
+  freeReg(reg->no);
+  reg->no = newReg.no;
+  reg->c = newReg.c;
 }
 
 Reg doMath(AST_NODE* node)
@@ -961,6 +972,11 @@ Reg doMath(AST_NODE* node)
 		{
 			Reg LHSReg = doMath(node->child);
 			Reg RHSReg = doMath(node->child->rightSibling);
+				  //handle implicit type conversion
+	  if(LHSReg.c == 'w' && RHSReg.c == 's')
+	    codeGenConvertFromIntToFloat(&LHSReg);
+	  else if(LHSReg.c == 's' && RHSReg.c == 'w')
+	    codeGenConvertFromIntToFloat(&RHSReg);
 			switch(node->semantic_value.exprSemanticValue.op.binaryOp)
 			{
 				case BINARY_OP_ADD:
@@ -1298,8 +1314,22 @@ void doAssignStmt(AST_NODE* assignStatNode)
 	Reg RHSReg = doMath(RHS);
 	
 	SymbolTableEntry* LHSEntry = LHS->semantic_value.identifierSemanticValue.symbolTableEntry;
+	DATA_TYPE type;
+	if(LHS->semantic_value.identifierSemanticValue.kind == NORMAL_ID)
+	  {
+	    type = LHSEntry->attribute->attr.typeDescriptor->properties.dataType;
+	  }
+	if(LHS->semantic_value.identifierSemanticValue.kind == ARRAY_ID)
+	  {
+	    type = LHSEntry->attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
+	  }
+	if((type == FLOAT_TYPE) && (RHSReg.c == 'w')){//type conversion
+	  codeGenConvertFromIntToFloat(&RHSReg);
+	}
+	
 	if(LHS->semantic_value.identifierSemanticValue.kind == NORMAL_ID)
 	{
+
 		if(LHSEntry->nestingLevel == 0)
 		{
 			char* label = LHSEntry->address.label;
@@ -1481,12 +1511,68 @@ void doStmtLst(AST_NODE* stmtLstNode, char* funcName)
 			case WHILE_STMT:
 				doWhileStmt(stmtNode, funcName);
 				break;
+					case FOR_STMT:
+	  doForStmt(stmtNode, funcName);
+	  break;
 			case IF_STMT:
 				doIfStmt(stmtNode, funcName);
 				break;
 		}
 		stmtNode = stmtNode->rightSibling;
 	}
+}
+
+inline void genLabel(char* name){
+  writeV8("%s:\n", name);
+}
+inline void genGoto(char* name){
+  writeV8("b %s\n", name);
+}
+inline void genBranch(Reg reg, char* tname, char* fname){
+  if(reg.c == 'w'){
+    writeV8("\tcmp %c%d, 0\n", reg.c, reg.no);
+  } else{
+    writeV8("\tfcmp %c%d, 0\n", reg.c, reg.no);
+  }
+  freeReg(reg.no);
+  writeV8("\tbeq %s\n", fname);
+  writeV8("\tb %s\n", tname);
+}
+void doForStmt(AST_NODE* stmtNode, char* funcName){
+  forCount++;
+  char testName[15];
+  sprintf(testName, "ForTest%d", forCount);
+  char incName[15];
+  sprintf(incName, "ForInc%d", forCount);
+  char bodyName[15];
+  sprintf(bodyName, "ForBody%d", forCount);
+  char exitName[15];
+  sprintf(exitName, "ForExit%d", forCount);
+
+  AST_NODE* initNode = stmtNode->child;
+  AST_NODE* testNode = initNode->rightSibling;
+  AST_NODE* incNode = testNode->rightSibling;
+  AST_NODE* bodyNode = incNode->rightSibling;
+  //init
+  writeV8("# forinit\n");
+  doStmtLst(initNode, funcName);
+  //test
+  writeV8("# fortest\n");
+  genLabel(testName);
+  Reg reg = doMath(testNode->child);  //generate xxx
+  genBranch(reg, bodyName, exitName);
+  //inc
+  writeV8("# forinc\n");
+  genLabel(incName);
+  doStmtLst(incNode, funcName);
+  genGoto(testName);
+  //body
+  writeV8("# forbody\n");
+  genLabel(bodyName);
+  doBlock(bodyNode, funcName);
+  genGoto(incName);
+  //exit
+  genLabel(exitName);
 }
 
 void doWhileStmt(AST_NODE* stmtNode, char* funcName)
@@ -1778,6 +1864,7 @@ void printCode(AST_NODE *root)
     ifCount = 0;
     whileCount = 0;
     constCount = 0;
+      forCount = 0;
 
 	AST_NODE* child = root->child;
 	while(child)
