@@ -761,7 +761,8 @@ dim_list	: dim_list MK_LB expr MK_RB
     int ifCount;
     int whileCount;
     int constCount;
-int forCount;
+	int forCount;
+	int shortCutCount;
 	int AROffset;
 	int regStat[15] = {0};
 
@@ -970,194 +971,207 @@ Reg doMath(AST_NODE* node)
 	{
 		if(node->semantic_value.exprSemanticValue.kind == BINARY_OPERATION)
 		{
-			Reg LHSReg = doMath(node->child);
-			Reg RHSReg = doMath(node->child->rightSibling);
-			
-			//handle implicit type conversion
-			if(LHSReg.c == 'w' && RHSReg.c == 's')
-				codeGenConvertFromIntToFloat(&LHSReg);
-			else if(LHSReg.c == 's' && RHSReg.c == 'w')
-				codeGenConvertFromIntToFloat(&RHSReg);
-			
-			switch(node->semantic_value.exprSemanticValue.op.binaryOp)
+			if(node->semantic_value.exprSemanticValue.op.binaryOp == BINARY_OP_AND ||
+			   node->semantic_value.exprSemanticValue.op.binaryOp == BINARY_OP_OR)
 			{
-				case BINARY_OP_ADD:
-					if(LHSReg.c == 'w')
+				Reg resultReg;
+				resultReg.c = 'w';
+				resultReg.no = getFreeReg(INT_TYPE);
+				Reg LHSReg = doMath(node->child);
+				if(LHSReg.c == 'w')
+				{
+					writeV8("\tcmp %c%d, 0\n", LHSReg.c, LHSReg.no);
+				} 
+				else 
+				{
+					writeV8("\tfcmp %c%d, 0\n", LHSReg.c, LHSReg.no);
+				}
+				writeV8("\tcset w%d, ne\n", resultReg.no);
+				freeReg(LHSReg.no);
+				if(node->semantic_value.exprSemanticValue.op.binaryOp == BINARY_OP_AND)
+				{
+					writeV8("\tcmp w%d, 0\n", resultReg.no);
+					writeV8("\tbeq shortCut%d\n", shortCutCount);
+					Reg RHSReg = doMath(node->child->rightSibling);
+					if(RHSReg.c == 'w')
 					{
-						writeV8("\tadd %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-					}
-					else
+						writeV8("\tcmp %c%d, 0\n", RHSReg.c, RHSReg.no);
+					} 
+					else 
 					{
-						writeV8("\tfadd %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-					}	
-					break;
-				case BINARY_OP_SUB:
-					if(LHSReg.c == 'w')
+						writeV8("\tfcmp %c%d, 0\n", RHSReg.c, RHSReg.no);
+					}
+					writeV8("\tcset w%d, ne\n", resultReg.no);
+					freeReg(RHSReg.no);
+				}
+				else if(node->semantic_value.exprSemanticValue.op.binaryOp == BINARY_OP_OR)
+				{
+					writeV8("\tcmp w%d, 0\n", resultReg.no);
+					writeV8("\tbne shortCut%d\n", shortCutCount);
+					Reg RHSReg = doMath(node->child->rightSibling);
+					if(RHSReg.c == 'w')
 					{
-						writeV8("\tsub %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-					}
-					else
+						writeV8("\tcmp %c%d, 0\n", RHSReg.c, RHSReg.no);
+					} 
+					else 
 					{
-						writeV8("\tfsub %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+						writeV8("\tfcmp %c%d, 0\n", RHSReg.c, RHSReg.no);
 					}
-					break;
-				case BINARY_OP_MUL:
-					if(LHSReg.c == 'w')
-					{
-						writeV8("\tmul %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-					}
-					else
-					{
-						writeV8("\tfmul %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-					}
-					break;
-				case BINARY_OP_DIV:
-					if(LHSReg.c == 'w')
-					{
-						writeV8("\tsdiv %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-					}
-					else
-					{
-						writeV8("\tfdiv %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-					}
-					break;
-				case BINARY_OP_EQ:	// ==	
-					if(LHSReg.c == 'w')
-					{
-						writeV8("\tcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-						writeV8("\tcset %c%d, eq\n", LHSReg.c, LHSReg.no);
-					}
-					else
-					{
-						writeV8("\tfcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-						freeReg(LHSReg.no);
-						LHSReg.no = getFreeReg(INT_TYPE);
-						LHSReg.c = 'w';
-						writeV8("\tcset w%d, eq\n", LHSReg.no);
-					}
-					break;
-				case BINARY_OP_GE:	// >=
-					if(LHSReg.c == 'w')
-					{
-						writeV8("\tcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-						writeV8("\tcset %c%d, ge\n", LHSReg.c, LHSReg.no);
-					}
-					else
-					{
-						writeV8("\tfcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-						freeReg(LHSReg.no);
-						LHSReg.no = getFreeReg(INT_TYPE);
-						LHSReg.c = 'w';
-						writeV8("\tcset w%d, ge\n", LHSReg.no);
-					}
-					break;
-				case BINARY_OP_LE:	// <=
-					if(LHSReg.c == 'w')
-					{
-						writeV8("\tcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-						writeV8("\tcset %c%d, le\n", LHSReg.c, LHSReg.no);
-					}
-					else
-					{
-						writeV8("\tfcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-						freeReg(LHSReg.no);
-						LHSReg.no = getFreeReg(INT_TYPE);
-						LHSReg.c = 'w';
-						writeV8("\tcset w%d, le\n", LHSReg.no);
-					}
-					break;
-				case BINARY_OP_NE:	// !=
-					if(LHSReg.c == 'w')
-					{
-						writeV8("\tcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-						writeV8("\tcset %c%d, ne\n", LHSReg.c, LHSReg.no);
-					}
-					else
-					{
-						writeV8("\tfcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-						freeReg(LHSReg.no);
-						LHSReg.no = getFreeReg(INT_TYPE);
-						LHSReg.c = 'w';
-						writeV8("\tcset w%d, ne\n", LHSReg.no);
-					}
-					break;
-				case BINARY_OP_GT:	// >
-					if(LHSReg.c == 'w')
-					{
-						writeV8("\tcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-						writeV8("\tcset %c%d, gt\n", LHSReg.c, LHSReg.no);
-					}
-					else
-					{
-						writeV8("\tfcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-						freeReg(LHSReg.no);
-						LHSReg.no = getFreeReg(INT_TYPE);
-						LHSReg.c = 'w';
-						writeV8("\tcset w%d, gt\n", LHSReg.no);
-					}
-					break;
-				case BINARY_OP_LT:	// <
-					if(LHSReg.c == 'w')
-					{
-						writeV8("\tcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-						writeV8("\tcset %c%d, lt\n", LHSReg.c, LHSReg.no);
-					}
-					else
-					{
-						writeV8("\tfcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-						freeReg(LHSReg.no);
-						LHSReg.no = getFreeReg(INT_TYPE);
-						LHSReg.c = 'w';
-						writeV8("\tcset w%d, lt\n", LHSReg.no);
-					}
-					break;
-/*				case BINARY_OP_AND: // &&
-					if(LHSReg.c == 'w')
-					{
-						writeV8("\tand %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-					}
-					else
-					{	
-						Reg isLHSZeroReg, isRHSZeroReg;
-						isLHSZeroReg.no = getFreeReg(INT_TYPE);
-						isRHSZeroReg.no = getFreeReg(INT_TYPE);
-						isLHSZeroReg.c = 'w';
-						
-						writeV8("\tfcmp %c%d, #0.0\n", LHSReg.c, LHSReg.no);
-						writeV8("\tcset w%d, eq\n", isLHSZeroReg.no);
-						writeV8("\tfcmp %c%d, #0.0\n", RHSReg.c, RHSReg.no);
-						writeV8("\tcset w%d, eq\n", isRHSZeroReg.no);
-
-						writeV8("\tand w%d, w%d, w%d\n", isLHSZeroReg.no, isLHSZeroReg.no, isRHSZeroReg.no);
-						freeReg(LHSReg.no, RHSReg.no, isRHSZeroReg.no);
-						return isLHSZeroReg;
-					}
-					break;
-				case BINARY_OP_OR:	// ||
-					if(LHSReg.c == 'w')
-					{
-						writeV8("\torr %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
-					}
-					else
-					{
-						Reg isLHSZeroReg, isRHSZeroReg;
-						isLHSZeroReg.no = getFreeReg(INT_TYPE);
-						isRHSZeroReg.no = getFreeReg(INT_TYPE);
-						isLHSZeroReg.c = 'w';
-						
-						writeV8("\tfcmp %c%d, #0.0\n", LHSReg.c, LHSReg.no);
-						writeV8("\tcset w%d, eq\n", isLHSZeroReg.no);
-						writeV8("\tfcmp %c%d, #0.0\n", RHSReg.c, RHSReg.no);
-						writeV8("\tcset w%d, eq\n", isRHSZeroReg.no);
-
-						writeV8("\torr w%d, w%d, w%d\n", isLHSZeroReg.no, isLHSZeroReg.no, isRHSZeroReg.no);
-						freeReg(LHSReg.no, RHSReg.no, isRHSZeroReg.no);
-						return isLHSZeroReg;
-					}
-					break;
-*/			}
-			freeReg(RHSReg.no);
-			return LHSReg;
+					writeV8("cset w%d, eq\n", resultReg.no);
+					freeReg(RHSReg.no);
+				}
+				writeV8("shortCut%d:\n", shortCutCount++);
+				return resultReg;
+			}
+			else
+			{
+				Reg LHSReg = doMath(node->child);
+				Reg RHSReg = doMath(node->child->rightSibling);
+				
+				//handle implicit type conversion
+				if(LHSReg.c == 'w' && RHSReg.c == 's')
+					codeGenConvertFromIntToFloat(&LHSReg);
+				else if(LHSReg.c == 's' && RHSReg.c == 'w')
+					codeGenConvertFromIntToFloat(&RHSReg);
+				
+				switch(node->semantic_value.exprSemanticValue.op.binaryOp)
+				{
+					case BINARY_OP_ADD:
+						if(LHSReg.c == 'w')
+						{
+							writeV8("\tadd %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+						}
+						else
+						{
+							writeV8("\tfadd %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+						}	
+						break;
+					case BINARY_OP_SUB:
+						if(LHSReg.c == 'w')
+						{
+							writeV8("\tsub %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+						}
+						else
+						{
+							writeV8("\tfsub %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+						}
+						break;
+					case BINARY_OP_MUL:
+						if(LHSReg.c == 'w')
+						{
+							writeV8("\tmul %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+						}
+						else
+						{
+							writeV8("\tfmul %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+						}
+						break;
+					case BINARY_OP_DIV:
+						if(LHSReg.c == 'w')
+						{
+							writeV8("\tsdiv %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+						}
+						else
+						{
+							writeV8("\tfdiv %c%d, %c%d, %c%d\n", LHSReg.c, LHSReg.no, LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+						}
+						break;
+					case BINARY_OP_EQ:	// ==	
+						if(LHSReg.c == 'w')
+						{
+							writeV8("\tcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+							writeV8("\tcset %c%d, eq\n", LHSReg.c, LHSReg.no);
+						}
+						else
+						{
+							writeV8("\tfcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+							freeReg(LHSReg.no);
+							LHSReg.no = getFreeReg(INT_TYPE);
+							LHSReg.c = 'w';
+							writeV8("\tcset w%d, eq\n", LHSReg.no);
+						}
+						break;
+					case BINARY_OP_GE:	// >=
+						if(LHSReg.c == 'w')
+						{
+							writeV8("\tcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+							writeV8("\tcset %c%d, ge\n", LHSReg.c, LHSReg.no);
+						}
+						else
+						{
+							writeV8("\tfcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+							freeReg(LHSReg.no);
+							LHSReg.no = getFreeReg(INT_TYPE);
+							LHSReg.c = 'w';
+							writeV8("\tcset w%d, ge\n", LHSReg.no);
+						}
+						break;
+					case BINARY_OP_LE:	// <=
+						if(LHSReg.c == 'w')
+						{
+							writeV8("\tcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+							writeV8("\tcset %c%d, le\n", LHSReg.c, LHSReg.no);
+						}
+						else
+						{
+							writeV8("\tfcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+							freeReg(LHSReg.no);
+							LHSReg.no = getFreeReg(INT_TYPE);
+							LHSReg.c = 'w';
+							writeV8("\tcset w%d, le\n", LHSReg.no);
+						}
+						break;
+					case BINARY_OP_NE:	// !=
+						if(LHSReg.c == 'w')
+						{
+							writeV8("\tcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+							writeV8("\tcset %c%d, ne\n", LHSReg.c, LHSReg.no);
+						}
+						else
+						{
+							writeV8("\tfcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+							freeReg(LHSReg.no);
+							LHSReg.no = getFreeReg(INT_TYPE);
+							LHSReg.c = 'w';
+							writeV8("\tcset w%d, ne\n", LHSReg.no);
+						}
+						break;
+					case BINARY_OP_GT:	// >
+						if(LHSReg.c == 'w')
+						{
+							writeV8("\tcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+							writeV8("\tcset %c%d, gt\n", LHSReg.c, LHSReg.no);
+						}
+						else
+						{
+							writeV8("\tfcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+							freeReg(LHSReg.no);
+							LHSReg.no = getFreeReg(INT_TYPE);
+							LHSReg.c = 'w';
+							writeV8("\tcset w%d, gt\n", LHSReg.no);
+						}
+						break;
+					case BINARY_OP_LT:	// <
+						if(LHSReg.c == 'w')
+						{
+							writeV8("\tcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+							writeV8("\tcset %c%d, lt\n", LHSReg.c, LHSReg.no);
+						}
+						else
+						{
+							writeV8("\tfcmp %c%d, %c%d\n", LHSReg.c, LHSReg.no, RHSReg.c, RHSReg.no);
+							freeReg(LHSReg.no);
+							LHSReg.no = getFreeReg(INT_TYPE);
+							LHSReg.c = 'w';
+							writeV8("\tcset w%d, lt\n", LHSReg.no);
+						}
+						break;
+					default:
+						break;
+				}
+				freeReg(RHSReg.no);
+				return LHSReg;
+			}
 		}
 		else if(node->semantic_value.exprSemanticValue.kind == UNARY_OPERATION)
 		{
@@ -1574,6 +1588,7 @@ void doForStmt(AST_NODE* stmtNode, char* funcName)
 	genLabel(testName);
 	Reg reg = doMath(testNode->child);  //generate xxx
 	genBranch(reg, bodyName, exitName);
+
 	//inc
 	writeV8("# forinc\n");
 	genLabel(incName);
@@ -1615,98 +1630,32 @@ void doWhileStmt(AST_NODE* stmtNode, char* funcName)
 	writeV8("%s:\n", exitName);
 }
 
-void doLogicalExpr(AST_NODE* exprNode, char* startName, char* exitName)
-{
-	if(exprNode->semantic_value.exprSemanticValue.kind == BINARY_OPERATION)
-	{
-		if(exprNode->semantic_value.exprSemanticValue.op.binaryOp == BINARY_OP_AND ||
-		   exprNode->semantic_value.exprSemanticValue.op.binaryOp == BINARY_OP_OR)
-		{
-			Reg RHSReg = doMath(exprNode->child);
-			if(RHSReg.c == 'w')
-			{
-				writeV8("\tcmp %c%d, 0\n", RHSReg.c, RHSReg.no);
-			} 
-			else 
-			{
-				writeV8("\tfcmp %c%d, 0\n", RHSReg.c, RHSReg.no);
-			}
-			freeReg(RHSReg.no);
-
-			if(exprNode->semantic_value.exprSemanticValue.op.binaryOp == BINARY_OP_AND)
-			{
-				writeV8("\tbeq %s\n", exitName);
-				Reg LHSReg = doMath(exprNode->child->rightSibling);
-				if(LHSReg.c == 'w')
-				{
-					writeV8("\tcmp %c%d, 0\n", LHSReg.c, LHSReg.no);
-				} 
-				else 
-				{
-					writeV8("\tfcmp %c%d, 0\n", LHSReg.c, LHSReg.no);
-				}
-				writeV8("\tbeq %s\n", exitName);
-				freeReg(LHSReg.no);
-			}
-			else if(exprNode->semantic_value.exprSemanticValue.op.binaryOp == BINARY_OP_OR)
-			{
-				writeV8("\tbne %s\n", startName);
-				Reg LHSReg = doMath(exprNode->child->rightSibling);
-				if(LHSReg.c == 'w')
-				{
-					writeV8("\tcmp %c%d, 0\n", LHSReg.c, LHSReg.no);
-				} 
-				else 
-				{
-					writeV8("\tfcmp %c%d, 0\n", LHSReg.c, LHSReg.no);
-				}
-				writeV8("\tbeq %s\n", exitName);
-				freeReg(LHSReg.no);
-			}
-			return;
-		}
-	}
-	
-	Reg reg = doMath(exprNode);
-	if(reg.c == 'w')
-	{
-		writeV8("\tcmp %c%d, 0\n", reg.c, reg.no);
-	} 
-	else 
-	{
-		writeV8("\tfcmp %c%d, 0\n", reg.c, reg.no);
-	}
-	freeReg(reg.no);
-    writeV8("\tbeq %s\n", exitName); 
-}
-
 void doIfStmt(AST_NODE* ifStmtNode, char* funcName)
 {
 	ifCount++;
 	int elsePartCount = 0;
 	char exitLabel[14];
 	sprintf(exitLabel, "IfStmt%d_exit", ifCount);
-	
-	
+		
 	while(ifStmtNode->nodeType == STMT_NODE)
 	{
 		char beforeStartLabel[14] = {'\0'};
 		char startLabel[14] = {'\0'};
 		char elseIfLabel[14] = {'\0'};
-		sprintf(beforeStartLabel, "IfStmt%d_%d_0", ifCount, elsePartCount);
-		sprintf(startLabel, "IfStmt%d_%d_1", ifCount, elsePartCount++);
-		sprintf(elseIfLabel, "IfStmt%d_%d_0", ifCount, elsePartCount);
+		sprintf(beforeStartLabel, "IfStmt%d_%d", ifCount, elsePartCount++);
+		sprintf(elseIfLabel, "IfStmt%d_%d", ifCount, elsePartCount);
 
 		writeV8("%s:\n", beforeStartLabel);
-		doLogicalExpr(ifStmtNode->child, startLabel, elseIfLabel);		
-		writeV8("%s:\n", startLabel);
+		Reg conditionReg = doMath(ifStmtNode->child);
+		writeV8("\tcmp %c%d, 0\n", conditionReg.c, conditionReg.no);
+		writeV8("\tbeq %s\n", elseIfLabel);
 		doBlock(ifStmtNode->child->rightSibling, funcName);
 		writeV8("\tb %s\n", exitLabel);  
 
 		ifStmtNode = ifStmtNode->child->rightSibling->rightSibling;
 	}
 
-	writeV8("IfStmt%d_%d_0:\n", ifCount, elsePartCount);
+	writeV8("IfStmt%d_%d:\n", ifCount, elsePartCount);
 	if(ifStmtNode->nodeType == BLOCK_NODE)
 	{
 		doBlock(ifStmtNode, funcName);
@@ -1835,7 +1784,8 @@ void doVarDeclLst(AST_NODE* varDeclNode, int lv)
 						{
 							codeGenConvertFromIntToFloat(&valReg);
 						}	
-						writeV8("\tstr %c%d, [x29, #%d]\n", valReg.c, valReg.no, AROffset);		
+						writeV8("\tstr %c%d, [x29, #%d]\n", valReg.c, valReg.no, AROffset);
+						freeReg(valReg.no);
 					}
 				}
 			}
@@ -1887,7 +1837,8 @@ void printCode(AST_NODE *root)
     ifCount = 0;
     whileCount = 0;
     constCount = 0;
-      forCount = 0;
+	forCount = 0;
+	shortCutCount = 0;
 
 	AST_NODE* child = root->child;
 	while(child)

@@ -25,14 +25,83 @@ _start_MAIN:
 
 	.data
 _CONSTANT_0:
-	.word 1
+	.word 0
 	.align 3
 	.text
 	ldr w9, _CONSTANT_0
+	str w9, [x29, #-8]
+# forinit
+	.data
+_CONSTANT_1:
+	.word 0
+	.align 3
+	.text
+	ldr w9, _CONSTANT_1
 	str w9, [x29, #-4]
+# fortest
+ForTest1:
 	ldr w10, [x29, #-4]
-	mov w0, w10
+	.data
+_CONSTANT_2:
+	.word 10
+	.align 3
+	.text
+	ldr w11, _CONSTANT_2
+	cmp w10, w11
+	cset w10, lt
+	cmp w10, 0
+	cset w9, ne
+	cmp w9, 0
+	beq shortCut0
+	ldr w10, [x29, #-8]
+	.data
+_CONSTANT_3:
+	.word 5
+	.align 3
+	.text
+	ldr w11, _CONSTANT_3
+	cmp w10, w11
+	cset w10, lt
+	cmp w10, 0
+	cset w9, ne
+shortCut0:
+	cmp w9, 0
+	beq ForExit1
+	b ForBody1
+# forinc
+ForInc1:
+	ldr w9, [x29, #-4]
+	.data
+_CONSTANT_4:
+	.word 1
+	.align 3
+	.text
+	ldr w10, _CONSTANT_4
+	add w9, w9, w10
+	str w9, [x29, #-4]
+b ForTest1
+# forbody
+ForBody1:
+	ldr w9, [x29, #-4]
+	mov w0, w9
 	bl _write_int
+	.data
+_CONSTANT_5: .ascii "\n"
+	.align 2
+	.text
+	ldr x0, =_CONSTANT_5
+	bl _write_str
+	ldr w9, [x29, #-8]
+	.data
+_CONSTANT_6:
+	.word 1
+	.align 3
+	.text
+	ldr w10, _CONSTANT_6
+	add w9, w9, w10
+	str w9, [x29, #-8]
+b ForInc1
+ForExit1:
 
 _end_MAIN:
 	ldr x9, [sp, #8]
@@ -57,4 +126,4 @@ _end_MAIN:
 	RET x30
 	.data
 _frameSize_MAIN:
-	.word 96
+	.word 100
