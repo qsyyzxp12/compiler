@@ -25,53 +25,14 @@ _start_MAIN:
 
 	.data
 _CONSTANT_0:
-	.word 2
+	.word 1
 	.align 3
 	.text
 	ldr w9, _CONSTANT_0
 	str w9, [x29, #-4]
-IfStmt1_0_0:
-	ldr w9, [x29, #-4]
-	.data
-_CONSTANT_1:
-	.word 0
-	.align 3
-	.text
-	ldr w10, _CONSTANT_1
-	cmp w9, w10
-	cset w9, eq
-	cmp w9, 0
-	beq IfStmt1_1_0
-IfStmt1_0_1:
-	.data
-_CONSTANT_2: .ascii "0"
-	.align 3
-	.text
-	ldr x0, =_CONSTANT_2
-	bl _write_str
-	b IfStmt1_exit
-IfStmt1_1_0:
-	ldr w9, [x29, #-4]
-	.data
-_CONSTANT_3:
-	.word 1
-	.align 3
-	.text
-	ldr w10, _CONSTANT_3
-	cmp w9, w10
-	cset w9, eq
-	cmp w9, 0
-	beq IfStmt1_2_0
-IfStmt1_1_1:
-	.data
-_CONSTANT_4: .ascii "1"
-	.align 3
-	.text
-	ldr x0, =_CONSTANT_4
-	bl _write_str
-	b IfStmt1_exit
-IfStmt1_2_0:
-IfStmt1_exit:
+	ldr w10, [x29, #-4]
+	mov w0, w10
+	bl _write_int
 
 _end_MAIN:
 	ldr x9, [sp, #8]
